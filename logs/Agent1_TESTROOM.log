@@ -1,0 +1,16 @@
+[2023-10-07 22:23:41,203] [DEBUG] - Join Room Success
+[2023-10-07 22:23:41,204] [DEBUG] - User Token : eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX25hbWUiOiJBZ2VudDEiLCJyb29tX25hbWUiOiJURVNUUk9PTSIsImxlYWRlciI6ZmFsc2UsImlhdCI6MTY5NjY4ODYyMSwiZXhwIjoxNzA1MzI4NjIxfQ.I6CJhl65AZAIo5sbfybhz6N7XL0ulOlfyisOvTIjRo4
+[2023-10-07 22:23:51,261] [DEBUG] - Game Start
+[2023-10-07 22:23:51,290] [DEBUG] - Agent Role: hunter
+[2023-10-07 22:23:51,294] [DEBUG] - {'stage': 'check_role', 'stage_description': '遊戲開始，請查看身分', 'announcement': [], 'information': [], 'timer': 5, 'vote_info': {}, 'empty': 0}
+[2023-10-07 22:23:55,361] [DEBUG] - {'stage': '1-0-check', 'stage_description': '天黑請閉眼', 'announcement': [], 'information': [], 'timer': 5, 'vote_info': {}, 'empty': 0}
+[2023-10-07 22:24:00,467] [DEBUG] - {'stage': '1-0-werewolf_dialogue', 'stage_description': '狼人進行討論#659', 'announcement': [], 'information': [], 'timer': 100, 'vote_info': {}, 'empty': 0}
+[2023-10-07 22:24:03,541] [DEBUG] - {'stage': '1-0-werewolf_dialogue', 'stage_description': '狼人進行討論#688', 'announcement': [], 'information': [], 'timer': 105, 'vote_info': {}, 'empty': 0}
+[2023-10-07 22:24:05,598] [DEBUG] - {'stage': '1-0-werewolf', 'stage_description': '狼人請殺人', 'announcement': [], 'information': [], 'timer': 105, 'vote_info': {}, 'empty': 0}
+[2023-10-07 22:24:16,799] [DEBUG] - {'stage': '1-0-seer', 'stage_description': '預言家請睜眼，確認查驗身份', 'announcement': [], 'information': [], 'timer': 100, 'vote_info': {}, 'empty': 0}
+[2023-10-07 22:24:19,852] [DEBUG] - {'stage': '1-0-witch', 'stage_description': '女巫請睜眼，請問要使用解藥，還是毒藥', 'announcement': [], 'information': [], 'timer': 105, 'vote_info': {}, 'empty': 0}
+[2023-10-07 22:24:22,882] [DEBUG] - {'stage': '1-1-hunter', 'stage_description': '天亮請睜眼，Agent1(6)請發表遺言', 'announcement': [{'user': [6], 'operation': 'died', 'description': 'Agent1(6)昨晚死了'}], 'information': [{'user': [6], 'target': [], 'operation': 'dialogue', 'description': '發遺言'}, {'user': [6], 'target': [0, 1, 2, 3, 4, 5], 'operation': 'vote_or_not', 'description': '獵人殺人'}], 'timer': 105, 'vote_info': {}, 'empty': 0}
+[2023-10-07 22:24:22,918] [DEBUG] - Agent send operation : {'stage_name': '1-1-hunter', 'operation': 'dialogue', 'target': -1, 'chat': '123'}
+[2023-10-07 22:24:22,918] [DEBUG] - Send Status : OK
+[2023-10-07 22:24:31,082] [DEBUG] - {'stage': '1-1-dialogue', 'stage_description': 'sunny(3)玩家進行討論', 'announcement': [{'user': [6], 'operation': 'chat', 'description': '123'}], 'information': [], 'timer': 105, 'vote_info': {}, 'empty': 0}
+[2023-10-07 22:24:51,428] [WARNING] - __check_game_state__ Server Error , HTTPConnectionPool(host='localhost', port=8001): Max retries exceeded with url: /api/game/TESTROOM/information/Agent1 (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x0000026D96B1E8F0>: Failed to establish a new connection: [WinError 10061] 無法連線，因為目標電腦拒絕連線。'))
