@@ -21,6 +21,8 @@ class agent():
         self.role = None
         self.chat_func = None
         self.current_info = None
+        self.checker = True
+        self.player_name = None
         self.logger = logging.getLogger(__name__)
 
         # if pyChatGPT_token is not None: self.__pyChatGPT_init__(pyChatGPT_token)
@@ -63,7 +65,7 @@ class agent():
     
     def __proccess_data__(self , data):
         """the data proccess , must override this."""
-        print(data)
+        # print(data)
         if(len(data['information']) == 0):
             return
         
@@ -113,7 +115,7 @@ class agent():
     def quit_room(self):
         """quit the game room"""
         r = requests.get(f'{self.server_url}/api/quit_room/{self.room}/{self.name}' , headers ={
-            "Authorization" : "Bearer {self.user_token}"
+            "Authorization" : f"Bearer {self.user_token}"
         })
 
         if r.status_code != 200:
@@ -125,10 +127,11 @@ class agent():
             r = requests.get(f'{self.server_url}/api/room/{self.room}' , timeout=3)
 
             if r.status_code == 200 and r.json()["room_state"] == "started":
+                self.player_name = [name for name in r.json()["room_user"]]
                 self.logger.debug("Game Start")
                 self.__get_role__()
                 self.__check_game_state__()
-            else:
+            elif self.checker:
                 threading.Timer(5.0, self.__check_room_state__).start()
         except Exception as e:
             self.logger.warning(f"__check_room_state__ Server Error , {e}")
@@ -137,18 +140,27 @@ class agent():
         """check the game state every 1s until game over , if the game state is chaged , call the proccess data func"""
         try:
             r = requests.get(f'{self.server_url}/api/game/{self.room}/information/{self.name}' ,  headers ={
-            "Authorization" : "Bearer {self.user_token}"
+            "Authorization" : f"Bearer {self.user_token}"
             } , timeout=3)
 
             if r.status_code == 200:
                 if self.current_info != r.json():
                     self.current_info = r.json()
                     self.logger.debug(r.json())
+
+                    # check game over
+                    for anno in self.current_info['announcement']: 
+                        if anno['operation'] == "game_over" : 
+                            self.checker = False
+                            
+                            break
+
                     self.__proccess_data__(self.current_info) 
             else:
                 self.logger.warning(r.json())
 
-            threading.Timer(1.0, self.__check_game_state__).start()
+            if self.checker : threading.Timer(1.0, self.__check_game_state__).start()
+
         except Exception as e:
             self.logger.warning(f"__check_game_state__ Server Error , {e}")
 
@@ -156,7 +168,7 @@ class agent():
         """get the agent's role after the game is started"""
         try:
             r = requests.get(f'{self.server_url}/api/game/{self.room}/role/{self.name}' , headers ={
-                "Authorization" : "Bearer {self.user_token}"
+                "Authorization" : f"Bearer {self.user_token}"
             } , timeout=5)
 
             if r.status_code == 200:
@@ -171,8 +183,8 @@ class agent():
         """send operation to server"""
         try:
             r = requests.post(f'{self.server_url}/api/game/{self.room}/operation/{self.name}' , headers ={
-                "Authorization" : "Bearer {self.user_token}"
-            } , data= data, timeout=5)
+                "Authorization" : f"Bearer {self.user_token}"
+            } , json= data, timeout=5)
 
             self.logger.debug(f"Agent send operation : {data}")
             if r.status_code == 200:
