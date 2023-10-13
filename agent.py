@@ -130,13 +130,13 @@ class agent():
                 self.player_name = [name for name in r.json()["room_user"]]
                 self.logger.debug("Game Start")
                 self.__get_role__()
-                self.__check_game_state__()
+                self.__check_game_state__(0)
             elif self.checker:
                 threading.Timer(5.0, self.__check_room_state__).start()
         except Exception as e:
             self.logger.warning(f"__check_room_state__ Server Error , {e}")
 
-    def __check_game_state__(self):
+    def __check_game_state__(self , failure_cnt):
         """check the game state every 1s until game over , if the game state is chaged , call the proccess data func"""
         try:
             r = requests.get(f'{self.server_url}/api/game/{self.room}/information/{self.name}' ,  headers ={
@@ -158,8 +158,10 @@ class agent():
                     self.__proccess_data__(self.current_info) 
             else:
                 self.logger.warning(r.json())
+                failure_cnt+=1
 
-            if self.checker : threading.Timer(1.0, self.__check_game_state__).start()
+            if failure_cnt >= 5 : self.checker = False
+            if self.checker : threading.Timer(1.0, self.__check_game_state__ , args=(failure_cnt,)).start()
 
         except Exception as e:
             self.logger.warning(f"__check_game_state__ Server Error , {e}")
