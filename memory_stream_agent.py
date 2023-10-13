@@ -78,35 +78,27 @@ class long_memeory_stream():
 
         self.logger.debug(f"retrieval memory {sorted_memory_streams[:pick_num]}")
         return sorted_memory_streams[:pick_num]
+    
+    def reflection(self , day , turn):
+        info = self.__reflection_question__(day , turn)
+        question = info['question'].split('\n')
+        memory = self.retrieval(day , turn , question[0])
+        info = self.__reflection__(memory)
+        print(info)
+
+        self.push(day , turn , info['opinion'])
 
     def __cal_importantance__(self , observation):
                 
         final_prompt = self.prompt_template['importantance'].replace("%m" , observation).replace("%e" , self.example['importantance'])
 
-        success_get_patten = False
-        fail_idx = 0
-
-        # while not success_get_patten or fail_idx >= 3:
-
-        #     info = {}
-        #     result = self.__openai_send__(final_prompt)
-        #     splited_result = result.split('\n')
-        #     patten_name = ""
-        #     for line in splited_result:
-        #         patten = re.search('\[(.*)\]', line)
-        #         if patten != None:
-        #             patten_name = self.chinese_to_english[patten.group(1)]
-        #             info[patten_name] = ""
-        #         elif patten_name != "":
-        #             info[patten_name] += line
-
-        #     if "score" in info.keys(): success_get_patten = True
-        #     else : fail_idx+=1
-
         info = {
             "score" : "0",
             "reason" : "test"
         }
+
+        info = self.__proccess_LLM_output__(final_prompt, ["score","reason"] , info , -1)
+        
 
         return info
 
@@ -140,6 +132,66 @@ class long_memeory_stream():
         # print(score)
         score = np.array(score)
         return score / np.linalg.norm(score)
+    
+    def __reflection_question__(self , day , turn , pick_num = 5):
+
+        memory_str = '\n'.join([i['observation'] for i in self.memory_stream])
+        print(memory_str)
+
+        final_prompt = self.prompt_template['reflection_question'].replace('%m' , memory_str).replace("%e" , self.example['reflection_question'])
+
+        info = {
+            "question" : "test",
+        }
+
+        info = self.__proccess_LLM_output__(final_prompt, ["question"] , info , 3)
+
+        
+        return info
+    
+    def __reflection__(self , memory):
+
+        memory_str = '\n'.join([i['observation'] for i in memory])
+        final_prompt = self.prompt_template['reflection'].replace('%m' , memory_str).replace("%e" , self.example['reflection'])
+        info = {
+            "opinion" : "test",
+            "reference" : "test",
+        }
+        info = self.__proccess_LLM_output__(final_prompt, ["opinion" , "reference"] , info , 3)
+        
+        return info
+        
+
+    def __proccess_LLM_output__(self , prompt , keyword_list , sample_output , max_fail_cnt = 3):
+        success_get_keyword = False
+        fail_idx = 0
+
+        self.logger.debug(f"LLM keyword : {keyword_list}")
+        info = {}
+
+        while not success_get_keyword and fail_idx < max_fail_cnt:
+
+            self.logger.debug(f"start {fail_idx} prompt")
+            info = {}
+            result = self.__openai_send__(prompt)
+            splited_result = result.split('\n')
+            keyword_name = ""
+            for line in splited_result:
+                keyword = re.search('\[(.*)\]', line)
+                if keyword != None:
+                    keyword_name = self.chinese_to_english[keyword.group(1)]
+                    info[keyword_name] = ""
+                elif keyword_name != "":
+                    info[keyword_name] += line + "\n"
+
+            if all(_ in info.keys() for _ in keyword_list): success_get_keyword = True
+            else : fail_idx+=1
+        
+        self.logger.debug(f"LLM output : {info}")
+
+        if fail_idx >= max_fail_cnt: info = sample_output
+
+        return info
 
     def __openai_send__(self , prompt):
         """openai api send prompt , can override this."""
@@ -189,7 +241,9 @@ class memory_stream_agent(agent):
         self.__proccess_announcement__(data['announcement'])
 
         if len(self.long_memory) > 2:
-            self.long_memory.retrieval(self.day , self.turn , "誰是狼")
+            # self.long_memory.retrieval(self.day , self.turn , "誰是狼")
+            self.long_memory.reflection(self.day , self.turn)
+            # self.long_memory.__reflection_question__(self.day , self.turn)
 
     def __proccess_announcement__(self , announcement):
         for anno in announcement:
