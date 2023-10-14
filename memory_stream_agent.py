@@ -25,14 +25,28 @@ class long_memeory_stream():
         self.chinese_to_english = {
             # importantance
             "分數" : "score",
-            "原因" : "reason",
             # reflection question
             "問題" : "question",
             # refection
             "見解" : "opinion",
             "參考見解" : "reference",
+            # suspect role list
+            "該玩家身分" : "role",
+            # importantance / suspect role list
+            "原因" : "reason",
+
         }
+        self.player_num = None
+        self.suspect_role_list : dict[str , str] = None
+        self.know_role_list : dict[str , str] = {}
+
+        self.logger.debug("loadding model")
         self.model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
+        self.logger.debug("success load model")
+
+    def update_player_num(self , player_num):
+        self.player_num = player_num
+        self.suspect_role_list = {i:None for i in range(player_num)}
 
     def push(self , day , turn , observation):
         info = self.__cal_importantance__(observation)
@@ -87,6 +101,23 @@ class long_memeory_stream():
         print(info)
 
         self.push(day , turn , info['opinion'])
+    
+    def gen_suspect_role_list(self , day , turn , player_name):
+
+        for player , role in self.suspect_role_list.items():
+            if player in self.know_role_list.keys(): continue
+
+            memory = self.retrieval(day , turn , f"{player}號玩家({player_name[player]})是什麼身分?")
+            memory_str = '\n'.join([i['observation'] for i in memory])
+            final_prompt = self.prompt_template['suspect_role_list'].replace("%m" , memory_str).replace("%e" , self.example['suspect_role_list']).replace("%t" ,  f"{player}號玩家({player_name[player]}")
+            info = {
+                "role" : "村民",
+                "reason" : "test"
+            }
+            info = self.__proccess_LLM_output__(final_prompt , ["role" , "reason"] , info)
+            self.suspect_role_list[player] = info["role"]
+
+        self.logger.info(f"update suspect role list : {self.suspect_role_list}")
 
     def __cal_importantance__(self , observation):
                 
@@ -97,9 +128,8 @@ class long_memeory_stream():
             "reason" : "test"
         }
 
-        info = self.__proccess_LLM_output__(final_prompt, ["score","reason"] , info , -1)
-        
-
+        # info = self.__proccess_LLM_output__(final_prompt, ["score","reason"] , info , -1)
+    
         return info
 
     def __cal_recency__(self , day, turn) :
@@ -176,6 +206,7 @@ class long_memeory_stream():
             result = self.__openai_send__(prompt)
             splited_result = result.split('\n')
             keyword_name = ""
+
             for line in splited_result:
                 keyword = re.search('\[(.*)\]', line)
                 if keyword != None:
@@ -224,14 +255,19 @@ class memory_stream_agent(agent):
                                        server_url = server_url , agent_name = agent_name , room_name = room_name , 
                                        color = color) 
         self.master_token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX25hbWUiOiJ5dWkiLCJyb29tX25hbWUiOiJURVNUUk9PTSIsImxlYWRlciI6dHJ1ZSwiaWF0IjoxNjkwMzc5NTM0LCJleHAiOjE2OTkwMTk1MzR9.BEmD52DuK657YQezsqNgJAwbPfl54o8Pb--Dh7VQMMA"
-        self.__setting_game()
-        self.__start_server__()
-        self.day = None
-        self.turn = 0
+        # load prompt & example json
         self.prompt : dict[str , str] = None
         self.example : dict[str , str] = None
         self.__load_prompt_and_example__(prompt_dir)
-        self.long_memory = long_memeory_stream(prompt_template = self.prompt , example = self.example , logger=self.logger)
+        # init long memory class & models
+        self.long_memory : long_memeory_stream = long_memeory_stream(prompt_template = self.prompt , example = self.example , logger=self.logger)
+        # start the game
+        self.day = None
+        self.turn = 0
+        self.__setting_game()
+        self.__start_server__()
+
+        
         
 
     def __proccess_data__(self, data):
@@ -242,7 +278,8 @@ class memory_stream_agent(agent):
 
         if len(self.long_memory) > 2:
             # self.long_memory.retrieval(self.day , self.turn , "誰是狼")
-            self.long_memory.reflection(self.day , self.turn)
+            # self.long_memory.reflection(self.day , self.turn)
+            self.long_memory.gen_suspect_role_list(self.day , self.turn , self.player_name)
             # self.long_memory.__reflection_question__(self.day , self.turn)
 
     def __proccess_announcement__(self , announcement):
@@ -308,6 +345,11 @@ class memory_stream_agent(agent):
         except Exception as e :
             self.logger.warning(f"__setting_game Server Error , {e}")
     
+    def __start_game_init__(self):
+        self.__get_role__()
+        self.long_memory.update_player_num(len(self.player_name))
+        self.__check_game_state__(0)
+
     def __load_prompt_and_example__(self , prompt_dir):
         """load prompt json to dict"""
         with open(prompt_dir / "prompt.json" , encoding="utf-8") as json_file: self.prompt = json.load(json_file)

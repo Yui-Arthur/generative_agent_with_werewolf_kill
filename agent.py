@@ -78,7 +78,10 @@ class agent():
         }
         self.__send_operation__(op_data)
 
-        pass
+    def __start_game_init__(self):
+        """the game started setting , will call when game is start , can override this."""
+        self.__get_role__()
+        self.__check_game_state__(0)
 
     def __logging_setting__(self):
         """logging setting , can override this."""
@@ -129,8 +132,8 @@ class agent():
             if r.status_code == 200 and r.json()["room_state"] == "started":
                 self.player_name = [name for name in r.json()["room_user"]]
                 self.logger.debug("Game Start")
-                self.__get_role__()
-                self.__check_game_state__(0)
+                self.__start_game_init__()
+                
             elif self.checker:
                 threading.Timer(5.0, self.__check_room_state__).start()
         except Exception as e:
@@ -195,6 +198,8 @@ class agent():
                 self.logger.warning(f"Send error : {r.json()}")
         except Exception as e:
             self.logger.warning(f"__send_operation__ Server Error , {e}")
+    
+    
 
     
 if __name__ == "__main__":
