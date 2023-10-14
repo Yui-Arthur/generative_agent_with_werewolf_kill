@@ -32,8 +32,13 @@ class long_memeory_stream():
             "參考見解" : "reference",
             # suspect role list
             "該玩家身分" : "role",
-            # importantance / suspect role list
+            # vote
+            "投票" : "vote",
+            # dialgue
+            "發言" : "dialgue",
+            # importantance / suspect role list / vote
             "原因" : "reason",
+
 
         }
         self.player_num = None
@@ -44,9 +49,10 @@ class long_memeory_stream():
         self.model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
         self.logger.debug("success load model")
 
-    def update_player_num(self , player_num):
-        self.player_num = player_num
-        self.suspect_role_list = {i:None for i in range(player_num)}
+    def update_player_info(self , player_name):
+        self.player_num = len(player_name)
+        self.player_name = player_name
+        self.suspect_role_list = {i:None for i in range(self.player_num)}
 
     def push(self , day , turn , observation):
         info = self.__cal_importantance__(observation)
@@ -102,13 +108,14 @@ class long_memeory_stream():
 
         self.push(day , turn , info['opinion'])
     
-    def gen_suspect_role_list(self , day , turn , player_name):
+    def gen_suspect_role_list(self , day , turn):
 
         for player , role in self.suspect_role_list.items():
             if player in self.know_role_list.keys(): continue
 
-            memory = self.retrieval(day , turn , f"{player}號玩家({player_name[player]})是什麼身分?")
-            memory_str = '\n'.join([i['observation'] for i in memory])
+            memory = self.retrieval(day , turn , f"{player}號玩家({self.player_name[player]})是什麼身分?")
+            
+            memory_str = self.__memory_to_str__(memory)
             final_prompt = self.prompt_template['suspect_role_list'].replace("%m" , memory_str).replace("%e" , self.example['suspect_role_list']).replace("%t" ,  f"{player}號玩家({player_name[player]}")
             info = {
                 "role" : "村民",
@@ -118,6 +125,37 @@ class long_memeory_stream():
             self.suspect_role_list[player] = info["role"]
 
         self.logger.info(f"update suspect role list : {self.suspect_role_list}")
+    
+    def gen_vote(self , day , turn):
+        memory = self.retrieval(day , turn , "誰現在最可疑?")
+        memory_str = self.__memory_to_str__(memory)
+        sus_role_str , know_role_str = self.__role_list_to_str__()
+        final_prompt = self.prompt_template['vote'].replace("%m" , memory_str).replace("%e" , self.example['vote']).replace("%l" , sus_role_str).replace("%kl" , know_role_str)
+        
+        info = {
+            "vote" : "1",
+            "reason" : "test"
+        }
+        info = self.__proccess_LLM_output__(final_prompt , ["vote" , "reason"] , info)
+        return info
+    
+    def gen_dialgue(self , day ,turn):
+        memory = self.retrieval(day , turn , "現在有什麼重要訊息?")
+        memory_str = self.__memory_to_str__(memory)
+        sus_role_str , know_role_str = self.__role_list_to_str__()
+        final_prompt = self.prompt_template['dialgue'].replace("%m" , memory_str).replace("%e" , self.example['dialgue']).replace("%l" , sus_role_str).replace("%kl" , know_role_str)
+        
+        info = {
+            "dialgue" : "test",
+        }
+        info = self.__proccess_LLM_output__(final_prompt , ["dialgue"] , info)
+        return info
+    
+    def __role_list_to_str__(self):
+        sus_role_str = '\n'.join([f"{player}號玩家({self.player_name[player]}可能是{role})" for player , role in self.suspect_role_list.items()])
+        know_role_str = '\n'.join([f"{player}號玩家({self.player_name[player]}是{role})" for player , role in self.know_role_list.items()])
+
+        return sus_role_str , know_role_str
 
     def __cal_importantance__(self , observation):
                 
@@ -165,8 +203,7 @@ class long_memeory_stream():
     
     def __reflection_question__(self , day , turn , pick_num = 5):
 
-        memory_str = '\n'.join([i['observation'] for i in self.memory_stream])
-        print(memory_str)
+        memory_str = self.__memory_to_str__(self.memory_stream[-pick_num:])
 
         final_prompt = self.prompt_template['reflection_question'].replace('%m' , memory_str).replace("%e" , self.example['reflection_question'])
 
@@ -181,7 +218,7 @@ class long_memeory_stream():
     
     def __reflection__(self , memory):
 
-        memory_str = '\n'.join([i['observation'] for i in memory])
+        memory_str = self.__memory_to_str__(memory)
         final_prompt = self.prompt_template['reflection'].replace('%m' , memory_str).replace("%e" , self.example['reflection'])
         info = {
             "opinion" : "test",
@@ -206,10 +243,11 @@ class long_memeory_stream():
             result = self.__openai_send__(prompt)
             splited_result = result.split('\n')
             keyword_name = ""
+            print(result)
 
             for line in splited_result:
                 keyword = re.search('\[(.*)\]', line)
-                if keyword != None:
+                if keyword != None and keyword.group(1) in self.chinese_to_english.keys():
                     keyword_name = self.chinese_to_english[keyword.group(1)]
                     info[keyword_name] = ""
                 elif keyword_name != "":
@@ -223,6 +261,14 @@ class long_memeory_stream():
         if fail_idx >= max_fail_cnt: info = sample_output
 
         return info
+    
+    def __memory_to_str__(self , memory , add_idx=True):
+
+        if add_idx:
+            return '\n'.join([f"{idx}. {i['observation']}" for idx , i in enumerate(memory)])
+        else:
+            return '\n'.join([f"{i['observation']}" for idx , i in enumerate(memory)])
+
 
     def __openai_send__(self , prompt):
         """openai api send prompt , can override this."""
@@ -279,7 +325,9 @@ class memory_stream_agent(agent):
         if len(self.long_memory) > 2:
             # self.long_memory.retrieval(self.day , self.turn , "誰是狼")
             # self.long_memory.reflection(self.day , self.turn)
-            self.long_memory.gen_suspect_role_list(self.day , self.turn , self.player_name)
+            # self.long_memory.gen_suspect_role_list(self.day , self.turn)
+            # self.long_memory.gen_vote(self.day , self.turn)
+            self.long_memory.gen_dialgue(self.day , self.turn)
             # self.long_memory.__reflection_question__(self.day , self.turn)
 
     def __proccess_announcement__(self , announcement):
@@ -347,7 +395,7 @@ class memory_stream_agent(agent):
     
     def __start_game_init__(self):
         self.__get_role__()
-        self.long_memory.update_player_num(len(self.player_name))
+        self.long_memory.update_player_info(self.player_name)
         self.__check_game_state__(0)
 
     def __load_prompt_and_example__(self , prompt_dir):
