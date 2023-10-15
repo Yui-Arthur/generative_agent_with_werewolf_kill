@@ -12,7 +12,7 @@ import time
 import math
 from sentence_transformers import SentenceTransformer, util
 from utils.agent import agent
-from utils.long_memory_stream import long_memeory_stream
+from utils.role import role
 
 
 class memory_stream_agent(agent):
@@ -28,7 +28,7 @@ class memory_stream_agent(agent):
         self.master_token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX25hbWUiOiJ5dWkiLCJyb29tX25hbWUiOiJURVNUUk9PTSIsImxlYWRlciI6dHJ1ZSwiaWF0IjoxNjkwMzc5NTM0LCJleHAiOjE2OTkwMTk1MzR9.BEmD52DuK657YQezsqNgJAwbPfl54o8Pb--Dh7VQMMA"
         
         # init long memory class & models
-        self.long_memory : long_memeory_stream = long_memeory_stream(prompt_dir , logger=self.logger)
+        self.long_memory : role = role(prompt_dir , logger=self.logger)
         # start the game
         self.day = None
         self.turn = 0
@@ -37,14 +37,14 @@ class memory_stream_agent(agent):
         # start the game for test
         self.__start_server__()
 
-    def __proccess_data__(self, data):
-        """the data proccess."""
+    def __process_data__(self, data):
+        """the data process."""
         # if self.day != data['stage'].split('-')[0]:
         #     self.day = data['stage'].split('-')[0]
 
         self.long_memory.update_stage(data)
 
-    # def __proccess_announcement__(self , announcement):
+    # def __process_announcement__(self , announcement):
     #     """add announcement to memory stream"""
     #     for anno in announcement:
     #         self.turn +=1

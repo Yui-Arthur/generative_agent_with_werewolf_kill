@@ -16,7 +16,7 @@ class long_memeory_stream():
     
     def __init__(self , prompt_dir , logger):
         self.memory_stream = []
-        self.logger = logger
+        self.logger : logging.Logger = logger
         self.max_fail_cnt = -1
 
         self.chinese_to_english = {
@@ -63,7 +63,7 @@ class long_memeory_stream():
         self.player_num = len(player_name)
         self.player_name = player_name
         self.role = role
-        self.logger.debug(f"您本場的身分為{self.role_to_chinese[role]}")
+        # self.logger.debug(f"您本場的身分為{self.role_to_chinese[role]}")
         self.logger.debug(f"{self.player_name}")
         self.__load_prompt_and_example__(self.prompt_dir)
         self.push(0 , 0 , f"您本場的身分為{self.role_to_chinese[role]}")
@@ -87,9 +87,12 @@ class long_memeory_stream():
         if self.day != data['stage'].split('-')[0]:
             self.day = data['stage'].split('-')[0]
 
-        self.__proccess_announcement__(data['announcement'])
 
-        self.__proccess_information__()
+        if any(data["vote_info"].values()) :
+            self.__push_vote_info__(data["vote_info"] , data["empty"])
+
+        self.__proccess_announcement__(data['announcement'])
+        self.__proccess_information__(data)
 
     def __proccess_announcement__(self , announcement):
         """add announcement to memory stream"""
@@ -104,12 +107,22 @@ class long_memeory_stream():
 
             self.push(self.day , len(self.memory_stream)+1 , observation)
 
-        if chat_flag:
-            self.__reflection__(self.day , len(self.memory_stream))
-            self.__gen_suspect_role_list__(self.day , len(self.memory_stream))
+        
 
-    def __proccess_information__(self):
-        pass
+        if chat_flag:
+            pass
+            # self.__reflection__(self.day , len(self.memory_stream))
+            # self.__gen_suspect_role_list__(self.day , len(self.memory_stream))
+
+    def __proccess_information__(self , data):
+        
+        informations = data["information"]
+
+        # for info in informations:
+        #     if info['operation'] == "dialogue":
+        #         self.__gen_dialgue__(self.day , len(self.memory_stream))
+        #     elif info['operation'] == "vote_or_not" and "vote" in data["stage"]:
+        #         self.__gen_vote__(self.day , len(self.memory_stream))
 
     def __retrieval__(self , day , turn , query , pick_num = 10):
         """
@@ -174,7 +187,7 @@ class long_memeory_stream():
                 "role" : "村民",
                 "reason" : "test"
             }
-            info = self.__proccess_LLM_output__(final_prompt , ["role" , "reason"] , info)
+            info = self.__process_LLM_output__(final_prompt , ["role" , "reason"] , info)
             self.suspect_role_list[player] = info["role"]
 
         self.logger.info(f"update suspect role list : {self.suspect_role_list}")
@@ -291,6 +304,18 @@ class long_memeory_stream():
         
         return info
         
+    def __push_vote_info__(self , vote_info : dict , vote_type):
+
+        prefix = "狼人投票殺人階段:" if vote_type == 1 else "玩家票人出去階段:"
+
+        for player , voted in vote_info.items():
+            player = int(player)
+            if voted != -1:
+                ob = f"{prefix} {player}號玩家({self.player_name[player]})投給{voted}號玩家({self.player_name[voted]})"
+            else:
+                ob = f"{prefix} {player}號玩家({self.player_name[player]})棄票"
+
+            self.push(self.day , len(self.memory_stream)+1 , ob)
 
     def __proccess_LLM_output__(self , prompt , keyword_list , sample_output , max_fail_cnt = -1):
         """
@@ -312,7 +337,6 @@ class long_memeory_stream():
             splited_result = result.split('\n')
             keyword_name = ""
             print(result)
-
             for line in splited_result:
                 keyword = re.search('\[(.*)\]', line)
                 if keyword != None and keyword.group(1) in self.chinese_to_english.keys():
@@ -371,10 +395,6 @@ class long_memeory_stream():
         with open(prompt_dir / "common_prompt.json" , encoding="utf-8") as json_file: self.prompt_template = json.load(json_file)
         with open(prompt_dir / "common_example.json" , encoding="utf-8") as json_file: self.example = json.load(json_file)
 
-        self.logger.debug(f"load {self.role} json")
-        with open(prompt_dir / f"{self.role}_prompt.json" , encoding="utf-8") as json_file: self.prompt_template.update(json.load(json_file))
-        with open(prompt_dir / f"{self.role}_example.json" , encoding="utf-8") as json_file: self.example.update(json.load(json_file))
-        
         for key , prompt_li in self.prompt_template.items():
             self.prompt_template[key] = '\n'.join(prompt_li)
         for key , prompt_li in self.example.items():

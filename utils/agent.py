@@ -23,7 +23,7 @@ class agent():
         self.current_info = None
         self.checker = True
         self.player_name = None
-        self.logger = logging.getLogger(__name__)
+        self.logger : logging.Logger = logging.getLogger(__name__)
 
         # if pyChatGPT_token is not None: self.__pyChatGPT_init__(pyChatGPT_token)
         if openai_token is not None: self.__openai_init__(openai_token)
@@ -63,8 +63,8 @@ class agent():
         
         return response['choices'][0]['message']['content']
     
-    def __proccess_data__(self , data):
-        """the data proccess , must override this."""
+    def __process_data__(self , data):
+        """the data process , must override this."""
         # print(data)
         if(len(data['information']) == 0):
             return
@@ -140,7 +140,7 @@ class agent():
             self.logger.warning(f"__check_room_state__ Server Error , {e}")
 
     def __check_game_state__(self , failure_cnt):
-        """check the game state every 1s until game over , if the game state is chaged , call the proccess data func"""
+        """check the game state every 1s until game over , if the game state is chaged , call the process data func"""
         try:
             r = requests.get(f'{self.server_url}/api/game/{self.room}/information/{self.name}' ,  headers ={
             "Authorization" : f"Bearer {self.user_token}"
@@ -158,7 +158,7 @@ class agent():
                             
                             break
 
-                    self.__proccess_data__(self.current_info) 
+                    self.__process_data__(self.current_info) 
             else:
                 self.logger.warning(r.json())
                 failure_cnt+=1
