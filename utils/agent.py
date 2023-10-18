@@ -147,9 +147,13 @@ class agent():
             } , timeout=3)
 
             if r.status_code == 200:
-                if self.current_info != r.json():
-                    self.current_info = r.json()
-                    self.logger.debug(r.json())
+                data = r.json()
+                # block realtime werewolf vote info 
+                if data['stage'].split('-')[-1] == "werewolf" : data['vote_info'] = {}
+
+                if self.current_info != data:
+                    self.current_info = data
+                    self.logger.debug(data)
 
                     # check game over
                     for anno in self.current_info['announcement']: 
@@ -179,6 +183,7 @@ class agent():
             if r.status_code == 200:
                 self.role = r.json()["game_info"]["user_role"]
                 self.logger.debug(f"Agent Role: {self.role}")
+                return r.json()
             else:
                 self.logger.warning(f"Get role Error : {r.json()}")
         except Exception as e:
