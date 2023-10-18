@@ -12,7 +12,7 @@ import time
 import math
 from sentence_transformers import SentenceTransformer, util
 from utils.agent import agent
-from utils.role import role
+from utils.role import role , werewolf , seer , witch , hunter
 
 
 class memory_stream_agent(agent):
@@ -28,36 +28,25 @@ class memory_stream_agent(agent):
         self.master_token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX25hbWUiOiJ5dWkiLCJyb29tX25hbWUiOiJURVNUUk9PTSIsImxlYWRlciI6dHJ1ZSwiaWF0IjoxNjkwMzc5NTM0LCJleHAiOjE2OTkwMTk1MzR9.BEmD52DuK657YQezsqNgJAwbPfl54o8Pb--Dh7VQMMA"
         
         # init long memory class & models
-        self.long_memory : role = role(prompt_dir , logger=self.logger)
+        self.__loading_sentence_model___()
+        self.long_memory : role = None
         # start the game
         self.day = None
         self.turn = 0
         # set the game for test
         self.__setting_game()
+        
         # start the game for test
         self.__start_server__()
 
+        self.prompt_dir = prompt_dir
+
     def __process_data__(self, data):
         """the data process."""
-        # if self.day != data['stage'].split('-')[0]:
-        #     self.day = data['stage'].split('-')[0]
+        operations = self.long_memory.update_stage(data)
+        for operation in operations:
+            self.__send_operation__(operation)
 
-        self.long_memory.update_stage(data)
-
-    # def __process_announcement__(self , announcement):
-    #     """add announcement to memory stream"""
-    #     for anno in announcement:
-    #         self.turn +=1
-    #         observation = ""
-            
-    #         if(anno["operation"] == "chat"):
-    #             observation = f"{self.player_name[anno['user'][0]]}({anno['user'][0]})說「{anno['description']}」"    
-    #         else:
-    #             observation = f"{anno['description']}"
-
-    #         self.long_memory.push(self.day , self.turn , observation)
-            
-    #     pass
 
     def __reset_server__(self , server_url):
         """for convenient test"""
@@ -92,8 +81,8 @@ class memory_stream_agent(agent):
                 "Authorization" : f"Bearer {self.master_token}"
             }, json= {
                 "player_num": 7,    
-                "operation_time" : 2,
-                "dialogue_time" : 2,
+                "operation_time" : 4,
+                "dialogue_time" : 4,
                 "seer" : 1,
                 "witch" : 1,
                 "village" : 2,
@@ -110,9 +99,27 @@ class memory_stream_agent(agent):
     
     def __start_game_init__(self):
         """the game started setting , update player name"""
-        self.__get_role__()
-        self.long_memory.update_game_info(self.player_name , self.role)
+        role_info = self.__get_role__()
+        role_to_class = {
+            "werewolf" : werewolf,
+            "seer" : seer,
+            "witch" : witch,
+            "hunter" : hunter,
+            "village" : role,
+        }
+        
+        self.long_memory : role = role_to_class[self.role](self.prompt_dir , self.logger, self.model)
+        if self.role != "werewolf":
+            self.long_memory.update_game_info(self.player_name , self.role)
+        else:
+            self.long_memory.update_game_info(self.player_name , self.role , role_info['game_info']['teamate'])
+
         self.__check_game_state__(0)
+    
+    def __loading_sentence_model___(self):
+        self.logger.debug("loadding model")
+        self.model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
+        self.logger.debug("success load model")
         
 if __name__ == '__main__':
     a = memory_stream_agent(server_url = "http://localhost:8001" , openai_token=Path("secret/openai.key") )

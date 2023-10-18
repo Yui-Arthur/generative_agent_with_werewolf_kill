@@ -14,11 +14,11 @@ from sentence_transformers import SentenceTransformer, util
 
 class long_memeory_stream():
     
-    def __init__(self , prompt_dir , logger):
+    def __init__(self , prompt_dir , logger , sentence_model = None):
         self.memory_stream = []
         self.logger : logging.Logger = logger
         self.max_fail_cnt = -1
-
+        self.token_used = 0
         self.chinese_to_english = {
             # importantance
             "分數" : "score",
@@ -53,10 +53,20 @@ class long_memeory_stream():
         self.example : dict[str , str] = None
         
         self.day = 0
+        self.ret_format = {
+            "stage_name" : None,
+            "operation": None,
+            "target" : None,
+            "chat" : None
+        }
 
-        self.logger.debug("loadding model")
-        self.model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
-        self.logger.debug("success load model")
+
+        if sentence_model == None:
+            self.logger.debug("loadding model")
+            self.model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
+            self.logger.debug("success load model")
+        else:
+            self.model = sentence_model
 
     def update_game_info(self , player_name , role):
         """update the player name & init suspect_role_list"""
@@ -86,16 +96,23 @@ class long_memeory_stream():
     def update_stage(self , data):
         if self.day != data['stage'].split('-')[0]:
             self.day = data['stage'].split('-')[0]
+            self.__day_init__()
 
 
         if any(data["vote_info"].values()) :
-            self.__push_vote_info__(data["vote_info"] , data["empty"])
+            self.__push_vote_info__(data["vote_info"] , data["stage"])
 
-        self.__proccess_announcement__(data['announcement'])
-        self.__proccess_information__(data)
+        self.__process_announcement__(data)
+        operations = self.__process_information__(data)
+        for op in operations:
+            op['stage_name'] = data['stage']
 
-    def __proccess_announcement__(self , announcement):
+        return operations
+
+
+    def __process_announcement__(self , data):
         """add announcement to memory stream"""
+        announcement = data['announcement']
         chat_flag = False
         for anno in announcement:
             observation = ""
@@ -114,19 +131,24 @@ class long_memeory_stream():
             # self.__reflection__(self.day , len(self.memory_stream))
             # self.__gen_suspect_role_list__(self.day , len(self.memory_stream))
 
-    def __proccess_information__(self , data):
+    def __process_information__(self , data) -> list[dict]:
         
         informations = data["information"]
+        
+        operation = []
+    
 
-        # for info in informations:
-        #     if info['operation'] == "dialogue":
-        #         self.__gen_dialgue__(self.day , len(self.memory_stream))
-        #     elif info['operation'] == "vote_or_not" and "vote" in data["stage"]:
-        #         self.__gen_vote__(self.day , len(self.memory_stream))
+        for info in informations:
+            if info['operation'] == "dialogue":
+                operation.append(self.__gen_dialgue__(self.day , len(self.memory_stream)))
+            elif info['operation'] == "vote_or_not" and "vote" in data["stage"]:
+                operation.append(self.__gen_vote__(self.day , len(self.memory_stream)))
 
+        return operation
+    
     def __retrieval__(self , day , turn , query , pick_num = 10):
         """
-        the retrieval proccess , will call importantance,recency,relevance func
+        the retrieval process , will call importantance,recency,relevance func
         and return the top {pick_num} memory sored by score.
         """
         importantance_score = [ob['importantance'] for ob in self.memory_stream]
@@ -194,30 +216,42 @@ class long_memeory_stream():
     
     def __gen_vote__(self , day , turn):
         """gen the vote player num & get the reason"""
-        memory = self.__retrieval__(day , turn , "誰現在最可疑?")
-        memory_str = self.__memory_to_str__(memory)
-        sus_role_str , know_role_str = self.__role_list_to_str__()
-        final_prompt = self.prompt_template['vote'].replace("%m" , memory_str).replace("%e" , self.example['vote']).replace("%l" , sus_role_str).replace("%kl" , know_role_str)
+        # memory = self.__retrieval__(day , turn , "誰現在最可疑?")
+        # memory_str = self.__memory_to_str__(memory)
+        # sus_role_str , know_role_str = self.__role_list_to_str__()
+        # final_prompt = self.prompt_template['vote'].replace("%m" , memory_str).replace("%e" , self.example['vote']).replace("%l" , sus_role_str).replace("%kl" , know_role_str)
         
         info = {
-            "vote" : "1",
+            "vote" : "4",
             "reason" : "test"
         }
-        info = self.__proccess_LLM_output__(final_prompt , ["vote" , "reason"] , info)
-        return info
+        # info = self.__process_LLM_output__(final_prompt , ["vote" , "reason"] , info)
+
+        ret = self.ret_format.copy()
+        ret['operation'] = "vote_or_not"
+        ret['target'] = int(info["vote"].strip("\n"))
+        ret['chat'] = ""
+
+        return ret
     
     def __gen_dialgue__(self , day ,turn):
         """gen the dialgue"""
-        memory = self.__retrieval__(day , turn , "現在有什麼重要訊息?")
-        memory_str = self.__memory_to_str__(memory)
-        sus_role_str , know_role_str = self.__role_list_to_str__()
-        final_prompt = self.prompt_template['dialgue'].replace("%m" , memory_str).replace("%e" , self.example['dialgue']).replace("%l" , sus_role_str).replace("%kl" , know_role_str)
+        # memory = self.__retrieval__(day , turn , "現在有什麼重要訊息?")
+        # memory_str = self.__memory_to_str__(memory)
+        # sus_role_str , know_role_str = self.__role_list_to_str__()
+        # final_prompt = self.prompt_template['dialgue'].replace("%m" , memory_str).replace("%e" , self.example['dialgue']).replace("%l" , sus_role_str).replace("%kl" , know_role_str)
         
         info = {
             "dialgue" : "test",
         }
-        info = self.__proccess_LLM_output__(final_prompt , ["dialgue"] , info)
-        return info
+        # info = self.__process_LLM_output__(final_prompt , ["dialgue"] , info)
+
+        ret = self.ret_format.copy()
+        ret['operation'] = "dialogue"
+        ret['target'] = -1
+        ret['chat'] = info['dialgue']
+
+        return ret
     
     def __role_list_to_str__(self):
         """
@@ -240,7 +274,7 @@ class long_memeory_stream():
             "reason" : "test"
         }
 
-        # info = self.__proccess_LLM_output__(final_prompt, ["score","reason"] , info , -1)
+        # info = self.__process_LLM_output__(final_prompt, ["score","reason"] , info , -1)
     
         return info
 
@@ -276,7 +310,7 @@ class long_memeory_stream():
         return score / np.linalg.norm(score)
     
     def __reflection_question__(self , day , turn , pick_num = 5):
-        """one of reflection proccess , get the question used for reflection."""
+        """one of reflection process , get the question used for reflection."""
         self.logger.debug('reflection_question')
         memory_str = self.__memory_to_str__(self.memory_stream[-pick_num:])
 
@@ -286,13 +320,13 @@ class long_memeory_stream():
             "question" : "test",
         }
 
-        info = self.__proccess_LLM_output__(final_prompt, ["question"] , info , 3)
+        info = self.__process_LLM_output__(final_prompt, ["question"] , info , 3)
 
         
         return info
     
     def __reflection_opinion__(self , memory):
-        """one of reflection proccess , get the opinion as new observation."""
+        """one of reflection process , get the opinion as new observation."""
         self.logger.debug('reflection_opinion')
         memory_str = self.__memory_to_str__(memory)
         final_prompt = self.prompt_template['reflection'].replace('%m' , memory_str).replace("%e" , self.example['reflection'])
@@ -300,13 +334,13 @@ class long_memeory_stream():
             "opinion" : "test",
             "reference" : "test",
         }
-        info = self.__proccess_LLM_output__(final_prompt, ["opinion" , "reference"] , info , 3)
+        info = self.__process_LLM_output__(final_prompt, ["opinion" , "reference"] , info , 3)
         
         return info
         
-    def __push_vote_info__(self , vote_info : dict , vote_type):
+    def __push_vote_info__(self , vote_info : dict , stage):
 
-        prefix = "狼人投票殺人階段:" if vote_type == 1 else "玩家票人出去階段:"
+        prefix = "狼人投票殺人階段:" if stage.split('-')[-1] == "seer" else "玩家票人出去階段:"
 
         for player , voted in vote_info.items():
             player = int(player)
@@ -317,7 +351,10 @@ class long_memeory_stream():
 
             self.push(self.day , len(self.memory_stream)+1 , ob)
 
-    def __proccess_LLM_output__(self , prompt , keyword_list , sample_output , max_fail_cnt = -1):
+    def __day_init__(self):
+        pass
+
+    def __process_LLM_output__(self , prompt , keyword_list , sample_output , max_fail_cnt = -1):
         """
         communication with LLM , repeat {max_fail_cnt} util find the {keyword_list} in LLM response .
         return the {keyword_list} dict , if fail get {keyword_list} in LLM response , return {sample_output}.
@@ -334,10 +371,17 @@ class long_memeory_stream():
             self.logger.debug(f"start {fail_idx} prompt")
             info = {}
             result = self.__openai_send__(prompt)
+
+            # result block by openai
+            if result == None:
+                fail_idx+=1
+                continue
+            
+            
             splited_result = result.split('\n')
             keyword_name = ""
-            print(result)
             for line in splited_result:
+                # get keyword like [XXX]
                 keyword = re.search('\[(.*)\]', line)
                 if keyword != None and keyword.group(1) in self.chinese_to_english.keys():
                     keyword_name = self.chinese_to_english[keyword.group(1)]
@@ -384,6 +428,14 @@ class long_memeory_stream():
             presence_penalty=0,
             stop=None)
         
+        self.token_used += response["usage"]["total_tokens"]
+        
+        if response['choices'][0]["finish_reason"] == "content_filter":
+            self.logger.debug("Block By Openai")
+            return None
+
+        
+        
         return response['choices'][0]['message']['content']
     
     def __len__(self):
@@ -400,5 +452,9 @@ class long_memeory_stream():
         for key , prompt_li in self.example.items():
             self.example[key] = '\n'.join(prompt_li)
     
+    def __register_keywords__(self , keywords:dict[str,str]):
+        self.logger.debug(f"Register new keyword : {keywords}")
+        self.chinese_to_english.update(keywords)
+
 
 
