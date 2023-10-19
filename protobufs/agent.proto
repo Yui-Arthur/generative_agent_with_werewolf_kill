@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+message agent_query {
+    string agentType = 1;
+    string agentName = 2;
+    string roomName = 3;
+    string keyPath = 4;
+    string color = 5;
+    string promptDir = 6;
+}
+
+message agent_state {
+    int32 agentID = 1;
+}
+
+message empty{
+
+}
+
+service agent{
+    rpc create_agent(agent_query) returns (agent_state) {};
+    rpc delete_agent(agent_state) returns (empty) {};
+}
