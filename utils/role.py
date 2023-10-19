@@ -88,7 +88,7 @@ class werewolf(role):
 
 
     def __process_announcement__(self, data):
-        # super().__process_announcement__(announcement)
+        super().__process_announcement__(data)
         announcement = data['announcement']
 
         for anno in announcement:
@@ -107,10 +107,94 @@ class werewolf(role):
 
 
 class seer(role):
-    pass
+    def __init__(self , prompt_dir , logger , sentence_model = None):
+        super().__init__(prompt_dir, logger , sentence_model)
+        
+        self.__register_keywords__({
+            "今晚要驗誰" : "target"
+        })
+        self.max_fail_cnt = 0
+    
+    def __process_information__(self , data):
+        # operation = super().__process_information__(data)
+        operation = []
+        if len(data["information"]) == 0 or data['stage'].split('-')[-1] != "seer":
+            return operation
+
+        # memory = self.__retrieval__(self.day , len(self.memory_stream) , "目前哪位玩家最可疑")
+        # memory_str = self.__memory_to_str__(memory)
+        # sus_role_str , know_role_str = self.__role_list_to_str__()
+        # final_prompt = self.prompt_template['check_role'].replace("%e" , self.example['check_role']).replace("%l" , sus_role_str).replace("%kl" , know_role_str).replace("%m" , memory_str)
+
+        info = {
+            "target" : "1",
+            "reason" : "test"
+        }
+
+        # info = self.__process_LLM_output__(final_prompt , ['target' , 'reason'] , info , 3)
+
+        ret = self.ret_format.copy()
+        ret['operation'] = "vote"
+        ret['target'] = int(info['target'].strip("\n"))
+        ret['chat'] = ""
+        operation.append(ret)
+        return operation
+
+    def __process_announcement__(self, data):
+        super().__process_announcement__(data)
+        announcement = data['announcement']
+
+        for anno in announcement:
+            if anno['operation'] == 'role_info':
+                print(anno)
+                role_type = anno['description'].split('是')[-1]
+                
+                self.know_role_list[int(anno['user'][0])] = role_type
+                self.push(self.day , len(self.memory_stream) + 1 , f"{anno['user'][0]}號玩家({self.player_name[anno['user'][0]]})是{role_type}")
+                self.logger.debug(f"add role info : {anno['user'][0]}號玩家({self.player_name[anno['user'][0]]})是{role_type} ")
+
+        return
 
 class witch(role):
-    pass
+    
+    def __init__(self , prompt_dir, logger , sentence_model):
+        super().__init__(prompt_dir, logger , sentence_model)
+        
+        self.__register_keywords__({
+        })
+
+        self.max_fail_cnt = 0
+        self.save = True
+        self.poison = True
+
+    def __process_information__(self , data):
+        # operation = super().__process_information__(data)
+        operation = []
+        if len(data["information"]) == 0 or data['stage'].split('-')[-1] != "witch":
+            return operation
+
+        # memory = self.__retrieval__(self.day , len(self.memory_stream) , "目前哪位玩家最可疑")
+        # memory_str = self.__memory_to_str__(memory)
+        # sus_role_str , know_role_str = self.__role_list_to_str__()
+        # final_prompt = self.prompt_template['check_role'].replace("%e" , self.example['check_role']).replace("%l" , sus_role_str).replace("%kl" , know_role_str).replace("%m" , memory_str)
+
+        info = {
+            "target" : "1",
+            "reason" : "test"
+        }
+
+        # info = self.__process_LLM_output__(final_prompt , ['target' , 'reason'] , info , 3)
+
+        ret = self.ret_format.copy()
+        ret['operation'] = "vote"
+        ret['target'] = int(info['target'].strip("\n"))
+        ret['chat'] = ""
+        operation.append(ret)
+        return operation
+    
+    def __used_skill__(self , type , target):
+        pass
+
 
 class hunter(role):
     pass

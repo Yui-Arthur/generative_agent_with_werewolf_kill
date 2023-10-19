@@ -18,7 +18,7 @@ from utils.role import role , werewolf , seer , witch , hunter
 class memory_stream_agent(agent):
     def __init__(self , openai_token = None , pyChatGPT_token = None , 
                  server_url = "140.127.208.185" , agent_name = "Agent1" , room_name = "TESTROOM" , 
-                 color = "f9a8d4" , prompt_dir = Path("prompt/memory_stream/")):
+                 color = "f9a8d4" , prompt_dir = "doc/prompt/memory_stream/"):
         self.__reset_server__(server_url)
         
         super().__init__(openai_token = openai_token , pyChatGPT_token = pyChatGPT_token ,
@@ -39,7 +39,7 @@ class memory_stream_agent(agent):
         # start the game for test
         self.__start_server__()
 
-        self.prompt_dir = prompt_dir
+        self.prompt_dir = Path(prompt_dir)
 
     def __process_data__(self, data):
         """the data process."""
@@ -81,8 +81,8 @@ class memory_stream_agent(agent):
                 "Authorization" : f"Bearer {self.master_token}"
             }, json= {
                 "player_num": 7,    
-                "operation_time" : 4,
-                "dialogue_time" : 4,
+                "operation_time" : 10,
+                "dialogue_time" : 10,
                 "seer" : 1,
                 "witch" : 1,
                 "village" : 2,
@@ -122,7 +122,7 @@ class memory_stream_agent(agent):
         self.logger.debug("success load model")
         
 if __name__ == '__main__':
-    a = memory_stream_agent(server_url = "http://localhost:8001" , openai_token=Path("secret/openai.key") )
+    a = memory_stream_agent(server_url = "http://localhost:8001" , openai_token=Path("doc/secret/openai.key") )
     while a.checker != False: pass
     
     
