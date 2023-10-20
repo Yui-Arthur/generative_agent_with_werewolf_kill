@@ -16,14 +16,16 @@ from utils.role import role , werewolf , seer , witch , hunter
 
 
 class memory_stream_agent(agent):
-    def __init__(self , openai_token = None , pyChatGPT_token = None , 
+    def __init__(self , openai_token = None , api_base = "https://werewolf-kill-agent.openai.azure.com/" , engine = "agent" ,  
                  server_url = "140.127.208.185" , agent_name = "Agent1" , room_name = "TESTROOM" , 
-                 color = "f9a8d4" , prompt_dir = "doc/prompt/memory_stream/"):
+                 color = "f9a8d4" , prompt_dir = "doc/prompt/memory_stream"):
         self.__reset_server__(server_url)
         
-        super().__init__(openai_token = openai_token , pyChatGPT_token = pyChatGPT_token ,
+        print(openai_token)
+        super().__init__(openai_token = openai_token , api_base = api_base , engine = engine, 
                                        server_url = server_url , agent_name = agent_name , room_name = room_name , 
                                        color = color) 
+        
         # used for start game for test
         self.master_token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX25hbWUiOiJ5dWkiLCJyb29tX25hbWUiOiJURVNUUk9PTSIsImxlYWRlciI6dHJ1ZSwiaWF0IjoxNjkwMzc5NTM0LCJleHAiOjE2OTkwMTk1MzR9.BEmD52DuK657YQezsqNgJAwbPfl54o8Pb--Dh7VQMMA"
         
@@ -120,7 +122,7 @@ class memory_stream_agent(agent):
         self.logger.debug("loadding model")
         self.model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
         self.logger.debug("success load model")
-        
+
 if __name__ == '__main__':
     a = memory_stream_agent(server_url = "http://localhost:8001" , openai_token=Path("doc/secret/openai.key") )
     while a.checker != False: pass

@@ -8,7 +8,7 @@ from pathlib import Path
 import time
 
 class agent():
-    def __init__(self , openai_token = None , pyChatGPT_token = None , 
+    def __init__(self , openai_token = None , api_base = "https://werewolf-kill-agent.openai.azure.com/" , engine = "agent" ,  
                  server_url = "140.127.208.185" , agent_name = "Agent1" , room_name = "TESTROOM" , 
                  color = "f9a8d4"):
         
@@ -18,7 +18,10 @@ class agent():
         self.room = room_name
         self.color = color
         self.logger : logging.Logger = logging.getLogger(__name__)
-        if openai_token is not None: self.__openai_init__(openai_token)
+
+        # openai api setting
+        self.engine = engine
+        if openai_token is not None: self.__openai_init__(openai_token , api_base)
 
         # game info 
         self.user_token = None
@@ -31,8 +34,6 @@ class agent():
         self.timer = None
 
         self.chat_func = None
-
-        # if pyChatGPT_token is not None: self.__pyChatGPT_init__(pyChatGPT_token)
         
         self.__logging_setting__()
         self.__join_room__()
@@ -43,20 +44,21 @@ class agent():
         if self.timer != None:
             self.timer.cancel()
 
-    def __openai_init__(self , openai_token):
+    def __openai_init__(self , openai_token , api_base):
         """openai api setting , can override this"""
         with open(openai_token,'r') as f : openai_token = f.readline()
         openai.api_type = "azure"
-        openai.api_base = "https://werewolf-kill-agent.openai.azure.com/"
+        openai.api_base = api_base
         openai.api_version = "2023-07-01-preview"
         openai.api_key = openai_token
 
+        print("!")
         self.chat_func = self.__openai_send__
 
     def __openai_send__(self , prompt):
         """openai api send prompt , can override this."""
         response = openai.ChatCompletion.create(
-            engine="test",
+            engine=self.engine,
             messages = [
                 {"role":"system","content":"You are an AI assistant that helps people find information."},
                 {"role":"user","content":prompt}

@@ -5,8 +5,10 @@ message agent_query {
     string agentName = 2;
     string roomName = 3;
     string keyPath = 4;
-    string color = 5;
-    string promptDir = 6;
+    string apiBase = 5;
+    string engine = 6;
+    string color = 7;
+    string promptDir = 8;
 }
 
 message agent_state {

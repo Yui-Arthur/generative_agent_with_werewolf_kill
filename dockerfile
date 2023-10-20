@@ -4,4 +4,4 @@ WORKDIR /usr/src/app/agent
 COPY .  .
 RUN pip install -r ./requirement.txt
 
-CMD ["python" , "-u" , "server.py"  , "--api_server" , "api_server:8001"]
+CMD ["python" , "-u" , "server.py"  , "--api_server" , "http://api_server:8001"]

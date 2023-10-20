@@ -13,7 +13,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x15protobufs/agent.proto\"x\n\x0b\x61gent_query\x12\x11\n\tagentType\x18\x01 \x01(\t\x12\x11\n\tagentName\x18\x02 \x01(\t\x12\x10\n\x08roomName\x18\x03 \x01(\t\x12\x0f\n\x07keyPath\x18\x04 \x01(\t\x12\r\n\x05\x63olor\x18\x05 \x01(\t\x12\x11\n\tpromptDir\x18\x06 \x01(\t\"\x1e\n\x0b\x61gent_state\x12\x0f\n\x07\x61gentID\x18\x01 \x01(\x05\"\x07\n\x05\x65mpty2]\n\x05\x61gent\x12,\n\x0c\x63reate_agent\x12\x0c.agent_query\x1a\x0c.agent_state\"\x00\x12&\n\x0c\x64\x65lete_agent\x12\x0c.agent_state\x1a\x06.empty\"\x00\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x15protobufs/agent.proto\"\x99\x01\n\x0b\x61gent_query\x12\x11\n\tagentType\x18\x01 \x01(\t\x12\x11\n\tagentName\x18\x02 \x01(\t\x12\x10\n\x08roomName\x18\x03 \x01(\t\x12\x0f\n\x07keyPath\x18\x04 \x01(\t\x12\x0f\n\x07\x61piBase\x18\x05 \x01(\t\x12\x0e\n\x06\x65ngine\x18\x06 \x01(\t\x12\r\n\x05\x63olor\x18\x07 \x01(\t\x12\x11\n\tpromptDir\x18\x08 \x01(\t\"\x1e\n\x0b\x61gent_state\x12\x0f\n\x07\x61gentID\x18\x01 \x01(\x05\"\x07\n\x05\x65mpty2]\n\x05\x61gent\x12,\n\x0c\x63reate_agent\x12\x0c.agent_query\x1a\x0c.agent_state\"\x00\x12&\n\x0c\x64\x65lete_agent\x12\x0c.agent_state\x1a\x06.empty\"\x00\x62\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -21,12 +21,12 @@ _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'protobufs.agent_pb2', _glob
 if _descriptor._USE_C_DESCRIPTORS == False:
 
   DESCRIPTOR._options = None
-  _globals['_AGENT_QUERY']._serialized_start=25
-  _globals['_AGENT_QUERY']._serialized_end=145
-  _globals['_AGENT_STATE']._serialized_start=147
-  _globals['_AGENT_STATE']._serialized_end=177
-  _globals['_EMPTY']._serialized_start=179
-  _globals['_EMPTY']._serialized_end=186
-  _globals['_AGENT']._serialized_start=188
-  _globals['_AGENT']._serialized_end=281
+  _globals['_AGENT_QUERY']._serialized_start=26
+  _globals['_AGENT_QUERY']._serialized_end=179
+  _globals['_AGENT_STATE']._serialized_start=181
+  _globals['_AGENT_STATE']._serialized_end=211
+  _globals['_EMPTY']._serialized_start=213
+  _globals['_EMPTY']._serialized_end=220
+  _globals['_AGENT']._serialized_start=222
+  _globals['_AGENT']._serialized_end=315
 # @@protoc_insertion_point(module_scope)

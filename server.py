@@ -24,15 +24,14 @@ class agent_service(agent_pb2_grpc.agentServicer):
         agent_name = request.agentName
         room_name = request.roomName 
         key_path = request.keyPath
+        api_base = request.apiBase
+        engine = request.engine
         color = request.color
         prompt_dic = request.promptDir
 
-        agent = self.agent_type_dict[agent_type](openai_token = Path(key_path) , 
-                                                 agent_name=agent_name ,
-                                                 room_name=room_name,
-                                                 color=color,
-                                                 prompt_dir=prompt_dic ,
-                                                 server_url = self.server_ip)
+        agent = self.agent_type_dict[agent_type](openai_token = Path(key_path) , agent_name=agent_name , room_name=room_name,
+                                                 color=color, api_base = api_base , engine = engine , 
+                                                 prompt_dir=prompt_dic , server_url = self.server_ip)
         
         self.agent_dict[self.agent_idx] = agent
         self.agent_idx +=1
@@ -62,7 +61,7 @@ def serve(opt):
 
 def parse_opt():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--api_server' , type=str, default="localhost:8001" , help='server ip')
+    parser.add_argument('--api_server' , type=str, default="http://localhost:8001" , help='server ip')
     opt = parser.parse_args()
 
     return opt
