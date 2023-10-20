@@ -1,0 +1,4 @@
+sentence-transformers
+openai
+grpcio
+grpcio-tools
