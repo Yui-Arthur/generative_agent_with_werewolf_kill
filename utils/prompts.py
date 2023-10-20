@@ -16,6 +16,7 @@ class prompts:
         self.choices = [-1] # player choices in prompts
         self.day = 0
         
+        # dictionary en -> ch
         self.en_dict={
             "witch":"女巫",
             "seer":"預言家",
@@ -24,6 +25,7 @@ class prompts:
             "hunter":"獵人",
         }
         
+        # stage description and save text responding to the stage
         self.stage_detail={
             "guess_role": {
                 "stage_description": "猜測玩家角色階段，你要藉由你有的資訊猜測玩家角色",
@@ -70,6 +72,7 @@ class prompts:
             },
         }
     
+        # initial prompts in the begining
         self.init_prompt = f"""你現在正在玩狼人殺，遊戲中玩家會藉由說謊，以獲得勝利。因此，資訊只有玩家發言可能會是假的，而其他的資訊皆是真的
 其遊戲設定為{self.room_setting["player_num"]}人局，角色包含{self.room_setting["werewolf"]}位狼人、{self.room_setting["village"]}位平民、{"3" if self.room_setting["hunter"] else "2"}位神職（預言家和女巫{"和獵人" if self.room_setting["hunter"] else ""}）
 
@@ -84,36 +87,42 @@ class prompts:
         self.logger.debug("Memory")
 
         if len(self.memory[0]) == 0:
-            print("無資訊")
+            self.logger.debug("無資訊")
         else: 
             for day, mem in enumerate(self.memory):
-                print(f'第{day+1}天')
+                self.logger.debug(f'第{day+1}天')
 
                 for idx, i in enumerate(mem):
-                    print(f'{idx+1}. {i}')
+                    self.logger.debug(f'{idx+1}. {i}')
 
-        print('\n')
+        self.logger.debug(f'\n')
 
     
     def agent_process(self, data):
+        ''' Agent process all the data including announcaments and informations '''
 
         if int(data['stage'].split('-')[0]) != self.day:
             self.day = int(data['stage'].split('-')[0])
             self.memory.append([])
         
-        
+        # show memory
         self.logger.debug("Day "+str(self.day))
         self.__print_memory__()
         
+        # process announcement
         self.process_announcement(data['stage'], data['announcement'])
+
+        # process information and return all the operations
         operations = self.process_information(data['stage'], data['information'])
+
         return operations
 
 
 
 
     def process_announcement(self, stage, announcements):
-        
+        ''' Process all the announcements and save them to the memory '''
+
         if len(announcements) == 0:
             return
 
@@ -144,6 +153,14 @@ class prompts:
 
     
     def process_information(self, stage, informations):
+        '''
+        Process all the infomations 
+        1. Guess roles
+        2. Generate prompts
+        3. Send to Openai
+        4. Extract string
+        5. Save to memory
+        '''
 
         if len(informations) == 0:
             return []
@@ -159,7 +176,7 @@ class prompts:
 
         # self.logger.debug("Informations:")
 
-
+        # process special case (witch)
         if prompt_type == 'witch':
             
             if informations[0]['description'] == '女巫救人':
@@ -236,13 +253,17 @@ class prompts:
             for idx, i in enumerate(informations):
                 # self.logger.debug(i)
                 
+                # update player choices in prmpts
                 self.choices = i['target']
 
-
+                # generate response
                 response = self.prompts_response(prompt_type)
                 
+                # combine save text with response
                 text = f"{self.stage_detail[prompt_type]['save']}{response}"
 
+
+                # process text in special cases
                 if prompt_type == 'werewolf_dialogue':
                     res = response.split("，")
                     if res[0] == "選項1":
@@ -253,22 +274,27 @@ class prompts:
                         text = f"我在狼人發言階段不發言。{res[1]}"
 
                 elif prompt_type == 'dialogue':
-                    res_json = json.loads(response)
+                    try:
+                        res_json = json.loads(response)
+                    except Exception as e:
+                        self.logger.warning(f"Dialogue Json.load error , {e}")
+
                     text = f"{res_json['最終的分析']['發言']}{res_json['最終的分析']['理由']}"
 
+                if text == '':
+                    text = '無操作'
 
+
+                # save operation's target
                 target = -1
                 if '號玩家，' in response:
                     target = int(response.split('號玩家，')[0][-1])
 
 
-                if text == '':
-                    text = '無操作'
-                
-
+                # save text to memory
                 self.memory[self.day-1].append(text)
 
-
+                # process operation data 
                 op_data = {
                     "stage_name" : stage,
                     "operation" : i['operation'],
@@ -295,6 +321,7 @@ class prompts:
 
 
     def prompts_response(self, prompt_type):
+        '''Generate response by prompts'''
         
         prompt = self.generate_prompts(prompt_type)
         self.logger.debug("Prompt: "+str(prompt))
@@ -393,7 +420,7 @@ class prompts:
         
     
     def __openai_send__(self , prompt):
-        """openai api send prompt , can override this."""
+        """ openai api send prompt , can override this. """
         
         response = openai.Completion.create(
              engine="gpt-35-turbo", # this will correspond to the custom name you chose for your deployment when you deployed a model.      
