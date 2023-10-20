@@ -49,10 +49,9 @@ class agent():
         with open(openai_token,'r') as f : openai_token = f.readline()
         openai.api_type = "azure"
         openai.api_base = api_base
-        openai.api_version = "2023-07-01-preview"
+        openai.api_version = "2023-09-15-preview"
         openai.api_key = openai_token
 
-        print("!")
         self.chat_func = self.__openai_send__
 
     def __openai_send__(self , prompt):
