@@ -1,3 +1,4 @@
 doc/secret/*.key
 __pycache__
 logs/*.log
+grpc_client
