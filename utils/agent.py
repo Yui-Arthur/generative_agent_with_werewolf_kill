@@ -12,29 +12,36 @@ class agent():
                  server_url = "140.127.208.185" , agent_name = "Agent1" , room_name = "TESTROOM" , 
                  color = "f9a8d4"):
         
-        self.record = []
+        # basic setting
         self.server_url = server_url
         self.name = agent_name
         self.room = room_name
         self.color = color
+        self.logger : logging.Logger = logging.getLogger(__name__)
+        if openai_token is not None: self.__openai_init__(openai_token)
+
+        # game info 
         self.user_token = None
         self.role = None
-        self.chat_func = None
         self.current_info = None
-        self.checker = True
         self.player_name = None
-        self.logger : logging.Logger = logging.getLogger(__name__)
+
+        # thread setting        
+        self.checker = True
+        self.timer = None
+
+        self.chat_func = None
 
         # if pyChatGPT_token is not None: self.__pyChatGPT_init__(pyChatGPT_token)
-        if openai_token is not None: self.__openai_init__(openai_token)
         
         self.__logging_setting__()
         self.__join_room__()
         
-
-    def chat(self , prompt):
-        print(self.chat_func(prompt))
-
+    def stop_agent(self):
+        self.logger.debug("Stop the timer & cancel the checker")
+        self.checker = False
+        if self.timer != None:
+            self.timer.cancel()
 
     def __openai_init__(self , openai_token):
         """openai api setting , can override this"""
@@ -135,7 +142,7 @@ class agent():
                 self.__start_game_init__()
                 
             elif self.checker:
-                threading.Timer(5.0, self.__check_room_state__).start()
+                self.timer = threading.Timer(5.0, self.__check_room_state__).start()
         except Exception as e:
             self.logger.warning(f"__check_room_state__ Server Error , {e}")
 
@@ -168,7 +175,7 @@ class agent():
                 failure_cnt+=1
 
             if failure_cnt >= 5 : self.checker = False
-            if self.checker : threading.Timer(1.0, self.__check_game_state__ , args=(failure_cnt,)).start()
+            if self.checker : self.timer = threading.Timer(1.0, self.__check_game_state__ , args=(failure_cnt,)).start()
 
         except Exception as e:
             self.logger.warning(f"__check_game_state__ Server Error , {e}")
@@ -205,9 +212,12 @@ class agent():
             self.logger.warning(f"__send_operation__ Server Error , {e}")
     
     def __del__(self):
-        self.checker = False
-        if self.role != None:
+
+        if self.role == None:
             self.quit_room()
+            self.logger.debug("Quit Room")
+
+
     
 if __name__ == "__main__":
     a = agent(server_url = "http://localhost:8001" , openai_token=Path("secret/openai.key"))

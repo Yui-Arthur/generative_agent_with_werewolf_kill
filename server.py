@@ -12,10 +12,12 @@ class agent_service(agent_pb2_grpc.agentServicer):
         self.agent_type_dict = {
             "memory_stream_agent" : memory_stream_agent
         }
-        self.agent_list = []
+        self.agent_dict = {}
+        self.agent_idx = 0
         
     def create_agent(self , request , context):
         
+
         agent_type = request.agentType
         agent_name = request.agentName
         room_name = request.roomName 
@@ -30,8 +32,21 @@ class agent_service(agent_pb2_grpc.agentServicer):
                                                  prompt_dir=prompt_dic ,
                                                  server_url = "http://localhost:8001")
         
-        self.agent_list.append(agent)
-        return agent_state(agentID = len(self.agent_list))
+        self.agent_dict[self.agent_idx] = agent
+        self.agent_idx +=1
+        return agent_state(agentID = self.agent_idx -1)
+    
+    def delete_agent(self , request , context):
+        
+        agent_id = request.agentID
+        
+        if agent_id not in self.agent_dict.keys():
+            context.abort(grpc.StatusCode.NOT_FOUND, "Agent not found")
+
+        self.agent_dict[agent_id].stop_agent()
+        del self.agent_dict[agent_id]
+        
+        return empty()
 
 def serve():
 
