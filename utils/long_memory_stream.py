@@ -47,6 +47,7 @@ class long_memeory_stream():
         self.role = None
         self.suspect_role_list : dict[str , str] = None
         self.know_role_list : dict[str , str] = {}
+        self.remain_player = []
         
         self.prompt_dir = prompt_dir
         self.prompt_template : dict[str , str] = None
@@ -73,11 +74,13 @@ class long_memeory_stream():
         self.player_num = len(player_name)
         self.player_name = player_name
         self.role = role
-        # self.logger.debug(f"您本場的身分為{self.role_to_chinese[role]}")
+        
         self.logger.debug(f"{self.player_name}")
         self.__load_prompt_and_example__(self.prompt_dir)
         self.push(0 , 0 , f"您本場的身分為{self.role_to_chinese[role]}")
+
         self.suspect_role_list = {i:None for i in range(self.player_num)}
+        self.remain_player = [i for i in range(self.player_num)]
 
     def push(self , day , turn , observation):
         """push the observation in memeory stream"""
@@ -116,11 +119,13 @@ class long_memeory_stream():
         chat_flag = False
         for anno in announcement:
             observation = ""
-            if(anno["operation"] == "chat"):
-                observation = f"{self.player_name[anno['user'][0]]}({anno['user'][0]})說「{anno['description']}」"    
+            if anno["operation"] == "chat":
+                observation = f"{anno['user'][0]}號玩家({self.player_name[anno['user'][0]]})說「{anno['description']}」"    
                 chat_flag = True
-            else:
-                observation = f"{anno['description']}"
+            elif anno["operation"] == "died":
+                observation = f"{anno['user'][0]}號玩家({self.player_name[anno['user'][0]]})死了"    
+                self.remain_player.remove(int(anno['user'][0]))
+                self.suspect_role_list.pop(int(anno['user'][0]))
 
             self.push(self.day , len(self.memory_stream)+1 , observation)
 

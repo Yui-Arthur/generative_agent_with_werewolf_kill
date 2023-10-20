@@ -8,40 +8,48 @@ from pathlib import Path
 import time
 
 class agent():
-    def __init__(self , openai_token = None , pyChatGPT_token = None , 
+    def __init__(self , openai_token = None , api_base = "https://werewolf-kill-agent.openai.azure.com/" , engine = "agent" ,  
                  server_url = "140.127.208.185" , agent_name = "Agent1" , room_name = "TESTROOM" , 
                  color = "f9a8d4"):
         
-        self.record = []
+        # basic setting
         self.server_url = server_url
         self.name = agent_name
         self.room = room_name
         self.color = color
-        self.user_token = None
-        self.role = None
-        self.chat_func = None
-        self.current_info = None
-        self.checker = True
-        self.player_name = None
         self.logger : logging.Logger = logging.getLogger(__name__)
 
-        # if pyChatGPT_token is not None: self.__pyChatGPT_init__(pyChatGPT_token)
-        if openai_token is not None: self.__openai_init__(openai_token)
+        # openai api setting
+        self.engine = engine
+        if openai_token is not None: self.__openai_init__(openai_token , api_base)
+
+        # game info 
+        self.user_token = None
+        self.role = None
+        self.current_info = None
+        self.player_name = None
+
+        # thread setting        
+        self.checker = True
+        self.timer = None
+
+        self.chat_func = None
         
         self.__logging_setting__()
         self.__join_room__()
         
+    def stop_agent(self):
+        self.logger.debug("Stop the timer & cancel the checker")
+        self.checker = False
+        if self.timer != None:
+            self.timer.cancel()
 
-    def chat(self , prompt):
-        print(self.chat_func(prompt))
-
-
-    def __openai_init__(self , openai_token):
+    def __openai_init__(self , openai_token , api_base):
         """openai api setting , can override this"""
         with open(openai_token,'r') as f : openai_token = f.readline()
         openai.api_type = "azure"
-        openai.api_base = "https://werewolf-kill-agent.openai.azure.com/"
-        openai.api_version = "2023-07-01-preview"
+        openai.api_base = api_base
+        openai.api_version = "2023-09-15-preview"
         openai.api_key = openai_token
 
         self.chat_func = self.__openai_send__
@@ -49,7 +57,7 @@ class agent():
     def __openai_send__(self , prompt):
         """openai api send prompt , can override this."""
         response = openai.ChatCompletion.create(
-            engine="test",
+            engine=self.engine,
             messages = [
                 {"role":"system","content":"You are an AI assistant that helps people find information."},
                 {"role":"user","content":prompt}
@@ -135,7 +143,7 @@ class agent():
                 self.__start_game_init__()
                 
             elif self.checker:
-                threading.Timer(5.0, self.__check_room_state__).start()
+                self.timer = threading.Timer(5.0, self.__check_room_state__).start()
         except Exception as e:
             self.logger.warning(f"__check_room_state__ Server Error , {e}")
 
@@ -168,7 +176,7 @@ class agent():
                 failure_cnt+=1
 
             if failure_cnt >= 5 : self.checker = False
-            if self.checker : threading.Timer(1.0, self.__check_game_state__ , args=(failure_cnt,)).start()
+            if self.checker : self.timer = threading.Timer(1.0, self.__check_game_state__ , args=(failure_cnt,)).start()
 
         except Exception as e:
             self.logger.warning(f"__check_game_state__ Server Error , {e}")
@@ -204,7 +212,12 @@ class agent():
         except Exception as e:
             self.logger.warning(f"__send_operation__ Server Error , {e}")
     
-    
+    def __del__(self):
+
+        if self.role == None:
+            self.quit_room()
+            self.logger.debug("Quit Room")
+
 
     
 if __name__ == "__main__":
