@@ -1,4 +1,4 @@
-doc/secret/*.key
+/secret/*.key
 __pycache__
 logs/*.log
 t.py
