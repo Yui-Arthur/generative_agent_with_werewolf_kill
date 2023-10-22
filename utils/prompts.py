@@ -73,7 +73,7 @@ class prompts:
         }
     
         # initial prompts in the begining
-        self.init_prompt = f"""你現在正在玩狼人殺，遊戲中玩家會藉由說謊，以獲得勝利。因此，資訊只有玩家發言可能會是假的，而其他的資訊皆是真的
+        self.init_prompt = f"""你現在正在玩狼人殺，遊戲中玩家會藉由說謊，以獲得勝利。因此，資訊為某玩家發言可能會是假的，而其他的資訊皆是真的。
 其遊戲設定為{self.room_setting["player_num"]}人局，角色包含{self.room_setting["werewolf"]}位狼人、{self.room_setting["village"]}位平民、{"3" if self.room_setting["hunter"] else "2"}位神職（預言家和女巫{"和獵人" if self.room_setting["hunter"] else ""}）
 
 你是{self.player_id}號玩家，你的角色是{self.en_dict[self.user_role]}，你的勝利條件為{"殺死所有神職或是所有平民或是狼的數量多於平民加神職的數量" if self.user_role == "werewolf" else "殺死所有狼人"}\n\n"""
@@ -135,8 +135,11 @@ class prompts:
             if i['user'][0] == self.player_id:
                 continue
             
-            if i['operation'] == 'dialogue':
-                text = f"{i['user'][0]}號玩家發言: {i['description']}"
+            if i['operation'] == 'chat':
+                if i['description'] == '':
+                    text = f"{i['user'][0]}號玩家無發言"
+                else:
+                    text = f"{i['user'][0]}號玩家發言: {i['description']}"
 
             elif i['operation'] == 'died':
                 self.alive.remove(i['user'][0])
@@ -276,10 +279,12 @@ class prompts:
                 elif prompt_type == 'dialogue':
                     try:
                         res_json = json.loads(response)
-                    except Exception as e:
-                        self.logger.warning(f"Dialogue Json.load error , {e}")
+                        text = f"{self.stage_detail[prompt_type]['save']}{res_json['最終的分析']['發言']}{res_json['最終的分析']['理由']}"
 
-                    text = f"{res_json['最終的分析']['發言']}{res_json['最終的分析']['理由']}"
+                    except Exception as e:
+                        text = ''
+                        self.logger.warning(f"Dialogue prompts error , {e}")
+
 
                 if text == '':
                     text = '無操作'
@@ -427,15 +432,19 @@ class prompts:
             prompt=prompt, 
             max_tokens=2000, 
             temperature=0.7, 
-            stop="\n\n")
+            stop="\n")
         
         res = response['choices'][0]['text']
+        
+        # if res == '' (no words), resend to get the data
+        if not (res and res.strip()):
+            res = self.__openai_send__(prompt)
 
+        # cut unused string (ex. <|end|>)
         if '<' in res:
             res = res.split('<')[0]
         
-        if not (res and res.strip()):
-            res = self.__openai_send__(prompt)
+        
         
         return res
 
