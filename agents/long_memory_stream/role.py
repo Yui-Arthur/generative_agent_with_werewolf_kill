@@ -182,19 +182,19 @@ class witch(role):
         memory_str = self.__memory_to_str__(memory)
 
         save_posion = "毒藥已用完，"
-        save_list = data['information'][0]['target']
+        save_list = self.__player_list_to_str__(data['information'][0]['target'])
         if len(data['information'])==2:
-            posion_list = data['information'][1]['target']
+            posion_list = self.__player_list_to_str__(data['information'][1]['target'])
             save_posion = ""
         elif data['information'][0]['description'] == '女巫毒人':
             save_list = []
-            posion_list = data['information'][0]['target']
+            posion_list = self.__player_list_to_str__(data['information'][0]['target'])
             save_posion = "解藥已用完，"
 
-        final_prompt = self.prompt_template['save_poison'].replace("%e" , self.example['save_poison']).replace("%l" , sus_role_str).replace("%kl" , know_role_str).replace("%m", memory_str).replace("%vl", str(save_list)).replace("%pl", str(posion_list)).replace("%s" , save_posion)
+        final_prompt = self.prompt_template['save_poison'].replace("%e" , self.example['save_poison']).replace("%l" , sus_role_str).replace("%kl" , know_role_str).replace("%m", memory_str).replace("%vl", save_list).replace("%pl", posion_list).replace("%s" , save_posion)
     
         info = {
-            "save_or_poison" : "save",
+            "save_or_poison" : "救人",
             "target": "1",
             "reason": "test"
         }
