@@ -49,7 +49,7 @@ class memory_stream_agent(agent):
             "village" : role,
         }
         
-        self.long_memory : role = role_to_class[self.role](self.prompt_dir , self.logger, self.model)
+        self.long_memory : role = role_to_class[self.role](self.prompt_dir , self.logger, self.engine , self.model)
         if self.role != "werewolf":
             self.long_memory.update_game_info(self.player_name , self.role)
         else:

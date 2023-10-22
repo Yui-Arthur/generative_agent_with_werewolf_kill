@@ -14,8 +14,9 @@ from sentence_transformers import SentenceTransformer, util
 
 class long_memeory_stream():
     
-    def __init__(self , prompt_dir , logger , sentence_model = None):
+    def __init__(self , prompt_dir , logger , gpt_agent , sentence_model = None):
         self.memory_stream = []
+        self.agent = gpt_agent
         self.logger : logging.Logger = logger
         self.max_fail_cnt = -1
         self.token_used = 0
@@ -421,7 +422,7 @@ class long_memeory_stream():
     def __openai_send__(self , prompt):
         """openai api send prompt , can override this."""
         response = openai.ChatCompletion.create(
-            engine="agent",
+            engine=self.agent,
             messages = [
                 {"role":"system","content":"You are an AI assistant that helps people find information."},
                 {"role":"user","content":prompt}
