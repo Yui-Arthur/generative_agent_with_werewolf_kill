@@ -260,6 +260,9 @@ class prompts:
                 self.choices = i['target']
 
                 # generate response
+                if i['operation'] == 'dialogue':
+                    prompt_type = 'dialogue'
+                    
                 response = self.prompts_response(prompt_type)
                 
                 # combine save text with response
