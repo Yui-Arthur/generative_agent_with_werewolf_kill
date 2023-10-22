@@ -137,7 +137,8 @@ class memory_stream_agent_test(memory_stream_agent):
     
 
 if __name__ == '__main__':
-    a = memory_stream_agent_test(server_url = "http://localhost:8001" , openai_token=Path("doc/secret/openai.key") )
+    a = memory_stream_agent_test(server_url = "http://localhost:8001" , openai_token=Path("doc/secret/openai.key"), api_base = "https://pinyu.openai.azure.com/" , engine = "werewolf" )
+    # a = memory_stream_agent_test(server_url = "http://localhost:8001" , openai_token=Path("doc/secret/openai.key") )
     while a.checker != False: pass
     
     

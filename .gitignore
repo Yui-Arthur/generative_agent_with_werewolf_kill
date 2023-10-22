@@ -5,3 +5,4 @@ logs/*.log
 .vscode/
 grpc_client
 t.py
+test.py
