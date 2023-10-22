@@ -113,25 +113,29 @@ class seer(role):
         self.__register_keywords__({
             "今晚要驗誰" : "target"
         })
-        self.max_fail_cnt = 0
+        self.max_fail_cnt = 1
     
     def __process_information__(self , data):
-        # operation = super().__process_information__(data)
-        operation = []
+        operation = super().__process_information__(data)
         if len(data["information"]) == 0 or data['stage'].split('-')[-1] != "seer":
             return operation
 
-        # memory = self.__retrieval__(self.day , len(self.memory_stream) , "目前哪位玩家最可疑")
-        # memory_str = self.__memory_to_str__(memory)
-        # sus_role_str , know_role_str = self.__role_list_to_str__()
-        # final_prompt = self.prompt_template['check_role'].replace("%e" , self.example['check_role']).replace("%l" , sus_role_str).replace("%kl" , know_role_str).replace("%m" , memory_str)
+        memory = self.__retrieval__(self.day , len(self.memory_stream) , "目前哪位玩家最可疑")
+        memory_str = self.__memory_to_str__(memory)
+        sus_role_str , know_role_str = self.__role_list_to_str__()
+        print(f"sus_role_str = {sus_role_str}")
+        print(f"know_role_str = {know_role_str}")
+
+
+        final_prompt = self.prompt_template['check_role'].replace("%e" , self.example['check_role']).replace("%l" , sus_role_str).replace("%kl" , know_role_str).replace("%m" , memory_str)
 
         info = {
             "target" : "1",
             "reason" : "test"
         }
 
-        # info = self.__process_LLM_output__(final_prompt , ['target' , 'reason'] , info , 3)
+        print(f"memory_stream = {self.memory_stream}")
+        info = self.__process_LLM_output__(final_prompt , ['target' , 'reason'] , info , 3)
 
         ret = self.ret_format.copy()
         ret['operation'] = "vote"
@@ -161,40 +165,95 @@ class witch(role):
         super().__init__(prompt_dir, logger , sentence_model)
         
         self.__register_keywords__({
+            "選擇一位玩家" : "target",
+            "今晚要救人還是毒人" : "save_or_poison",
         })
 
-        self.max_fail_cnt = 0
+        self.max_fail_cnt = 3
         self.save = True
         self.poison = True
 
     def __process_information__(self , data):
-        # operation = super().__process_information__(data)
-        operation = []
+
+        operation = super().__process_information__(data)
         if len(data["information"]) == 0 or data['stage'].split('-')[-1] != "witch":
             return operation
 
-        # memory = self.__retrieval__(self.day , len(self.memory_stream) , "目前哪位玩家最可疑")
-        # memory_str = self.__memory_to_str__(memory)
-        # sus_role_str , know_role_str = self.__role_list_to_str__()
-        # final_prompt = self.prompt_template['check_role'].replace("%e" , self.example['check_role']).replace("%l" , sus_role_str).replace("%kl" , know_role_str).replace("%m" , memory_str)
+        self.logger.debug(f"witch process")
+        sus_role_str , know_role_str = self.__role_list_to_str__()
+        
+        if data['information'][0]['description'] == '女巫救人':
+            self.push(self.day , 0 , f"{data['information'][0]['target']}號玩家今晚被殺了 你要救他嗎")
+
+        final_prompt = self.prompt_template['save_poison'].replace("%e" , self.example['save_poison']).replace("%l" , sus_role_str).replace("%kl" , know_role_str).replace("%m" , self.__memory_to_str__(self.memory_stream)).replace("%p", str())
+        if self.save==True and self.poison==False :
+            final_prompt = final_prompt.replace("%s" , "毒藥已用完")
+        elif self.save==False and self.poison==True :
+            final_prompt = final_prompt.replace("%s" , "解藥已用完")
+        else:
+            final_prompt = final_prompt.replace("%s" , "")
+
+        info = {
+            "save_or_poison" : "save",
+            "target": "1",
+            "reason": "test"
+        }
+        info = self.__process_LLM_output__(final_prompt , ['save_or_poison', 'target', 'reason'] , info , 3)
+
+        ret = self.ret_format.copy()
+        ret['operation'] = "vote_or_not"
+        ret['target'] = int(info['target'].strip("\n"))
+
+        if info['save_or_poison'].strip("\n") == "救人":
+            self.push(self.day , 0 , f"你用解藥救了{data['information'][0]['target']}號玩家")
+            ret['chat'] = 'save'
+            self.save = False
+
+        elif info['save_or_poison'].strip("\n") == "毒人":
+            ret['chat'] = 'poison'
+            self.poison = False
+
+        else:
+            return operation
+
+
+        operation.append(ret)
+
+        return operation
+
+
+class hunter(role):
+    def __init__(self , prompt_dir , logger , sentence_model = None):
+        super().__init__(prompt_dir, logger , sentence_model)
+        
+        self.__register_keywords__({
+            "選擇要獵殺的對象" : "target"
+        })
+        self.max_fail_cnt = 1
+    
+    def __process_information__(self , data):
+
+        operation = super().__process_information__(data)
+        if len(data["information"]) == 0 or data['stage'].split('-')[-1] != "hunter":
+            return operation
+        
+        self.logger.debug("hunter process")
+        memory = self.__retrieval__(self.day , len(self.memory_stream) , "目前哪位玩家最可疑")
+        memory_str = self.__memory_to_str__(memory)
+        sus_role_str , know_role_str = self.__role_list_to_str__()
+        final_prompt = self.prompt_template['hunter'].replace("%e" , self.example['hunter']).replace("%l" , sus_role_str).replace("%kl" , know_role_str).replace("%m" , memory_str)
 
         info = {
             "target" : "1",
             "reason" : "test"
         }
-
-        # info = self.__process_LLM_output__(final_prompt , ['target' , 'reason'] , info , 3)
+        
+        info = self.__process_LLM_output__(final_prompt , ['target' , 'reason'] , info , 3)
 
         ret = self.ret_format.copy()
-        ret['operation'] = "vote"
+        ret['operation'] = "vote_or_not"
         ret['target'] = int(info['target'].strip("\n"))
         ret['chat'] = ""
         operation.append(ret)
+
         return operation
-    
-    def __used_skill__(self , type , target):
-        pass
-
-
-class hunter(role):
-    pass
