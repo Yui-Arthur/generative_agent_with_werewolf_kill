@@ -282,7 +282,7 @@ class prompts:
                         text = f"{self.stage_detail[prompt_type]['save']}{res_json['最終的分析']['發言']}{res_json['最終的分析']['理由']}"
 
                     except Exception as e:
-                        text = ''
+                        text = '我無發言'
                         self.logger.warning(f"Dialogue prompts error , {e}")
 
 
