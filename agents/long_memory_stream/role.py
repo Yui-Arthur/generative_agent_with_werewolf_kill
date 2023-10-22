@@ -216,11 +216,11 @@ class witch(role):
         ret['target'] = int(info['target'].strip("\n"))
 
         if info['save_or_poison'].strip("\n") == "救人":
-            self.push(self.day , 0 , f"你用解藥救了{ret['target']}號玩家({self.player_name[ret['target']]})")
+            self.push(self.day , len(self.memory_stream)+1 , f"你用解藥救了{ret['target']}號玩家({self.player_name[ret['target']]})")
             ret['chat'] = 'save'
             operation.append(ret)
         elif info['save_or_poison'].strip("\n") == "毒人":
-            self.push(self.day , 0 , f"你用毒藥毒了{ret['target']}號玩家({self.player_name[ret['target']]})")
+            self.push(self.day , len(self.memory_stream)+1 , f"你用毒藥毒了{ret['target']}號玩家({self.player_name[ret['target']]})")
             ret['chat'] = 'poison'
             operation.append(ret)
 
