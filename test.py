@@ -128,7 +128,7 @@ class memory_stream_agent(agent):
         
 
 if __name__ == '__main__':
-    a = memory_stream_agent(server_url = "http://localhost:8001" , openai_token=Path("secret/openai.key") )
+    a = memory_stream_agent(server_url = "http://localhost:8001" , openai_token=Path("doc/secret/openai.key") )
     while a.checker != False: pass
     
     

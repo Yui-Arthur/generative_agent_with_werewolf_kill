@@ -222,6 +222,6 @@ class agent():
 
     
 if __name__ == "__main__":
-    a = agent(server_url = "http://localhost:8001" , openai_token=Path("secret/openai.key"))
+    a = agent(server_url = "http://localhost:8001" , openai_token=Path("doc/secret/openai.key"))
     
     # a.chat("""hello""")
