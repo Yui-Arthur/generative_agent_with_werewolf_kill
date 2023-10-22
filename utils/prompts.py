@@ -423,11 +423,11 @@ class prompts:
         """ openai api send prompt , can override this. """
         
         response = openai.Completion.create(
-             engine="gpt-35-turbo", # this will correspond to the custom name you chose for your deployment when you deployed a model.      
-             prompt=prompt, 
-             max_tokens=2000, 
-             temperature=0.7, 
-             stop="\n\n")
+            engine="gpt-35-turbo", # this will correspond to the custom name you chose for your deployment when you deployed a model.      
+            prompt=prompt, 
+            max_tokens=2000, 
+            temperature=0.7, 
+            stop="\n\n")
         
         res = response['choices'][0]['text']
 
@@ -435,7 +435,7 @@ class prompts:
             res = res.split('<')[0]
         
         if not (res and res.strip()):
-            self.__openai_send__(prompt)
+            res = self.__openai_send__(prompt)
         
         return res
 

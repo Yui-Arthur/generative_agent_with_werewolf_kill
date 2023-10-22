@@ -3,7 +3,8 @@ import openai
 from pathlib import Path   
 from utils.agent import agent
 from utils.prompts import prompts
-
+import logging
+from datetime import datetime
 
 class memory_stream_agent(agent):
     
@@ -50,7 +51,23 @@ class memory_stream_agent(agent):
         openai.api_key = openai_token
         self.chat_func = self.__openai_send__ 
 
-    
+    def __logging_setting__(self):
+        """logging setting , can override this."""
+        log_format = logging.Formatter('[%(asctime)s] [%(levelname)s] - %(message)s')
+        self.logger.setLevel(logging.DEBUG)
+
+        current_time = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+        handler = logging.FileHandler(filename=f'logs/{self.name}_{self.room}_{current_time}.log', encoding='utf-8' , mode="w")
+        handler.setLevel(logging.DEBUG)   
+        handler.setFormatter(log_format)
+        self.logger.addHandler(handler)   
+
+        handler = logging.StreamHandler(sys.stdout)    
+        handler.setLevel(logging.DEBUG)                                        
+        handler.setFormatter(log_format)    
+        self.logger.addHandler(handler)   
+
+        logging.getLogger("requests").propagate = False
 
     def __process_data__(self, data):
         """Process the data got from server"""
