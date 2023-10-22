@@ -23,6 +23,17 @@ class role(long_memeory_stream):
         for key , prompt_li in self.example.items():
             self.example[key] = '\n'.join(prompt_li)
 
+    def __player_list_to_str__(self, datas):
+        """
+        export the {save_list} and {posion_list} to string like
+        1號玩家(Yui1), 2號玩家(Yui2), 3號玩家(Yui3)
+        """
+        name_list = ""
+        for data in datas:
+            name_list += f"{data}號玩家({self.player_name[data]}), "
+    
+        return name_list
+
 class werewolf(role):
 
     def __init__(self , prompt_dir , logger , gpt_agent , sentence_model = None):

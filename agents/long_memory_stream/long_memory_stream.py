@@ -271,6 +271,19 @@ class long_memeory_stream():
 
         return sus_role_str , know_role_str
     
+    
+    def __player_list_to_str__(self, datas):
+        """
+        export the {save_list} and {posion_list} to string like
+        1號玩家(Yui1), 2號玩家(Yui2), 3號玩家(Yui3)
+        """
+        name_list = ""
+        for data in datas:
+            name_list += f"{data}號玩家({self.player_name[data]}), "
+    
+        return name_list
+
+
     def __player_list_to_str__(self, datas):
         """
         export the {save_list} and {posion_list} to string like
