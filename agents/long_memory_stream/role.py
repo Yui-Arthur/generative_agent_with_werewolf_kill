@@ -167,8 +167,8 @@ class witch(role):
         })
 
         self.max_fail_cnt = 3
-        self.save = True
-        self.poison = True
+        # self.save = True
+        # self.poison = True
 
     def __process_information__(self , data):
 
@@ -178,18 +178,21 @@ class witch(role):
 
         self.logger.debug(f"witch process")
         sus_role_str , know_role_str = self.__role_list_to_str__()
-        
-        if data['information'][0]['description'] == '女巫救人':
-            self.push(self.day , 0 , f"{data['information'][0]['target']}號玩家今晚被殺了 你要救他嗎")
+        memory = self.__retrieval__(self.day , len(self.memory_stream) , "該救或毒哪位玩家")
+        memory_str = self.__memory_to_str__(memory)
 
-        final_prompt = self.prompt_template['save_poison'].replace("%e" , self.example['save_poison']).replace("%l" , sus_role_str).replace("%kl" , know_role_str).replace("%m" , self.__memory_to_str__(self.memory_stream)).replace("%p", str())
-        if self.save==True and self.poison==False :
-            final_prompt = final_prompt.replace("%s" , "毒藥已用完")
-        elif self.save==False and self.poison==True :
-            final_prompt = final_prompt.replace("%s" , "解藥已用完")
-        else:
-            final_prompt = final_prompt.replace("%s" , "")
+        save_posion = "毒藥已用完，"
+        save_list = data['information'][0]['target']
+        if len(data['information'])==2:
+            posion_list = data['information'][1]['target']
+            save_posion = ""
+        elif data['information'][0]['description'] == '女巫毒人':
+            save_list = []
+            posion_list = data['information'][0]['target']
+            save_posion = "解藥已用完，"
 
+        final_prompt = self.prompt_template['save_poison'].replace("%e" , self.example['save_poison']).replace("%l" , sus_role_str).replace("%kl" , know_role_str).replace("%m", memory_str).replace("%vl", str(save_list)).replace("%pl", str(posion_list)).replace("%s" , save_posion)
+    
         info = {
             "save_or_poison" : "save",
             "target": "1",
@@ -202,26 +205,20 @@ class witch(role):
         ret['target'] = int(info['target'].strip("\n"))
 
         if info['save_or_poison'].strip("\n") == "救人":
-            self.push(self.day , 0 , f"你用解藥救了{data['information'][0]['target']}號玩家")
+            self.push(self.day , 0 , f"你用解藥救了{ret['target']}號玩家({self.player_name[ret['target']]})")
             ret['chat'] = 'save'
-            self.save = False
-
+            operation.append(ret)
         elif info['save_or_poison'].strip("\n") == "毒人":
+            self.push(self.day , 0 , f"你用毒藥毒了{ret['target']}號玩家({self.player_name[ret['target']]})")
             ret['chat'] = 'poison'
-            self.poison = False
-
-        else:
-            return operation
-
-
-        operation.append(ret)
+            operation.append(ret)
 
         return operation
 
 
 class hunter(role):
-    def __init__(self , prompt_dir , logger , sentence_model = None):
-        super().__init__(prompt_dir, logger , sentence_model)
+    def __init__(self , prompt_dir , logger , gpt_agent , sentence_model = None):
+        super().__init__(prompt_dir, logger , gpt_agent , sentence_model)
         
         self.__register_keywords__({
             "選擇要獵殺的對象" : "target"
