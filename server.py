@@ -3,15 +3,18 @@ from protobufs.agent_pb2 import agent_query , agent_state , empty
 import protobufs.agent_pb2_grpc as agent_pb2_grpc
 import threading
 from concurrent import futures
-from memory_stream_agent import memory_stream_agent
 from pathlib import Path
 import argparse
+# from memory_stream_agent import memory_stream_agent
+# from intelligent_agent import intelligent_agent
+from agents import memory_stream_agent , intelligent_agent
 
 class agent_service(agent_pb2_grpc.agentServicer):
     
     def __init__(self , server_ip):
         self.agent_type_dict = {
-            "memory_stream_agent" : memory_stream_agent
+            "memory_stream_agent" : memory_stream_agent , 
+            "intelligent_agent" : intelligent_agent
         }
         self.agent_dict = {}
         self.agent_idx = 1
