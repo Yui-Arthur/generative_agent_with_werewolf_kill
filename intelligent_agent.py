@@ -10,7 +10,7 @@ class intelligent_agent(agent):
     def __init__(self , openai_token = None , api_base = "https://wolf-openai-llm.openai.azure.com/" , engine = "agent", 
                  server_url = "140.127.208.185" , agent_name = "Agent1" , room_name = "TESTROOM" , 
                  color = "f9a8d4" , prompt_dir = Path("prompt/memory_stream/")):
-        self.__reset_server__(server_url)
+        
         
         super().__init__(openai_token = openai_token, api_base = api_base , engine = engine, 
                                        server_url = server_url , agent_name = agent_name , room_name = room_name , 
