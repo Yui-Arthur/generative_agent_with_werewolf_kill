@@ -123,8 +123,6 @@ class seer(role):
         memory = self.__retrieval__(self.day , len(self.memory_stream) , "目前哪位玩家最可疑")
         memory_str = self.__memory_to_str__(memory)
         sus_role_str , know_role_str = self.__role_list_to_str__()
-        print(f"sus_role_str = {sus_role_str}")
-        print(f"know_role_str = {know_role_str}")
 
 
         final_prompt = self.prompt_template['check_role'].replace("%e" , self.example['check_role']).replace("%l" , sus_role_str).replace("%kl" , know_role_str).replace("%m" , memory_str)
@@ -134,7 +132,6 @@ class seer(role):
             "reason" : "test"
         }
 
-        print(f"memory_stream = {self.memory_stream}")
         info = self.__process_LLM_output__(final_prompt , ['target' , 'reason'] , info , 3)
 
         ret = self.ret_format.copy()
