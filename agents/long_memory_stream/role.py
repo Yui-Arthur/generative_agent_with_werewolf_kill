@@ -1,4 +1,4 @@
-from utils.long_memory_stream import long_memeory_stream
+from .long_memory_stream import long_memeory_stream
 
 import json
 
