@@ -432,7 +432,7 @@ class prompts:
             prompt=prompt, 
             max_tokens=2000, 
             temperature=0.7, 
-            stop="\n")
+            stop="\n\n")
         
         res = response['choices'][0]['text']
         
