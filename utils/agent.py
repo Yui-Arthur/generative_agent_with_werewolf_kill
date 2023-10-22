@@ -212,15 +212,16 @@ class agent():
         except Exception as e:
             self.logger.warning(f"__send_operation__ Server Error , {e}")
     
-    def __del__(self):
+    # def __del__(self):
 
-        if self.role == None:
-            self.quit_room()
-            self.logger.debug("Quit Room")
+
+        # if self.role == None:
+        #     self.quit_room()
+        #     self.logger.debug("Quit Room")
 
 
     
 if __name__ == "__main__":
-    a = agent(server_url = "http://localhost:8001" , openai_token=Path("secret/openai.key"))
+    a = agent(server_url = "http://localhost:8001" , openai_token=Path("doc/secret/openai.key"))
     
     # a.chat("""hello""")

@@ -1,4 +1,7 @@
-doc/secret/*.key
+/doc/secret/*.key
 __pycache__
 logs/*.log
+.DS_Store
+.vscode/
 grpc_client
+t.py
