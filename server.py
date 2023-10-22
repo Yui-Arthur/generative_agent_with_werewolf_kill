@@ -14,12 +14,12 @@ class agent_service(agent_pb2_grpc.agentServicer):
             "memory_stream_agent" : memory_stream_agent
         }
         self.agent_dict = {}
-        self.agent_idx = 0
+        self.agent_idx = 1
         self.server_ip = server_ip
         
     def create_agent(self , request , context):
         
-
+        print(request)
         agent_type = request.agentType
         agent_name = request.agentName
         room_name = request.roomName 
@@ -28,6 +28,7 @@ class agent_service(agent_pb2_grpc.agentServicer):
         engine = request.engine
         color = request.color
         prompt_dic = request.promptDir
+        
 
         agent = self.agent_type_dict[agent_type](openai_token = Path(key_path) , agent_name=agent_name , room_name=room_name,
                                                  color=color, api_base = api_base , engine = engine , 
