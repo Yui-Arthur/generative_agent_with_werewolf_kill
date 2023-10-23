@@ -6,9 +6,10 @@ import openai
 import sys   
 from pathlib import Path   
 import time
+import json
 
 class agent():
-    def __init__(self , openai_token = None , api_base = "https://werewolf-kill-agent.openai.azure.com/" , engine = "agent" ,  
+    def __init__(self , openai_token = None , api_base = None , engine = None , api_json = None,  
                  server_url = "140.127.208.185" , agent_name = "Agent1" , room_name = "TESTROOM" , 
                  color = "f9a8d4"):
         
@@ -22,6 +23,8 @@ class agent():
         # openai api setting
         self.engine = engine
         if openai_token is not None: self.__openai_init__(openai_token , api_base)
+        elif api_json is not None : self.__openai_init_v2_(api_json)
+        else: raise Exception("Not give api_init parameter")
 
         # game info 
         self.user_token = None
@@ -37,7 +40,15 @@ class agent():
         
         self.__logging_setting__()
         self.__join_room__()
-        
+
+    def get_info(self) -> dict[str,str]:
+        return_sample = {
+            "memory" : "1234",
+            "role_info" : "45678",
+        }
+
+        return return_sample
+
     def stop_agent(self):
         self.logger.debug("Stop the timer & cancel the checker")
         self.checker = False
@@ -51,6 +62,18 @@ class agent():
         openai.api_base = api_base
         openai.api_version = "2023-09-15-preview"
         openai.api_key = openai_token
+
+        self.chat_func = self.__openai_send__
+    
+    def __openai_init_v2_(self , api_json):
+        """openai api setting , can override this"""
+        with open(api_json,'r') as f : api_info = json.load(f)
+        openai.api_type = api_info["api_type"]
+        openai.api_base = api_info["api_base"]
+        openai.api_version = api_info["api_version"] 
+        openai.api_key = api_info["key"]
+        self.engine = api_info['engine']
+        
 
         self.chat_func = self.__openai_send__
 
@@ -218,9 +241,3 @@ class agent():
             self.quit_room()
             self.logger.debug("Quit Room")
 
-
-    
-if __name__ == "__main__":
-    a = agent(server_url = "http://localhost:8001" , openai_token=Path("doc/secret/openai.key"))
-    
-    # a.chat("""hello""")
