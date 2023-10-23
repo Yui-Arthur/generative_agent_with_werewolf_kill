@@ -204,7 +204,7 @@ class intelligent_agent_test(agent):
     def __start_game_init__(self):
         """the game started setting , update player name"""
         data = self.__get_role__()
-        self.logger.debug(f'User data: {data}')
+        self.logger.debug(f'Game Info: {data}')
 
 
         self.prompts : prompts = prompts(data['player_id'], data['game_info'], self.room_setting, self.logger)

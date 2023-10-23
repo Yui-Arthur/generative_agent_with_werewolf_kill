@@ -12,7 +12,7 @@ class prompts:
         self.room_setting = room_setting
         self.memory = []
         self.guess_roles = []
-        self.alive = [0, 1, 2, 3, 4, 5, 6] # alive players
+        self.alive = [] # alive players
         self.choices = [-1] # player choices in prompts
         self.day = 0
         
@@ -24,6 +24,10 @@ class prompts:
             "village":"村民",
             "hunter":"獵人",
         }
+
+        for i in range(self.room_setting['player_num']):
+            self.alive.append(i)
+
         
         # stage description and save text responding to the stage
         self.stage_detail={
@@ -283,7 +287,10 @@ class prompts:
                         text = f"{self.stage_detail[prompt_type]['save']}{res_json['最終的分析']['發言']}{res_json['最終的分析']['理由']}"
 
                     except Exception as e:
-                        text = '我無發言'
+                        if self.player_id in self.alive:
+                            text = '我無遺言'
+                        else:
+                            text = '我無發言'
                         self.logger.warning(f"Dialogue prompts error , {e}")
 
 
