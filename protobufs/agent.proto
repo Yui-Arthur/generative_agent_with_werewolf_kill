@@ -13,6 +13,10 @@ message agent_state {
     int32 agentID = 1;
 }
 
+message agent_info {
+    map<string, string> agentInfo = 2;
+}
+
 message empty{
 
 }
@@ -20,4 +24,5 @@ message empty{
 service agent{
     rpc create_agent(agent_query) returns (agent_state) {};
     rpc delete_agent(agent_state) returns (empty) {};
+    rpc get_agent_info(agent_state) returns (agent_info) {};
 }

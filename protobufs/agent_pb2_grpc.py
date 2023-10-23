@@ -24,6 +24,11 @@ class agentStub(object):
                 request_serializer=protobufs_dot_agent__pb2.agent_state.SerializeToString,
                 response_deserializer=protobufs_dot_agent__pb2.empty.FromString,
                 )
+        self.get_agent_info = channel.unary_unary(
+                '/agent/get_agent_info',
+                request_serializer=protobufs_dot_agent__pb2.agent_state.SerializeToString,
+                response_deserializer=protobufs_dot_agent__pb2.agent_info.FromString,
+                )
 
 
 class agentServicer(object):
@@ -41,6 +46,12 @@ class agentServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def get_agent_info(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_agentServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -53,6 +64,11 @@ def add_agentServicer_to_server(servicer, server):
                     servicer.delete_agent,
                     request_deserializer=protobufs_dot_agent__pb2.agent_state.FromString,
                     response_serializer=protobufs_dot_agent__pb2.empty.SerializeToString,
+            ),
+            'get_agent_info': grpc.unary_unary_rpc_method_handler(
+                    servicer.get_agent_info,
+                    request_deserializer=protobufs_dot_agent__pb2.agent_state.FromString,
+                    response_serializer=protobufs_dot_agent__pb2.agent_info.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -95,5 +111,22 @@ class agent(object):
         return grpc.experimental.unary_unary(request, target, '/agent/delete_agent',
             protobufs_dot_agent__pb2.agent_state.SerializeToString,
             protobufs_dot_agent__pb2.empty.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def get_agent_info(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/agent/get_agent_info',
+            protobufs_dot_agent__pb2.agent_state.SerializeToString,
+            protobufs_dot_agent__pb2.agent_info.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)

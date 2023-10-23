@@ -1,5 +1,5 @@
 import grpc
-from protobufs.agent_pb2 import agent_query , agent_state , empty
+from protobufs.agent_pb2 import agent_query , agent_state , empty , agent_state , agent_info
 import protobufs.agent_pb2_grpc as agent_pb2_grpc
 import threading
 from concurrent import futures
@@ -7,7 +7,7 @@ from pathlib import Path
 import argparse
 # from memory_stream_agent import memory_stream_agent
 # from intelligent_agent import intelligent_agent
-from agents import memory_stream_agent , intelligent_agent
+from agents import memory_stream_agent , intelligent_agent , agent
 from sentence_transformers import SentenceTransformer, util
 
 class agent_service(agent_pb2_grpc.agentServicer):
@@ -17,7 +17,7 @@ class agent_service(agent_pb2_grpc.agentServicer):
             "memory_stream_agent" : memory_stream_agent , 
             "intelligent_agent" : intelligent_agent
         }
-        self.agent_dict = {}
+        self.agent_dict : dict[int , agent] = {} 
         self.agent_idx = 1
         self.server_ip = server_ip
         
@@ -51,6 +51,15 @@ class agent_service(agent_pb2_grpc.agentServicer):
         del self.agent_dict[agent_id]
         
         return empty()
+    
+    def get_agent_info(self , request , context):
+        print(request)
+        agent_id = request.agentID
+
+        if agent_id not in self.agent_dict.keys():
+            context.abort(grpc.StatusCode.NOT_FOUND, "Agent not found")
+
+        return agent_info(agentInfo = self.agent_dict[agent_id].get_info())
 
 def serve(opt):
 

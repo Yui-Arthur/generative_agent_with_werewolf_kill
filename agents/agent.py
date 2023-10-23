@@ -40,7 +40,15 @@ class agent():
         
         self.__logging_setting__()
         self.__join_room__()
-        
+
+    def get_info(self) -> dict[str,str]:
+        return_sample = {
+            "memory" : "1234",
+            "role_info" : "45678",
+        }
+
+        return return_sample
+
     def stop_agent(self):
         self.logger.debug("Stop the timer & cancel the checker")
         self.checker = False
