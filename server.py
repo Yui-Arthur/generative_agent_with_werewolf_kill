@@ -8,6 +8,7 @@ import argparse
 # from memory_stream_agent import memory_stream_agent
 # from intelligent_agent import intelligent_agent
 from agents import memory_stream_agent , intelligent_agent
+from sentence_transformers import SentenceTransformer, util
 
 class agent_service(agent_pb2_grpc.agentServicer):
     
@@ -26,15 +27,13 @@ class agent_service(agent_pb2_grpc.agentServicer):
         agent_type = request.agentType
         agent_name = request.agentName
         room_name = request.roomName 
-        key_path = request.keyPath
-        api_base = request.apiBase
-        engine = request.engine
+        api_json = request.apiJson
         color = request.color
         prompt_dic = request.promptDir
         
 
-        agent = self.agent_type_dict[agent_type](openai_token = Path(key_path) , agent_name=agent_name , room_name=room_name,
-                                                 color=color, api_base = api_base , engine = engine , 
+        agent = self.agent_type_dict[agent_type](agent_name=agent_name , room_name=room_name,
+                                                 color=color, api_json = api_json, 
                                                  prompt_dir=prompt_dic , server_url = self.server_ip)
         
         self.agent_dict[self.agent_idx] = agent
@@ -55,6 +54,8 @@ class agent_service(agent_pb2_grpc.agentServicer):
 
 def serve(opt):
 
+    model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
+    del model
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
     agent_pb2_grpc.add_agentServicer_to_server((agent_service(opt["api_server"])), server)
     print(f'server start with api server : {opt["api_server"]}')
@@ -70,9 +71,6 @@ def parse_opt():
 
     return opt
 
-
-
-    
 
 if __name__ == '__main__':
     opt = parse_opt()

@@ -4,9 +4,7 @@ message agent_query {
     string agentType = 1;
     string agentName = 2;
     string roomName = 3;
-    string keyPath = 4;
-    string apiBase = 5;
-    string engine = 6;
+    string apiJson = 4;
     string color = 7;
     string promptDir = 8;
 }
