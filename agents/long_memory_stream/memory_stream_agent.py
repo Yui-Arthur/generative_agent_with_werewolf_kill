@@ -15,12 +15,12 @@ from ..agent import agent
 from .role import role , werewolf , seer , witch , hunter
 
 class memory_stream_agent(agent):
-    def __init__(self , openai_token = None , api_base = "https://werewolf-kill-agent.openai.azure.com/" , engine = "agent" ,  
+    def __init__(self , openai_token = None , api_base = None , engine = None , api_json = "doc/secret/yui.key",  
                  server_url = "140.127.208.185" , agent_name = "Agent1" , room_name = "TESTROOM" , 
                  color = "f9a8d4" , prompt_dir = "doc/prompt/memory_stream"):
         
-        super().__init__(openai_token = openai_token , api_base = api_base , engine = engine, 
-                                       server_url = server_url , agent_name = agent_name , room_name = room_name , 
+        super().__init__(api_json = api_json, server_url = server_url ,
+                         agent_name = agent_name , room_name = room_name , 
                                        color = color) 
         
         # init long memory class & models
@@ -49,7 +49,7 @@ class memory_stream_agent(agent):
             "village" : role,
         }
         
-        self.long_memory : role = role_to_class[self.role](self.prompt_dir , self.logger, self.model)
+        self.long_memory : role = role_to_class[self.role](self.prompt_dir , self.logger, self.engine , self.model)
         if self.role != "werewolf":
             self.long_memory.update_game_info(self.player_name , self.role)
         else:
@@ -63,13 +63,13 @@ class memory_stream_agent(agent):
         self.logger.debug("success load model")
 
 class memory_stream_agent_test(memory_stream_agent):
-    def __init__(self , openai_token = None , api_base = "https://werewolf-kill-agent.openai.azure.com/" , engine = "agent" ,  
+    def __init__(self , openai_token = None , api_base = None , engine = None , api_json = "doc/secret/yui.key",  
                  server_url = "140.127.208.185" , agent_name = "Agent1" , room_name = "TESTROOM" , 
                  color = "f9a8d4" , prompt_dir = "doc/prompt/memory_stream"):
         self.__reset_server__(server_url)
         
-        super().__init__(openai_token = openai_token , api_base = api_base , engine = engine, 
-                                       server_url = server_url , agent_name = agent_name , room_name = room_name , 
+        super().__init__(api_json = api_json , server_url = server_url , 
+                         agent_name = agent_name , room_name = room_name , 
                                        color = color , prompt_dir = prompt_dir) 
         
         # used for start game for test
@@ -137,7 +137,8 @@ class memory_stream_agent_test(memory_stream_agent):
     
 
 if __name__ == '__main__':
-    a = memory_stream_agent_test(server_url = "http://localhost:8001" , openai_token=Path("doc/secret/openai.key") )
+    a = memory_stream_agent_test(server_url = "http://localhost:8001" , openai_token=Path("doc/secret/openai.key"), api_base = "https://pinyu.openai.azure.com/" , engine = "werewolf" )
+    # a = memory_stream_agent_test(server_url = "http://localhost:8001" , openai_token=Path("doc/secret/openai.key") )
     while a.checker != False: pass
     
     
