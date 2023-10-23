@@ -4,4 +4,4 @@ logs/*.log
 .DS_Store
 .vscode/
 grpc_client
-t.py
+test.py
