@@ -139,7 +139,10 @@ class prompts:
             
             if i['operation'] == 'chat':
                 if i['description'] == '':
-                    text = f"{i['user'][0]}號玩家無發言"
+                    if self.player_id in self.alive:
+                        text = f"{i['user'][0]}號玩家無遺言"
+                    else:
+                        text = f"{i['user'][0]}號玩家無發言"
                 else:
                     text = f"{i['user'][0]}號玩家發言: {i['description']}"
 
