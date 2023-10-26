@@ -55,6 +55,9 @@ class agent_service(agent_pb2_grpc.agentServicer):
         print(f"Get Info with {request}")
         agent_id = request.agentID
 
+        if agent_id == -1:
+            return agent_info(agentInfo = {"This is test agent grpc server state , you should not send the agentID less then 0" : "!"})
+
         if agent_id not in self.agent_dict.keys():
             context.abort(grpc.StatusCode.NOT_FOUND, "Agent not found")
         if self.agent_dict[agent_id].game_over == True:
