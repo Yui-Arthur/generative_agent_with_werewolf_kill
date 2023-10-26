@@ -15,13 +15,15 @@ class role(long_memeory_stream):
         super().__load_prompt_and_example__(prompt_dir)
 
         self.logger.debug(f"load {self.role} json")
-        with open(prompt_dir / f"{self.role}_prompt.json" , encoding="utf-8") as json_file: self.prompt_template.update(json.load(json_file))
-        with open(prompt_dir / f"{self.role}_example.json" , encoding="utf-8") as json_file: self.example.update(json.load(json_file))
+        with open(prompt_dir / f"{self.role}_prompt.json" , encoding="utf-8") as json_file: prompt_template = json.load(json_file)
+        with open(prompt_dir / f"{self.role}_example.json" , encoding="utf-8") as json_file: example = json.load(json_file)
         
-        for key , prompt_li in self.prompt_template.items():
+        for key , prompt_li in prompt_template.items():
             self.prompt_template[key] = '\n'.join(prompt_li)
-        for key , prompt_li in self.example.items():
+        for key , prompt_li in example.items():
             self.example[key] = '\n'.join(prompt_li)
+
+        print(self.prompt_template)
 
     def __player_list_to_str__(self, datas):
         """
