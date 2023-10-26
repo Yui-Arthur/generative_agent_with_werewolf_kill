@@ -23,7 +23,6 @@ class role(long_memeory_stream):
         for key , prompt_li in example.items():
             self.example[key] = '\n'.join(prompt_li)
 
-        print(self.prompt_template)
 
     def __player_list_to_str__(self, datas):
         """
