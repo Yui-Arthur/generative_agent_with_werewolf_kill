@@ -109,8 +109,10 @@ class agent():
         }
         self.__send_operation__(op_data)
 
-    def __start_game_init__(self):
+    def __start_game_init__(self , room_data):
         """the game started setting , will call when game is start , can override this."""
+        self.logger.debug(f"game is started , this final room info : {room_data}")
+        self.player_name = [name for name in room_data["room_user"]]
         self.__get_role__()
         self.__check_game_state__(0)
 
@@ -161,9 +163,7 @@ class agent():
             r = requests.get(f'{self.server_url}/api/room/{self.room}' , timeout=3)
 
             if r.status_code == 200 and r.json()["room_state"] == "started":
-                self.player_name = [name for name in r.json()["room_user"]]
-                self.logger.debug("Game Start")
-                self.__start_game_init__()
+                self.__start_game_init__(r.json())
                 
             elif self.checker:
                 self.timer = threading.Timer(5.0, self.__check_room_state__).start()
