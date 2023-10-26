@@ -5,19 +5,18 @@ import threading
 from concurrent import futures
 from pathlib import Path
 import argparse
-# from memory_stream_agent import memory_stream_agent
-# from intelligent_agent import intelligent_agent
 from agents import memory_stream_agent , intelligent_agent , agent
 from sentence_transformers import SentenceTransformer, util
+import threading
 
 class agent_service(agent_pb2_grpc.agentServicer):
     
-    def __init__(self , server_ip):
+    def __init__(self , server_ip , agent_dict):
         self.agent_type_dict = {
             "memory_stream_agent" : memory_stream_agent , 
             "intelligent_agent" : intelligent_agent
         }
-        self.agent_dict : dict[int , agent] = {} 
+        self.agent_dict : dict[int , agent] = agent_dict
         self.agent_idx = 1
         self.server_ip = server_ip
         
@@ -41,7 +40,7 @@ class agent_service(agent_pb2_grpc.agentServicer):
         return agent_state(agentID = self.agent_idx -1)
     
     def delete_agent(self , request , context):
-        
+        print(f"Delete Agent with {request}")
         agent_id = request.agentID
         
         if agent_id not in self.agent_dict.keys():
@@ -53,24 +52,40 @@ class agent_service(agent_pb2_grpc.agentServicer):
         return empty()
     
     def get_agent_info(self , request , context):
-        print(request)
+        print(f"Get Info with {request}")
         agent_id = request.agentID
 
         if agent_id not in self.agent_dict.keys():
             context.abort(grpc.StatusCode.NOT_FOUND, "Agent not found")
+        if self.agent_dict[agent_id].game_over == True:
+            del self.agent_dict[agent_id]
+            context.abort(grpc.StatusCode.NOT_FOUND, "The game of the agent is end")
 
         return agent_info(agentInfo = self.agent_dict[agent_id].get_info())
+    
+def print_agent_dict(agent_dict : dict[str , agent]):
+
+    for id in list(agent_dict.keys()):
+        if agent_dict[id].game_over == True: 
+            del agent_dict[id]
+        else:
+            print(f"agent name : {agent_dict[id].name} room : {agent_dict[id].room}")
+
+    threading.Timer(60 , print_agent_dict , args=[agent_dict]).start()
 
 def serve(opt):
 
     model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
     del model
+    agent_dict = {}
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
-    agent_pb2_grpc.add_agentServicer_to_server((agent_service(opt["api_server"])), server)
+    agent_pb2_grpc.add_agentServicer_to_server((agent_service(opt["api_server"] , agent_dict)), server)
     print(f'server start with api server : {opt["api_server"]}')
     
     server.add_insecure_port("[::]:50052")
+    print_agent_dict(agent_dict)
     server.start()
+
     server.wait_for_termination()
 
 def parse_opt():

@@ -37,6 +37,7 @@ class agent():
         self.timer = None
 
         self.chat_func = None
+        self.game_over = False
         
         self.__logging_setting__()
         self.__join_room__()
@@ -116,6 +117,9 @@ class agent():
         
     def __game_over_process__(self, anno):
         self.logger.info(f"Game is over , {anno['description']}")
+        self.game_over = True
+        self.role = None
+        self.__del__()
 
     def __logging_setting__(self):
         """logging setting , can override this."""
@@ -200,7 +204,6 @@ class agent():
                         if anno['operation'] == "game_over" : 
                             self.checker = False
                             self.__game_over_process__(anno)
-                            
                             break
 
                     self.__process_data__(self.current_info) 
