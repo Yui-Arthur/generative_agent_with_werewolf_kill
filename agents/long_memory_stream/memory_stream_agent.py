@@ -38,8 +38,10 @@ class memory_stream_agent(agent):
         for operation in operations:
             self.__send_operation__(operation)
 
-    def __start_game_init__(self):
+    def __start_game_init__(self , room_data):
         """the game started setting , update player name"""
+        self.logger.debug(f"game is started , this final room info : {room_data}")
+        self.player_name = [name for name in room_data["room_user"]]
         role_info = self.__get_role__()
         role_to_class = {
             "werewolf" : werewolf,
