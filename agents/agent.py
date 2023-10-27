@@ -237,7 +237,6 @@ class agent():
     
     def __del__(self):
 
-
         if self.role == None:
             self.quit_room()
             self.logger.debug("Quit Room")
