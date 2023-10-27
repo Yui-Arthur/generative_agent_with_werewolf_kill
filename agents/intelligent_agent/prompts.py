@@ -12,7 +12,7 @@ class prompts:
         self.room_setting = room_setting
         self.memory = []
         self.guess_roles = []
-        self.alive = [0, 1, 2, 3, 4, 5, 6] # alive players
+        self.alive = [] # alive players
         self.choices = [-1] # player choices in prompts
         self.day = 0
         
@@ -24,6 +24,10 @@ class prompts:
             "village":"村民",
             "hunter":"獵人",
         }
+
+        for i in range(self.room_setting['player_num']):
+            self.alive.append(i)
+
         
         # stage description and save text responding to the stage
         self.stage_detail={
@@ -72,14 +76,13 @@ class prompts:
             },
         }
     
-        # initial prompts in the begining
-        self.init_prompt = f"""你現在正在玩狼人殺，遊戲中玩家會藉由說謊，以獲得勝利。因此，資訊為某玩家發言可能會是假的，而其他的資訊皆是真的。
+        # initial prompts in the beginning
+        self.init_prompt = f"""你現在是狼人殺遊戲中的一名玩家，遊戲中玩家會藉由說謊，以獲得勝利。因此，資訊為某玩家發言可能會是假的，而其他的資訊皆是真的。
 其遊戲設定為{self.room_setting["player_num"]}人局，角色包含{self.room_setting["werewolf"]}位狼人、{self.room_setting["village"]}位平民、{"3" if self.room_setting["hunter"] else "2"}位神職（預言家和女巫{"和獵人" if self.room_setting["hunter"] else ""}）
-
-你是{self.player_id}號玩家，你的角色是{self.en_dict[self.user_role]}，你的勝利條件為{"殺死所有神職或是所有平民或是狼的數量多於平民加神職的數量" if self.user_role == "werewolf" else "殺死所有狼人"}\n\n"""
+你是{self.player_id}號玩家，你的角色是{self.en_dict[self.user_role]}，你的勝利條件為{"殺死所有神職或是所有平民或是狼的數量多於平民加神職的數量" if self.user_role == "werewolf" else "殺死所有狼人。"}\n\n"""
         
         for x in self.teammate:
-            self.init_prompt += f"{x}號玩家是狼，是你的隊友\n"
+            self.init_prompt += f"{x}號玩家是狼，是你的隊友。\n"
 
     
     def __print_memory__(self):
@@ -99,7 +102,10 @@ class prompts:
 
     
     def agent_process(self, data):
-        ''' Agent process all the data including announcaments and informations '''
+        ''' Agent process all the data including announcements and information '''
+
+        if(data['stage'] == 'check_role'):
+            return []
 
         if int(data['stage'].split('-')[0]) != self.day:
             self.day = int(data['stage'].split('-')[0])
@@ -130,14 +136,16 @@ class prompts:
 
         for i in announcements:
             # self.logger.debug(i)
-             
             # 跳過自己的資料
             if i['user'][0] == self.player_id:
                 continue
             
             if i['operation'] == 'chat':
                 if i['description'] == '':
-                    text = f"{i['user'][0]}號玩家無發言"
+                    if self.player_id in self.alive:
+                        text = f"{i['user'][0]}號玩家無遺言"
+                    else:
+                        text = f"{i['user'][0]}號玩家無發言"
                 else:
                     text = f"{i['user'][0]}號玩家發言: {i['description']}"
 
@@ -150,7 +158,7 @@ class prompts:
 
             else:
                 text = f"{i['description']}"
-            
+            text += "。"
             self.memory[self.day-1].append(text)
 
 
@@ -195,7 +203,7 @@ class prompts:
 
                 # 不救，可以考慮使用毒藥
                 if res[0] == '不救' and len(informations)>1:
-                   
+                
                     self.choices = informations[1]['target']
 
                     response = self.prompts_response(prompt_type+'_poison')
@@ -285,7 +293,10 @@ class prompts:
                         text = f"{self.stage_detail[prompt_type]['save']}{res_json['最終的分析']['發言']}{res_json['最終的分析']['理由']}"
 
                     except Exception as e:
-                        text = '我無發言'
+                        if self.player_id in self.alive:
+                            text = '我無遺言'
+                        else:
+                            text = '我無發言'
                         self.logger.warning(f"Dialogue prompts error , {e}")
 
 
@@ -298,7 +309,7 @@ class prompts:
                 if '號玩家，' in response:
                     target = int(response.split('號玩家，')[0][-1])
 
-
+                text += "。"
                 # save text to memory
                 self.memory[self.day-1].append(text)
 
@@ -348,7 +359,7 @@ class prompts:
 
         # memory
         self.prompt += f"現在是第{self.day}天{self.stage_detail[prompt_type]['stage_description']}\n"
-        self.prompt += f"你的資訊為:\n"
+        self.prompt += f"你目前知道的資訊為:\n"
         
         if len(self.memory[0]) == 0:
             self.prompt += "無資訊\n"
@@ -369,11 +380,12 @@ class prompts:
             for idx, i in enumerate(self.guess_roles):
                 self.prompt += f'{idx}. {i}\n'
 
+        choices = ",".join(f"{player_number}號" for player_number in self.alive)
 
         # question
         # [你必須知道的資訊] = 上述提供資訊內容
         stage_question={
-            "guess_role": f'根據以上綜合資訊，請你判斷所有{self.alive}號玩家最符合的角色及你認為正確的機率百分比(直接回答"[玩家]號玩家: [角色]，[正確的機率百分比]，[原因]"，不需要其他廢話，回答完直接結束回答)',
+            "guess_role": f'根據以上你知道的資訊中，判斷{choices}玩家的角色及你認為正確的機率百分比(直接回答"[玩家]號玩家: [角色]，[正確的機率百分比]，[原因]"，不需要其他廢話，回答完直接結束回答)',
             "werewolf_dialogue":f'''根據以上綜合資訊，你有三個選項，請選擇其中一個選項當作發言？
 1. 我同意隊友的發言。請在{self.teammate}號玩家中，選擇一位隊友(若選擇此選項，請直接回答"選項1，[玩家]號玩家，[原因]"，不需要其他廢話，回答完直接結束回答)
 2. 想殺某位玩家，並猜測玩家的角色。從{self.alive}中，只能選擇一位想殺的玩家，且從預言家和女巫{"和獵人" if self.room_setting["hunter"] else ""}中選一位你認為是此玩家的角色(若選擇此選項，請直接回答"選項2，[玩家]號玩家，[角色]，[原因]"，不需要其他廢話，回答完直接結束回答)
@@ -386,27 +398,27 @@ class prompts:
             "dialogue-test":f'根據以上綜合資訊，簡述你的推測（20字以下）?',
             "check":f'根據以上綜合資訊，簡述你的推測（20字以下）?',
             "dialogue":'''使用JSON的形式來回答，如下所述:
-在這個回答格式中，我希望你能分析多次，以獲得更完整的想法，你要確保你每句話都能以上述提供資訊內容佐證，不能無中生有。並在[最終的分析]的發言，能夠清楚的表明你的立場，一定要確保發言的正確性，說話的邏輯一定不能有錯誤。
+在這個回答格式中，我希望你能分析多次，以獲得更完整的想法，你要確保你每句話都能以[你目前知道的資訊]佐證，不能無中生有。並在[最終的分析]的發言，能夠清楚的表明你的立場，一定要確保發言的正確性，說話的邏輯一定不能有錯誤。
 回答格式:
 {   
     "分析1": {
-        "想法": "你有甚麼想法?你需要以上述提供資訊內容佐證，不能無中生有",
-        "理由": "想出這個想法的理由是甚麼?你需要以上述提供資訊內容佐證，不能無中生有",
+        "想法": "你有甚麼想法?你需要以[你目前知道的資訊]佐證，不能無中生有",
+        "理由": "想出這個想法的理由是甚麼?你需要以[你目前知道的資訊]佐證，不能無中生有",
         "策略": "有了這個想法，你會怎麼做?",
         "批評": "對於想法與策略有甚麼可以批評與改進的地方或是有甚麼資訊是你理解錯誤的，請詳細說明",
     },
     "分析2": {
-        "反思": "對於前一個想法的批評內容，你能做甚麼改進?你需要以上述提供資訊內容佐證，並思考活著玩家可疑的地方，不能無中生有。",
-        "想法": "根據反思，你有甚麼更進一步的想法?你需要以上述提供資訊內容佐證，不能無中生有",
-        "理由": "想出這個想法的理由是甚麼?你需要以上述提供資訊內容佐證，不能無中生有",
+        "反思": "對於前一個想法的批評內容，你能做甚麼改進?你需要以[你目前知道的資訊]佐證，並思考活著玩家可疑的地方，不能無中生有。",
+        "想法": "根據反思，你有甚麼更進一步的想法?你需要以[你目前知道的資訊]佐證，不能無中生有",
+        "理由": "想出這個想法的理由是甚麼?你需要以[你目前知道的資訊]佐證，不能無中生有",
         "策略": "有了這個想法，你會怎麼做?",
         "批評": "對於想法與策略有甚麼可以批評與改進的地方或是有甚麼資訊是你理解錯誤的，請詳細說明",
-    }
+    },
     ...(你能夠思考N次，以獲得更完整的發言)
     "最終的分析":{
-        "反思": "對於前一個想法的批評內容，你能做甚麼改進?你需要以上述提供資訊內容佐證，並思考活著玩家可疑的地方，不能無中生有。",
-        "想法": "根據反思，你有甚麼更進一步的想法?你需要以上述提供資訊內容佐證，不能無中生有",
-        "理由": "想出這個想法的理由是甚麼?你需要以上述提供資訊內容佐證，不能無中生有",
+        "反思": "對於前一個想法的批評內容，你能做甚麼改進?你需要以[你目前知道的資訊]佐證，並思考活著玩家可疑的地方，不能無中生有。",
+        "想法": "根據反思，你有甚麼更進一步的想法?你需要以[你目前知道的資訊]佐證，不能無中生有",
+        "理由": "想出這個想法的理由是甚麼?你需要以[你目前知道的資訊]佐證，不能無中生有",
         "策略": "有了這個想法，你會怎麼做?",
         "發言": "(請直接呈現你說的話即可，不添加其他附加訊息)"
     }

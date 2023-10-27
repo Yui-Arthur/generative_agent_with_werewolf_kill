@@ -7,15 +7,16 @@ from pathlib import Path
 import logging
 from datetime import datetime
 import sys 
+import json
 
 class intelligent_agent(agent):
     
-    def __init__(self , openai_token = None , api_base = "https://wolf-openai-llm.openai.azure.com/" , engine = "agent", 
+    def __init__(self , openai_token = None , api_base = "https://wolf-openai-llm.openai.azure.com/" , engine = "agent", api_json = "doc/secret/yui.key", 
                  server_url = "140.127.208.185" , agent_name = "Agent1" , room_name = "TESTROOM" , 
                  color = "f9a8d4" , prompt_dir = Path("prompt/memory_stream/")):
         
         
-        super().__init__(openai_token = openai_token, api_base = api_base , engine = engine, 
+        super().__init__(openai_token = openai_token, api_base = api_base , engine = engine, api_json = api_json,
                                        server_url = server_url , agent_name = agent_name , room_name = room_name , 
                                        color = color) 
         # used for start game for test
@@ -38,6 +39,7 @@ class intelligent_agent(agent):
         openai.api_version = "2023-05-15"
         openai.api_key = openai_token
         self.chat_func = self.__openai_send__ 
+
 
     
 
@@ -62,13 +64,17 @@ class intelligent_agent(agent):
     
     
 
-    def __start_game_init__(self):
+    def __start_game_init__(self, room_data):
         """the game started setting , update player name"""
+        self.logger.debug(f"game is started , this final room info : {room_data}")
+        # self.room_setting = room_data['game_setting']
+        self.player_name = [name for name in room_data["room_user"]]
+
         data = self.__get_role__()
         self.logger.debug(f'User data: {data}')
 
 
-        self.prompts : prompts = prompts(data['player_id'], data['game_info'], self.room_setting, self.logger)
+        self.prompts : prompts = prompts(data['player_id'], data['game_info'], room_data['game_setting'], self.logger)
 
 
         self.__check_game_state__(0)
@@ -77,12 +83,12 @@ class intelligent_agent(agent):
     
 class intelligent_agent_test(agent):
     
-    def __init__(self , openai_token = None , api_base = "https://wolf-openai-llm.openai.azure.com/" , engine = "agent", 
+    def __init__(self , openai_token = None , api_base = "https://wolf-openai-llm.openai.azure.com/" , engine = "agent", api_json = "doc/secret/yui.key",
                  server_url = "140.127.208.185" , agent_name = "Agent1" , room_name = "TESTROOM" , 
                  color = "f9a8d4" , prompt_dir = Path("prompt/memory_stream/")):
         self.__reset_server__(server_url)
         
-        super().__init__(openai_token = openai_token, api_base = api_base , engine = engine, 
+        super().__init__(openai_token = openai_token, api_base = api_base , engine = engine, api_json = api_json,
                                        server_url = server_url , agent_name = agent_name , room_name = room_name , 
                                        color = color) 
         # used for start game for test
@@ -119,6 +125,9 @@ class intelligent_agent_test(agent):
         openai.api_version = "2023-05-15"
         openai.api_key = openai_token
         self.chat_func = self.__openai_send__ 
+
+    
+
 
     def __logging_setting__(self):
         """logging setting , can override this."""
@@ -201,8 +210,18 @@ class intelligent_agent_test(agent):
             self.logger.warning(f"__setting_game Server Error , {e}")
     
 
-    def __start_game_init__(self):
+
+
+        self.__check_game_state__(0)
+        
+
+
+    def __start_game_init__(self, room_data):
         """the game started setting , update player name"""
+        self.logger.debug(f"game is started , this final room info : {room_data}")
+        self.room_setting = room_data['game_setting']
+        self.player_name = [name for name in room_data["room_user"]]
+
         data = self.__get_role__()
         self.logger.debug(f'User data: {data}')
 
@@ -211,9 +230,5 @@ class intelligent_agent_test(agent):
 
 
         self.__check_game_state__(0)
-        
 
-if __name__ == '__main__':
-    a = intelligent_agent_test(server_url = "http://localhost:8001" , openai_token=Path("doc/secret/openai.key") )
-    while a.checker != False: pass
-       
+    
