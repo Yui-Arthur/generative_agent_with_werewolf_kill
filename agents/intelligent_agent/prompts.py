@@ -104,6 +104,9 @@ class prompts:
     def agent_process(self, data):
         ''' Agent process all the data including announcements and information '''
 
+        if(data['stage'] == 'check_role'):
+            return []
+
         if int(data['stage'].split('-')[0]) != self.day:
             self.day = int(data['stage'].split('-')[0])
             self.memory.append([])
