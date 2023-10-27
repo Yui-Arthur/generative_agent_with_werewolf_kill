@@ -4,5 +4,5 @@ __pycache__
 logs/*.log
 .DS_Store
 .vscode/
-grpc_client
+grpc_client.py
 test.py
