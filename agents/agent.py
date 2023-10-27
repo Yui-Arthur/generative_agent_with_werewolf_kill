@@ -19,6 +19,7 @@ class agent():
         self.room = room_name
         self.color = color
         self.logger : logging.Logger = logging.getLogger(__name__)
+        self.logger_handler = []
 
         # openai api setting
         self.engine = engine
@@ -132,11 +133,13 @@ class agent():
         handler.setLevel(logging.DEBUG)   
         handler.setFormatter(log_format)
         self.logger.addHandler(handler)   
+        self.logger_handler.append(handler)
 
         handler = logging.StreamHandler(sys.stdout)    
         handler.setLevel(logging.DEBUG)                                        
         handler.setFormatter(log_format)    
         self.logger.addHandler(handler)   
+        self.logger_handler.append(handler)
 
         logging.getLogger("requests").propagate = False
 
@@ -266,6 +269,8 @@ class agent():
 
     
     def __del__(self):
+        for handler in self.logger_handler:
+            self.logger.removeHandler(handler)
 
         if self.role == None and self.user_token != None:
             self.quit_room()
