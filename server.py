@@ -8,6 +8,7 @@ import argparse
 from agents import memory_stream_agent , intelligent_agent , agent
 from sentence_transformers import SentenceTransformer, util
 import threading
+import time
 
 class agent_service(agent_pb2_grpc.agentServicer):
     
@@ -22,7 +23,7 @@ class agent_service(agent_pb2_grpc.agentServicer):
         
     def create_agent(self , request , context):
         
-        print(request)
+        print(f"Create Agent with {request}")
         agent_type = request.agentType
         agent_name = request.agentName
         room_name = request.roomName 
@@ -30,10 +31,12 @@ class agent_service(agent_pb2_grpc.agentServicer):
         color = request.color
         prompt_dic = request.promptDir
         
-
-        agent = self.agent_type_dict[agent_type](agent_name=agent_name , room_name=room_name,
-                                                 color=color, api_json = api_json, 
-                                                 prompt_dir=prompt_dic , server_url = self.server_ip)
+        try:
+            agent = self.agent_type_dict[agent_type](agent_name=agent_name , room_name=room_name,
+                                                    color=color, api_json = api_json, 
+                                                    prompt_dir=prompt_dic , server_url = self.server_ip)
+        except Exception as e :
+            context.abort(grpc.StatusCode.NOT_FOUND, f"Init Agent Error with {e}")
         
         self.agent_dict[self.agent_idx] = agent
         self.agent_idx +=1
@@ -60,6 +63,7 @@ class agent_service(agent_pb2_grpc.agentServicer):
 
         if agent_id not in self.agent_dict.keys():
             context.abort(grpc.StatusCode.NOT_FOUND, "Agent not found")
+            
         if self.agent_dict[agent_id].game_over == True:
             del self.agent_dict[agent_id]
             context.abort(grpc.StatusCode.NOT_FOUND, "The game of the agent is end")
@@ -67,14 +71,19 @@ class agent_service(agent_pb2_grpc.agentServicer):
         return agent_info(agentInfo = self.agent_dict[agent_id].get_info())
     
 def print_agent_dict(agent_dict : dict[str , agent]):
-
+    print("agent name | room name")
     for id in list(agent_dict.keys()):
         if agent_dict[id].game_over == True: 
             del agent_dict[id]
         else:
-            print(f"agent name : {agent_dict[id].name} room : {agent_dict[id].room}")
+            print(f"{agent_dict[id].name} , {agent_dict[id].room}")
 
-    threading.Timer(60 , print_agent_dict , args=[agent_dict]).start()
+    
+    global thread_id
+    thread_id = threading.Timer(60 , print_agent_dict , args=[agent_dict])
+    
+    thread_id.start()
+    
 
 def serve(opt):
 
@@ -86,10 +95,18 @@ def serve(opt):
     print(f'server start with api server : {opt["api_server"]}')
     
     server.add_insecure_port("[::]:50052")
+
+    global thread_id
+    thread_id = None
+
     print_agent_dict(agent_dict)
     server.start()
-
+    
+    input()
+    thread_id.cancel()
+    
     server.wait_for_termination()
+    
 
 def parse_opt():
     parser = argparse.ArgumentParser()
