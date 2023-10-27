@@ -37,6 +37,7 @@ class agent():
         self.timer = None
 
         self.chat_func = None
+        self.game_over = False
         
         self.__logging_setting__()
         self.__join_room__()
@@ -115,6 +116,12 @@ class agent():
         self.player_name = [name for name in room_data["room_user"]]
         self.__get_role__()
         self.__check_game_state__(0)
+        
+    def __game_over_process__(self, anno):
+        self.logger.info(f"Game is over , {anno['description']}")
+        self.game_over = True
+        self.role = None
+        self.__del__()
 
     def __logging_setting__(self):
         """logging setting , can override this."""
@@ -135,6 +142,7 @@ class agent():
 
     def __join_room__(self):
         """join the game room & set the user_token"""
+        join_fail = False
         try :
             r = requests.get(f'{self.server_url}/api/join_room/{self.room}/{self.name}/{self.color}' , timeout=5)
             if r.status_code == 200:
@@ -144,9 +152,14 @@ class agent():
                 self.__check_room_state__()
             else:
                 self.logger.warning(f"Join Room Error : {r.json()}")
+                join_fail = True
         
         except Exception as e :
             self.logger.warning(f"__join_room__ Server Error , {e}")
+            join_fail = True
+
+        if join_fail: raise Exception("Join room failed")
+            
 
     def quit_room(self):
         """quit the game room"""
@@ -190,7 +203,7 @@ class agent():
                     for anno in self.current_info['announcement']: 
                         if anno['operation'] == "game_over" : 
                             self.checker = False
-                            
+                            self.__game_over_process__(anno)
                             break
 
                     self.__process_data__(self.current_info) 
@@ -235,9 +248,28 @@ class agent():
         except Exception as e:
             self.logger.warning(f"__send_operation__ Server Error , {e}")
     
+    def __skip_stage__(self):
+        """skip the stage"""
+        try:
+            print(self.current_info["stage"])
+            r = requests.get(f'{self.server_url}/api/game/{self.room}/skip/{self.current_info["stage"]}/{self.player_name}' , headers ={
+                "Authorization" : f"Bearer {self.user_token}"
+            } , timeout=5)
+
+            self.logger.debug(f"Skip stage : {self.current_info['stage']}")
+            if r.status_code == 200:
+                self.logger.debug(f"Skip stage : OK")
+            else:
+                self.logger.warning(f"Skip error : {r.json()}")
+        except Exception as e:
+            self.logger.warning(f"__skip_stage__ Server Error , {e}")
+
+    
     def __del__(self):
 
-        if self.role == None:
+        if self.role == None and self.user_token != None:
             self.quit_room()
             self.logger.debug("Quit Room")
+        
+        self.logger.debug("Agent deleted")
 
