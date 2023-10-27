@@ -1,4 +1,5 @@
 /doc/secret/*.key
+/doc/secret/*.json
 __pycache__
 logs/*.log
 .DS_Store

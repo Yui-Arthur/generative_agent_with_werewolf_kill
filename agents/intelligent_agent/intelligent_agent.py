@@ -7,6 +7,7 @@ from pathlib import Path
 import logging
 from datetime import datetime
 import sys 
+import json
 
 class intelligent_agent(agent):
     
@@ -39,6 +40,7 @@ class intelligent_agent(agent):
         openai.api_key = openai_token
         self.chat_func = self.__openai_send__ 
 
+
     
 
     def __process_data__(self, data):
@@ -62,13 +64,17 @@ class intelligent_agent(agent):
     
     
 
-    def __start_game_init__(self):
+    def __start_game_init__(self, room_data):
         """the game started setting , update player name"""
+        self.logger.debug(f"game is started , this final room info : {room_data}")
+        # self.room_setting = room_data['game_setting']
+        self.player_name = [name for name in room_data["room_user"]]
+
         data = self.__get_role__()
         self.logger.debug(f'User data: {data}')
 
 
-        self.prompts : prompts = prompts(data['player_id'], data['game_info'], self.room_setting, self.logger)
+        self.prompts : prompts = prompts(data['player_id'], data['game_info'], room_data['game_setting'], self.logger)
 
 
         self.__check_game_state__(0)
@@ -119,6 +125,9 @@ class intelligent_agent_test(agent):
         openai.api_version = "2023-05-15"
         openai.api_key = openai_token
         self.chat_func = self.__openai_send__ 
+
+    
+
 
     def __logging_setting__(self):
         """logging setting , can override this."""
@@ -201,17 +210,25 @@ class intelligent_agent_test(agent):
             self.logger.warning(f"__setting_game Server Error , {e}")
     
 
-    def __start_game_init__(self):
-        """the game started setting , update player name"""
-        data = self.__get_role__()
-        self.logger.debug(f'Game Info: {data}')
-
-
-        self.prompts : prompts = prompts(data['player_id'], data['game_info'], self.room_setting, self.logger)
 
 
         self.__check_game_state__(0)
         
 
 
-       
+    def __start_game_init__(self, room_data):
+        """the game started setting , update player name"""
+        self.logger.debug(f"game is started , this final room info : {room_data}")
+        self.room_setting = room_data['game_setting']
+        self.player_name = [name for name in room_data["room_user"]]
+
+        data = self.__get_role__()
+        self.logger.debug(f'User data: {data}')
+
+
+        self.prompts : prompts = prompts(data['player_id'], data['game_info'], self.room_setting, self.logger)
+
+
+        self.__check_game_state__(0)
+
+    
