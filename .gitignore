@@ -1,8 +1,8 @@
 /doc/secret/*.key
+/doc/secret/*.json
 __pycache__
 logs/*.log
 .DS_Store
 .vscode/
 grpc_client.py
-t.py
 test.py
