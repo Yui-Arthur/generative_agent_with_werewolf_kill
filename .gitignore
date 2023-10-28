@@ -4,9 +4,6 @@ __pycache__
 logs/*.log
 .DS_Store
 .vscode/
-<<<<<<< HEAD
 grpc_client
-=======
 grpc_client.py
->>>>>>> 6bba55cdd5b049e82b7e69c1cc77fec2ee84b098
 test.py
