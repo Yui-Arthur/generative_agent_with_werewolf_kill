@@ -7,3 +7,5 @@ logs/*.log
 grpc_client
 grpc_client.py
 test.py
+/test/tes.py
+/test/test1.py
