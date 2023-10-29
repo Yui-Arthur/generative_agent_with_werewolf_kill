@@ -269,8 +269,6 @@ class agent():
 
     
     def __del__(self):
-        for handler in self.logger_handler:
-            self.logger.removeHandler(handler)
 
         if self.role == None and self.user_token != None:
             self.quit_room()
@@ -278,3 +276,5 @@ class agent():
         
         self.logger.debug("Agent deleted")
 
+        for handler in self.logger_handler:
+            self.logger.removeHandler(handler)
