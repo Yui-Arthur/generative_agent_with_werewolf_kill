@@ -6,3 +6,4 @@ logs/*.log
 .vscode/
 grpc_client.py
 test.py
+doc/game_info/*.jsonl
