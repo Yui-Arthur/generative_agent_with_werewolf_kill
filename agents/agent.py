@@ -123,12 +123,13 @@ class agent():
         self.__get_role__()
         self.__check_game_state__(0)
         
-    def __game_over_process__(self, anno):
-        self.logger.info(f"Game is over , {anno['description']}")
-        self.game_over = True
+    def __game_over_process__(self, anno , wait_time):
+        self.logger.info(f"Game is over , {anno['description']} , waiting  {wait_time}s for room state change")
+        self.__save__game__info__()
         self.role = None
-        self.__save__game__info__(  )
-        self.__del__()
+        
+        threading.Timer(wait_time , self.__del__).start()
+        # self.__del__()
 
     def __logging_setting__(self):
         """logging setting , can override this."""
@@ -216,7 +217,7 @@ class agent():
                     for anno in self.current_info['announcement']: 
                         if anno['operation'] == "game_over" : 
                             self.checker = False
-                            self.__game_over_process__(anno)
+                            self.__game_over_process__(anno , data['timer'])
                             break
 
                     self.__process_data__(self.current_info) 
@@ -289,6 +290,8 @@ class agent():
                 f.write('\n')
     
     def __del__(self):
+        self.game_over = True
+        
 
         if self.role == None and self.user_token != None:
             self.__quit_room__()
