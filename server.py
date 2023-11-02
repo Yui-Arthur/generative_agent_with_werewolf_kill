@@ -102,15 +102,19 @@ def serve(opt):
     print_agent_dict(agent_dict)
     server.start()
     
-    input()
-    thread_id.cancel()
-    
+    if not opt["docker"]:
+        input()
+        thread_id.cancel()
+    else:
+        print('use docker deploy')
+
     server.wait_for_termination()
     
 
 def parse_opt():
     parser = argparse.ArgumentParser()
     parser.add_argument('--api_server' , type=str, default="http://localhost:8001" , help='server ip')
+    parser.add_argument('--docker' , action="store_true" , help='whether use docker to deploy')
     opt = parser.parse_args()
 
     return opt

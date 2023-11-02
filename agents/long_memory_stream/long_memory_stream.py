@@ -113,6 +113,13 @@ class long_memeory_stream():
 
         return operations
 
+    def get_long_memory_info(self):
+        ret = {
+            "memory" : self.__memory_to_str__(self.memory_stream[-10:]),
+            "suspect_role_list" : self.__role_list_to_str__()[0]
+        }
+
+        return ret
 
     def __process_announcement__(self , data):
         """add announcement to memory stream"""
@@ -133,9 +140,9 @@ class long_memeory_stream():
         
 
         if chat_flag:
-            pass
-            # self.__reflection__(self.day , len(self.memory_stream))
-            # self.__gen_suspect_role_list__(self.day , len(self.memory_stream))
+            self.__reflection__(self.day , len(self.memory_stream))
+            self.__gen_suspect_role_list__(self.day , len(self.memory_stream))
+            # pass
 
     def __process_information__(self , data) -> list[dict]:
         
@@ -222,16 +229,16 @@ class long_memeory_stream():
     
     def __gen_vote__(self , day , turn):
         """gen the vote player num & get the reason"""
-        # memory = self.__retrieval__(day , turn , "誰現在最可疑?")
-        # memory_str = self.__memory_to_str__(memory)
-        # sus_role_str , know_role_str = self.__role_list_to_str__()
-        # final_prompt = self.prompt_template['vote'].replace("%m" , memory_str).replace("%e" , self.example['vote']).replace("%l" , sus_role_str).replace("%kl" , know_role_str)
+        memory = self.__retrieval__(day , turn , "誰現在最可疑?")
+        memory_str = self.__memory_to_str__(memory)
+        sus_role_str , know_role_str = self.__role_list_to_str__()
+        final_prompt = self.prompt_template['vote'].replace("%m" , memory_str).replace("%e" , self.example['vote']).replace("%l" , sus_role_str).replace("%kl" , know_role_str)
         
         info = {
             "vote" : "4",
             "reason" : "test"
         }
-        # info = self.__process_LLM_output__(final_prompt , ["vote" , "reason"] , info)
+        info = self.__process_LLM_output__(final_prompt , ["vote" , "reason"] , info)
 
         ret = self.ret_format.copy()
         ret['operation'] = "vote_or_not"
@@ -242,15 +249,15 @@ class long_memeory_stream():
     
     def __gen_dialgue__(self , day ,turn):
         """gen the dialgue"""
-        # memory = self.__retrieval__(day , turn , "現在有什麼重要訊息?")
-        # memory_str = self.__memory_to_str__(memory)
-        # sus_role_str , know_role_str = self.__role_list_to_str__()
-        # final_prompt = self.prompt_template['dialgue'].replace("%m" , memory_str).replace("%e" , self.example['dialgue']).replace("%l" , sus_role_str).replace("%kl" , know_role_str)
+        memory = self.__retrieval__(day , turn , "現在有什麼重要訊息?")
+        memory_str = self.__memory_to_str__(memory)
+        sus_role_str , know_role_str = self.__role_list_to_str__()
+        final_prompt = self.prompt_template['dialgue'].replace("%m" , memory_str).replace("%e" , self.example['dialgue']).replace("%l" , sus_role_str).replace("%kl" , know_role_str)
         
         info = {
             "dialgue" : "test",
         }
-        # info = self.__process_LLM_output__(final_prompt , ["dialgue"] , info)
+        info = self.__process_LLM_output__(final_prompt , ["dialgue"] , info)
 
         ret = self.ret_format.copy()
         ret['operation'] = "dialogue"
@@ -280,7 +287,7 @@ class long_memeory_stream():
             "reason" : "test"
         }
 
-        # info = self.__process_LLM_output__(final_prompt, ["score","reason"] , info , -1)
+        info = self.__process_LLM_output__(final_prompt, ["score","reason"] , info , -1)
     
         return info
 

@@ -6,6 +6,7 @@ class role(long_memeory_stream):
 
     def __init__(self , prompt_dir , logger , gpt_agent , sentence_model = None):
         super().__init__(prompt_dir, logger , gpt_agent , sentence_model)
+        self.max_fail_cnt = 1
         
     def __processs_information__(self , data):
         return super().__process_information__(data)
@@ -43,7 +44,7 @@ class werewolf(role):
         self.__register_keywords__({
             "回答" : "answer"
         })
-        self.max_fail_cnt = 0
+        # self.max_fail_cnt = 0
 
     def update_game_info(self , player_name , role , teamate):
         super().update_game_info(player_name , role)
@@ -124,7 +125,7 @@ class seer(role):
         self.__register_keywords__({
             "今晚要驗誰" : "target"
         })
-        self.max_fail_cnt = 1
+        # self.max_fail_cnt = 3
     
     def __process_information__(self , data):
         operation = super().__process_information__(data)
@@ -177,7 +178,7 @@ class witch(role):
             "今晚要救人還是毒人" : "save_or_poison",
         })
 
-        self.max_fail_cnt = 3
+        # self.max_fail_cnt = 0
         # self.save = True
         # self.poison = True
 
@@ -234,7 +235,7 @@ class hunter(role):
         self.__register_keywords__({
             "選擇要獵殺的對象" : "target"
         })
-        self.max_fail_cnt = 1
+        # self.max_fail_cnt = 0
     
     def __process_information__(self , data):
 
