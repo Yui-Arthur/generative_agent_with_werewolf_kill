@@ -13,8 +13,14 @@ message agent_state {
     int32 agentID = 1;
 }
 
+message info_list {
+    repeated string info = 1;
+}
+
+// message inner_agent_info { map<string, list> details = 1; }
+
 message agent_info {
-    map<string, string> agentInfo = 2;
+    map<string,info_list>  agentInfo = 2;
 }
 
 message empty{
