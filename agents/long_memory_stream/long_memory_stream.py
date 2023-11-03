@@ -46,8 +46,8 @@ class long_memeory_stream():
         }
         self.player_num = None
         self.role = None
-        self.suspect_role_list : dict[str , str] = None
-        self.know_role_list : dict[str , str] = {}
+        self.suspect_role_list : dict[int , str] = {}
+        self.know_role_list : dict[int , str] = {}
         self.remain_player = []
         
         self.prompt_dir = prompt_dir
@@ -80,7 +80,7 @@ class long_memeory_stream():
         self.__load_prompt_and_example__(self.prompt_dir)
         self.push(0 , 0 , f"您本場的身分為{self.role_to_chinese[role]}")
 
-        self.suspect_role_list = {i:None for i in range(self.player_num)}
+        self.suspect_role_list = {i:"未知" for i in range(self.player_num)}
         self.remain_player = [i for i in range(self.player_num)]
 
     def push(self , day , turn , observation):
@@ -115,8 +115,9 @@ class long_memeory_stream():
 
     def get_long_memory_info(self):
         ret = {
-            "memory" : self.__memory_to_str__(self.memory_stream[-10:]),
-            "suspect_role_list" : self.__role_list_to_str__()[0]
+            "memory" : [self.__memory_to_str__(self.memory_stream[-10:])],
+            "guess_roles" :[i for i in self.suspect_role_list.values()],
+            "token_used" : [str(self.token_used)]
         }
 
         return ret
@@ -133,7 +134,7 @@ class long_memeory_stream():
             elif anno["operation"] == "died":
                 observation = f"{anno['user'][0]}號玩家({self.player_name[anno['user'][0]]})死了"    
                 self.remain_player.remove(int(anno['user'][0]))
-                self.suspect_role_list.pop(int(anno['user'][0]))
+                # self.suspect_role_list.pop(int(anno['user'][0]))
 
             self.push(self.day , len(self.memory_stream)+1 , observation)
 

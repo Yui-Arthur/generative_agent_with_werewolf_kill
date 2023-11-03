@@ -48,10 +48,14 @@ class agent():
         self.__logging_setting__()
         self.__join_room__()
 
-    def get_info(self) -> dict[str,str]:
+    def get_info(self) -> dict[str,list[str]]:
         return_sample = {
-            "memory" : "1234",
-            "role_info" : "45678",
+            "guess_roles": ["狼人" , "好人" , "壞人"],
+            "confidence" : ["0.25" ,"0.25" ,"0.25"],
+            "memeory" : ["123456"],
+            "token_used" : ["123456"],
+            "other..." : ["..."],
+            "other2..." : ["..."]
         }
 
         return return_sample
