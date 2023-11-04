@@ -13,7 +13,7 @@ import math
 from sentence_transformers import SentenceTransformer, util
 from ..agent import agent
 from .role import role , werewolf , seer , witch , hunter
-from .summary import summary
+from ..summary import summary
 
 class memory_stream_agent(agent):
     def __init__(self , openai_token = None , api_base = None , engine = None , api_json = "doc/secret/yui.key",  
