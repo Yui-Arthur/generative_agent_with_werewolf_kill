@@ -27,6 +27,6 @@ class summary():
         self.room_name = room_name
         self.logger : logging.Logger = logger
         self.prompt_dir = Path(prompt_dir)
-        self.__load_prompt_and_example__(self.prompt_dir)
+        # self.__load_prompt_and_example__(self.prompt_dir)
 
     
