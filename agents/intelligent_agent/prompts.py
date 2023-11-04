@@ -516,19 +516,13 @@ class prompts:
         if not (res and res.strip()):
             res = self.__openai_send__(prompt)
 
-        # cut unused string (ex. <|end|>)
-        if '<' in res:
-            res = res.split('<',1)[0]
 
-        # cut unused string (ex. """)
-        if '\"' in res:
-            res = res.split('\"',1)[0]
-
-        # cut unused string (ex. """)
-        if '`' in res:
-            res = res.split('`',1)[0]
-        
-        
+        # cut unused string (ex. <|end|>、 """ 、 "`")
+        unused_ch = ['<', '\"', '`']
+        for unused in unused_ch:
+            if unused in res:
+                res = res.split(unused, 1)[0]
+            
         
         return res
 
