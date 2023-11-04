@@ -15,7 +15,11 @@ class prompts:
         self.alive = [] # alive players
         self.choices = [-1] # player choices in prompts
         self.day = 0
-        
+
+        self.token_used = 0
+        self.api_guess_roles= []
+        self.api_guess_confidence= []
+
         # dictionary en -> ch
         self.en_dict={
             "witch":"女巫",
@@ -33,6 +37,7 @@ class prompts:
         self.stage_detail={
             "guess_role": {
                 "stage_description": "猜測玩家角色階段，你要藉由你有的資訊猜測玩家角色",
+                "save": ["有", "的程度是", "，"]
             },
             "werewolf_dialogue":{
                 "stage_description":"狼人發言階段，狼人和其他狼人發言",
@@ -79,7 +84,7 @@ class prompts:
         # initial prompts in the beginning
         self.init_prompt = f"""你現在是狼人殺遊戲中的一名玩家，遊戲中玩家會藉由說謊，以獲得勝利。因此，資訊為某玩家發言可能會是假的，而其他的資訊皆是真的。
 其遊戲設定為{self.room_setting["player_num"]}人局，角色包含{self.room_setting["werewolf"]}位狼人、{self.room_setting["village"]}位平民、{"3" if self.room_setting["hunter"] else "2"}位神職（預言家和女巫{"和獵人" if self.room_setting["hunter"] else ""}）
-你是{self.player_id}號玩家，你的角色是{self.en_dict[self.user_role]}，你的勝利條件為{"殺死所有神職或是所有平民或是狼的數量多於平民加神職的數量" if self.user_role == "werewolf" else "殺死所有狼人。"}\n\n"""
+你是{self.player_id}號玩家，你的角色是{self.en_dict[self.user_role]}，你的勝利條件為{"殺死所有神職或是所有平民或是狼的數量多於平民加神職的數量" if self.user_role == "werewolf" else "殺死所有狼人。"}\n"""
         
         for x in self.teammate:
             self.init_prompt += f"{x}號玩家是狼，是你的隊友。\n"
@@ -88,17 +93,36 @@ class prompts:
     def __print_memory__(self):
 
         self.logger.debug("Memory")
+        self.logger.debug(self.__memory_to_string__())
+        self.logger.debug('\n')
+
+
+    def __memory_to_string__(self):
+
+        memory_string = ''
 
         if len(self.memory[0]) == 0:
-            self.logger.debug("無資訊")
+            memory_string += '無資訊\n'
+
         else: 
             for day, mem in enumerate(self.memory):
-                self.logger.debug(f'第{day+1}天')
+                memory_string += f'第{day+1}天\n'
 
                 for idx, i in enumerate(mem):
-                    self.logger.debug(f'{idx+1}. {i}')
+                    memory_string += f'{idx+1}. {i}\n'
 
-        self.logger.debug(f'\n')
+        return memory_string
+
+    
+    def __get_agent_info__(self):
+        ret = {
+            "memory" : [self.__memory_to_string__()],
+            "guess_roles" : self.api_guess_roles,
+            "confidence" : self.api_guess_confidence,
+            "token_used" : [str(self.token_used)]
+        }
+
+        return ret
 
     
     def agent_process(self, data):
@@ -142,16 +166,16 @@ class prompts:
             
             if i['operation'] == 'chat':
                 if i['description'] == '':
-                    if self.player_id in self.alive:
-                        text = f"{i['user'][0]}號玩家無遺言"
-                    else:
+                    if i['user'][0] in self.alive:
                         text = f"{i['user'][0]}號玩家無發言"
+                    else:
+                        text = f"{i['user'][0]}號玩家無遺言"
                 else:
                     text = f"{i['user'][0]}號玩家發言: {i['description']}"
 
             elif i['operation'] == 'died':
                 self.alive.remove(i['user'][0])
-                text = f"{i['user'][0]}號玩家昨晚死了"
+                text = f"{i['user'][0]}號玩家死了"
             
             elif i['operation'] == 'role_info':
                 text = f"{i['user'][0]}號玩家{i['description'].split(')')[1]}"
@@ -194,7 +218,7 @@ class prompts:
                 self.choices = informations[0]['target']
 
                 response = self.prompts_response(prompt_type+'_save')
-                res = response.split("，")
+                res = response.split("，", 1)
 
                 text = f"{self.stage_detail[prompt_type+'_save']['save']}{res[0]}{informations[0]['target'][0]}號玩家，{res[1]}"
                 self.memory[self.day-1].append(text)
@@ -207,7 +231,7 @@ class prompts:
                     self.choices = informations[1]['target']
 
                     response = self.prompts_response(prompt_type+'_poison')
-                    res = response.split("，")
+                    res = response.split("，", 1)
                     who = int(res[0].split('號')[0])
 
 
@@ -240,7 +264,7 @@ class prompts:
                 self.choices = informations[0]['target']
 
                 response = self.prompts_response(prompt_type+'_poison')
-                res = response.split("，")
+                res = response.split("，", 1)
                 who = int(res[0].split('號')[0])
                 
 
@@ -274,34 +298,43 @@ class prompts:
                 response = self.prompts_response(prompt_type)
                 
                 # combine save text with response
-                text = f"{self.stage_detail[prompt_type]['save']}{response}"
+                save_text = f"{self.stage_detail[prompt_type]['save']}{response}"
+                send_text = f"{self.stage_detail[prompt_type]['save']}{response}"
 
 
                 # process text in special cases
                 if prompt_type == 'werewolf_dialogue':
-                    res = response.split("，")
-                    if res[0] == "選項1":
-                        text = f"我在狼人階段發言\"我同意{res[1]}的發言\"。{res[2]}"
-                    elif res[0] == "選項2":
-                        text = f"我在狼人階段發言\"我想刀{res[1]}，我覺得他是{res[2]}\"。{res[3]}"
-                    elif res[0] == "選項3":
-                        text = f"我在狼人發言階段不發言。{res[1]}"
+                    res = response.split("，", 1)
+                    if "1" in res[0]:
+                        res = response.split("，", 2)
+                        save_text = f"我在狼人階段發言\"我同意{res[1]}的發言\"。{res[2]}"
+                        send_text = f"我同意{res[1]}的發言"
+                    elif "2" in res[0]:
+                        res = response.split("，", 3)
+                        save_text = f"我在狼人階段發言\"我想刀{res[1]}，我覺得他是{res[2]}\"。{res[3]}"
+                        send_text = f"我想刀{res[1]}，我覺得他是{res[2]}"
+                    elif "3" in res[0]:
+                        save_text = f"我在狼人發言階段不發言。{res[1]}"
+                        send_text = f"我不發言。{res[1]}"
 
                 elif prompt_type == 'dialogue':
                     try:
                         res_json = json.loads(response)
-                        text = f"{self.stage_detail[prompt_type]['save']}{res_json['最終的分析']['發言']}{res_json['最終的分析']['理由']}"
+                        save_text = f"{self.stage_detail[prompt_type]['save']}{res_json['最終的分析']['發言']}{res_json['最終的分析']['理由']}"
+                        send_text = f"{self.stage_detail[prompt_type]['save']}{res_json['最終的分析']['發言']}{res_json['最終的分析']['理由']}"
 
                     except Exception as e:
                         if self.player_id in self.alive:
-                            text = '我無遺言'
+                            save_text = '我無發言'
+                            send_text = '我無發言'
                         else:
-                            text = '我無發言'
+                            save_text = '我無遺言'
+                            send_text = '我無遺言'
                         self.logger.warning(f"Dialogue prompts error , {e}")
 
 
-                if text == '':
-                    text = '無操作'
+                if save_text == '':
+                    save_text = '無操作'
 
 
                 # save operation's target
@@ -309,16 +342,16 @@ class prompts:
                 if '號玩家，' in response:
                     target = int(response.split('號玩家，')[0][-1])
 
-                text += "。"
+                # save_text += "。"
                 # save text to memory
-                self.memory[self.day-1].append(text)
+                self.memory[self.day-1].append(save_text)
 
                 # process operation data 
                 op_data = {
                     "stage_name" : stage,
                     "operation" : i['operation'],
                     "target" : target,
-                    "chat" : text
+                    "chat" : send_text
                 }
                 operations.append(op_data)
 
@@ -335,8 +368,30 @@ class prompts:
         response = self.prompts_response('guess_role')
         
         self.guess_roles= []
-        for i in response.splitlines():
-            self.guess_roles.append(i)
+        self.api_guess_roles= []
+        self.api_guess_confidence= []
+
+        lines = response.splitlines()
+
+        for i in range(self.room_setting["player_num"]):
+        
+            [player, role, degree, reason] = lines[i].split('，', 3)
+            
+            # save to guess roles array
+            roles_prompt = player+self.stage_detail['guess_role']['save'][0]+degree+self.stage_detail['guess_role']['save'][1]+role+self.stage_detail['guess_role']['save'][2]+reason
+            self.guess_roles.append(roles_prompt)
+
+            # send to server (if it didn't print the percentage, how much we should get?)
+            self.api_guess_roles.append(role)
+            try:
+                d = int(degree.split('%')[0])/100
+            except ValueError:
+                d = 0
+
+            self.api_guess_confidence.append(d)
+        
+        self.logger.debug("Get Agent Info")
+        self.logger.debug(self.__get_agent_info__())
 
 
     def prompts_response(self, prompt_type):
@@ -351,14 +406,18 @@ class prompts:
         return response
 
 
+    def player_array_to_string(self, array):
+
+        return "、".join(f"{player_number}號" for player_number in array)
     
+
     def generate_prompts(self, prompt_type):
         ''' Generate all stages ptompts '''
 
         self.prompt = self.init_prompt
 
         # memory
-        self.prompt += f"現在是第{self.day}天{self.stage_detail[prompt_type]['stage_description']}\n"
+        self.prompt += f"\n現在是第{self.day}天{self.stage_detail[prompt_type]['stage_description']}\n"
         self.prompt += f"你目前知道的資訊為:\n"
         
         if len(self.memory[0]) == 0:
@@ -372,29 +431,29 @@ class prompts:
             
 
         # guess roles
-        self.prompt += "\n你猜測玩家的角色：\n"
+        self.prompt += "\n你推測玩家的角色：\n"
 
         if len(self.guess_roles) == 0:
             self.prompt += "無資訊\n"
         else:
             for idx, i in enumerate(self.guess_roles):
-                self.prompt += f'{idx}. {i}\n'
+                self.prompt += f'{i}\n'
 
-        choices = ",".join(f"{player_number}號" for player_number in self.alive)
-
+        all_choices = "、".join(f"{player_number}號" for player_number in range(self.room_setting['player_num']))
+        choices = self.player_array_to_string(self.choices)
         # question
         # [你必須知道的資訊] = 上述提供資訊內容
         stage_question={
-            "guess_role": f'根據以上你知道的資訊中，判斷{choices}玩家的角色及你認為正確的機率百分比(直接回答"[玩家]號玩家: [角色]，[正確的機率百分比]，[原因]"，不需要其他廢話，回答完直接結束回答)',
+            "guess_role": f'根據以上你知道的資訊中，判斷{all_choices}玩家的角色及你認為正確的機率百分比(直接回答"[玩家]號玩家，[角色]，[正確的機率百分比]，[原因]"，不需要其他廢話，回答完直接結束回答)',
             "werewolf_dialogue":f'''根據以上綜合資訊，你有三個選項，請選擇其中一個選項當作發言？
-1. 我同意隊友的發言。請在{self.teammate}號玩家中，選擇一位隊友(若選擇此選項，請直接回答"選項1，[玩家]號玩家，[原因]"，不需要其他廢話，回答完直接結束回答)
-2. 想殺某位玩家，並猜測玩家的角色。從{self.alive}中，只能選擇一位想殺的玩家，且從預言家和女巫{"和獵人" if self.room_setting["hunter"] else ""}中選一位你認為是此玩家的角色(若選擇此選項，請直接回答"選項2，[玩家]號玩家，[角色]，[原因]"，不需要其他廢話，回答完直接結束回答)
+1. 我同意隊友的發言。請在{self.player_array_to_string(self.teammate)}號玩家中，選擇一位隊友(若選擇此選項，請直接回答"選項1，[玩家]號玩家，[原因]"，不需要其他廢話，回答完直接結束回答)
+2. 想殺某位玩家，並猜測玩家的角色。從{self.player_array_to_string(self.alive)}中，只能選擇一位想殺的玩家，且從預言家和女巫{"和獵人" if self.room_setting["hunter"] else ""}中選一位你認為是此玩家的角色(若選擇此選項，請直接回答"選項2，[玩家]號玩家，[角色]，[原因]"，不需要其他廢話，回答完直接結束回答)
 3. 無發言(若選擇此選項，請直接回答"選項3，[原因]"，不需要其他廢話，回答完直接結束回答)
                 ''',
-            "werewolf":f'根據以上綜合資訊，請從{self.choices}號玩家中，選擇一位要殺的玩家並簡述原因？(直接回答"[玩家]號玩家，[原因]"，不需要其他廢話，回答完直接結束回答)',
-            "seer":f'根據以上綜合資訊，請問你要從{self.choices}號玩家中，查驗哪一位玩家並簡述原因？(直接回答"[玩家]號玩家，[原因]"，不需要其他廢話，回答完直接結束回答)',
-            "witch_save":f'根據以上綜合資訊，{self.choices}號玩家死了，請問你要使用解藥並簡述原因？(直接回答"[救或不救]，[原因]"，不需要其他廢話，回答完直接結束回答)',
-            "witch_poison":f'根據以上綜合資訊，請你從{self.choices}號玩家中使用毒藥，或選擇-1表示不使用毒藥，並簡述原因？(直接回答"[玩家]號玩家，[原因]"，不需要其他廢話，回答完直接結束回答)',
+            "werewolf":f'根據以上綜合資訊，請從{choices}號玩家中，選擇一位要殺的玩家並簡述原因？(直接回答"[玩家]號玩家，[原因]"，不需要其他廢話，回答完直接結束回答)',
+            "seer":f'根據以上綜合資訊，請問你要從{choices}號玩家中，查驗哪一位玩家並簡述原因？(直接回答"[玩家]號玩家，[原因]"，不需要其他廢話，回答完直接結束回答)',
+            "witch_save":f'根據以上綜合資訊，{choices}號玩家死了，請問你要使用解藥並簡述原因？(直接回答"[救或不救]，[原因]"，不需要其他廢話，回答完直接結束回答)',
+            "witch_poison":f'根據以上綜合資訊，請你從{choices}號玩家中使用毒藥，或選擇-1表示不使用毒藥，並簡述原因？(直接回答"[玩家]號玩家，[原因]"，不需要其他廢話，回答完直接結束回答)',
             "dialogue-test":f'根據以上綜合資訊，簡述你的推測（20字以下）?',
             "check":f'根據以上綜合資訊，簡述你的推測（20字以下）?',
             "dialogue":'''使用JSON的形式來回答，如下所述:
@@ -424,9 +483,9 @@ class prompts:
     }
 }
 請保證你的回答可以(直接被 Python 的 json.loads 解析)，且你只提供 JSON 格式的回答，不添加其他附加信息。''',
-            "vote1":f'根據以上綜合資訊，請你從{self.choices}號玩家中選一位投票，或選擇-1表示棄票，並簡述原因？(直接回答"[玩家]號玩家，[原因]"，不需要其他廢話，回答完直接結束回答)',
-            "vote2":f'根據以上綜合資訊，請你從{self.choices}號玩家中選一位投票，或選擇-1表示棄票，並簡述原因？(直接回答"[玩家]號玩家，[原因]"，不需要其他廢話，回答完直接結束回答)',
-            "hunter":f'根據以上綜合資訊，請你從{self.choices}號玩家中選一位殺掉，或選擇-1表示棄票，並簡述原因？(直接回答"[玩家]號玩家，[原因]"，不需要其他廢話，回答完直接結束回答)',
+            "vote1":f'根據以上綜合資訊，請你從{choices}號玩家中選一位投票，或選擇-1表示棄票，並簡述原因？(直接回答"[玩家]號玩家，[原因]"，不需要其他廢話，回答完直接結束回答)',
+            "vote2":f'根據以上綜合資訊，請你從{choices}號玩家中選一位投票，或選擇-1表示棄票，並簡述原因？(直接回答"[玩家]號玩家，[原因]"，不需要其他廢話，回答完直接結束回答)',
+            "hunter":f'根據以上綜合資訊，請你從{choices}號玩家中選一位殺掉，或選擇-1表示棄票，並簡述原因？(直接回答"[玩家]號玩家，[原因]"，不需要其他廢話，回答完直接結束回答)',
         }
     
         self.prompt += '\nQ:'
@@ -449,6 +508,8 @@ class prompts:
             temperature=0.7, 
             stop="\n\n")
         
+        self.token_used += response["usage"]["total_tokens"]
+        
         res = response['choices'][0]['text']
         
         # if res == '' (no words), resend to get the data
@@ -457,7 +518,15 @@ class prompts:
 
         # cut unused string (ex. <|end|>)
         if '<' in res:
-            res = res.split('<')[0]
+            res = res.split('<',1)[0]
+
+        # cut unused string (ex. """)
+        if '\"' in res:
+            res = res.split('\"',1)[0]
+
+        # cut unused string (ex. """)
+        if '`' in res:
+            res = res.split('`',1)[0]
         
         
         

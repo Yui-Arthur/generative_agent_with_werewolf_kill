@@ -41,6 +41,9 @@ class intelligent_agent(agent):
         self.chat_func = self.__openai_send__ 
 
 
+    def get_info(self) -> dict[str,str]:
+        
+        return self.prompts.__get_agent_info__()
     
 
     def __process_data__(self, data):
@@ -146,6 +149,12 @@ class intelligent_agent_test(agent):
         self.logger.addHandler(handler)   
 
         logging.getLogger("requests").propagate = False
+
+    
+    def get_info(self) -> dict[str,str]:
+        
+        return self.prompts.__get_agent_info__()
+    
 
     def __process_data__(self, data):
         """Process the data got from server"""
