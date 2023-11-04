@@ -1,5 +1,5 @@
 import grpc
-from protobufs.agent_pb2 import agent_query , agent_state , empty , agent_state , agent_info
+from protobufs.agent_pb2 import agent_query , agent_state , empty , agent_state , agent_info , info_list
 import protobufs.agent_pb2_grpc as agent_pb2_grpc
 import threading
 from concurrent import futures
@@ -59,7 +59,7 @@ class agent_service(agent_pb2_grpc.agentServicer):
         agent_id = request.agentID
 
         if agent_id == -1:
-            return agent_info(agentInfo = {"This is test agent grpc server state , you should not send the agentID less then 0" : "!"})
+            return agent_info(agentInfo = {"This is test agent grpc server state , you should not send the agentID less then 0" : info_list(info = ["!"])})
 
         if agent_id not in self.agent_dict.keys():
             context.abort(grpc.StatusCode.NOT_FOUND, "Agent not found")
@@ -68,7 +68,10 @@ class agent_service(agent_pb2_grpc.agentServicer):
             del self.agent_dict[agent_id]
             context.abort(grpc.StatusCode.NOT_FOUND, "The game of the agent is end")
 
-        return agent_info(agentInfo = self.agent_dict[agent_id].get_info())
+        # agent_info = 
+
+        # return agent_info(agentInfo = self.agent_dict[agent_id].get_info())
+        return agent_info(agentInfo = {key: info_list(info = value)for key , value in self.agent_dict[agent_id].get_info().items()})
     
 def print_agent_dict(agent_dict : dict[str , agent]):
     print("agent name | room name")
@@ -102,15 +105,19 @@ def serve(opt):
     print_agent_dict(agent_dict)
     server.start()
     
-    input()
-    thread_id.cancel()
-    
+    if not opt["docker"]:
+        input()
+        thread_id.cancel()
+    else:
+        print('use docker deploy')
+
     server.wait_for_termination()
     
 
 def parse_opt():
     parser = argparse.ArgumentParser()
     parser.add_argument('--api_server' , type=str, default="http://localhost:8001" , help='server ip')
+    parser.add_argument('--docker' , action="store_true" , help='whether use docker to deploy')
     opt = parser.parse_args()
 
     return opt

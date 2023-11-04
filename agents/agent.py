@@ -7,6 +7,7 @@ import sys
 from pathlib import Path   
 import time
 import json
+import datetime
 
 class agent():
     def __init__(self , openai_token = None , api_base = None , engine = None , api_json = None,  
@@ -20,6 +21,10 @@ class agent():
         self.color = color
         self.logger : logging.Logger = logging.getLogger(__name__)
         self.logger_handler = []
+
+        # save the info for experience
+        self.game_info = []
+        self.operation_info = {}
 
         # openai api setting
         self.engine = engine
@@ -43,10 +48,14 @@ class agent():
         self.__logging_setting__()
         self.__join_room__()
 
-    def get_info(self) -> dict[str,str]:
+    def get_info(self) -> dict[str,list[str]]:
         return_sample = {
-            "memory" : "1234",
-            "role_info" : "45678",
+            "guess_roles": ["狼人" , "好人" , "壞人"],
+            "confidence" : ["0.25" ,"0.25" ,"0.25"],
+            "memeory" : ["123456"],
+            "token_used" : ["123456"],
+            "other..." : ["..."],
+            "other2..." : ["..."]
         }
 
         return return_sample
@@ -118,11 +127,13 @@ class agent():
         self.__get_role__()
         self.__check_game_state__(0)
         
-    def __game_over_process__(self, anno):
-        self.logger.info(f"Game is over , {anno['description']}")
-        self.game_over = True
+    def __game_over_process__(self, anno , wait_time):
+        self.logger.info(f"Game is over , {anno['description']} , waiting  {wait_time}s for room state change")
+        self.__save__game__info__()
         self.role = None
-        self.__del__()
+        
+        threading.Timer(wait_time , self.__del__).start()
+        # self.__del__()
 
     def __logging_setting__(self):
         """logging setting , can override this."""
@@ -164,7 +175,7 @@ class agent():
         if join_fail: raise Exception("Join room failed")
             
 
-    def quit_room(self):
+    def __quit_room__(self):
         """quit the game room"""
         r = requests.get(f'{self.server_url}/api/quit_room/{self.room}/{self.name}' , headers ={
             "Authorization" : f"Bearer {self.user_token}"
@@ -201,12 +212,16 @@ class agent():
                 if self.current_info != data:
                     self.current_info = data
                     self.logger.debug(data)
+                    # save the last stage operation info & clear it
+                    self.game_info += [_ for _ in self.operation_info.values()]
+                    self.operation_info = {}
+                    self.game_info.append(data)
 
                     # check game over
                     for anno in self.current_info['announcement']: 
                         if anno['operation'] == "game_over" : 
                             self.checker = False
-                            self.__game_over_process__(anno)
+                            self.__game_over_process__(anno , data['timer'])
                             break
 
                     self.__process_data__(self.current_info) 
@@ -246,6 +261,9 @@ class agent():
             self.logger.debug(f"Agent send operation : {data}")
             if r.status_code == 200:
                 self.logger.debug(f"Send Status : OK")
+                # save the last operation
+                operation_key = data['operation'] if data['stage_name'].split('-')[-1] != "witch" else f"{data['operation']} {data['chat']}"
+                self.operation_info[operation_key] = data
             else:
                 self.logger.warning(f"Send error : {r.json()}")
         except Exception as e:
@@ -267,11 +285,20 @@ class agent():
         except Exception as e:
             self.logger.warning(f"__skip_stage__ Server Error , {e}")
 
+    def __save__game__info__(self):
+        current_datetime = datetime.datetime.today()
+        current_datetime_str = current_datetime.strftime("%m_%d_%H_%M")
+        with open(f"doc/game_info/{current_datetime_str}.jsonl" , "w" , encoding='utf-8') as f:
+            for info in self.game_info:
+                json.dump(info , f , ensure_ascii=False)
+                f.write('\n')
     
     def __del__(self):
+        self.game_over = True
+        
 
         if self.role == None and self.user_token != None:
-            self.quit_room()
+            self.__quit_room__()
             self.logger.debug("Quit Room")
         
         self.logger.debug("Agent deleted")

@@ -32,12 +32,24 @@ class memory_stream_agent(agent):
         self.turn = 0
 
         self.prompt_dir = Path(prompt_dir)
-    
+
+    def get_info(self) -> dict[str,str]:
+        
+        return self.long_memory.get_long_memory_info()
+
     def __process_data__(self, data):
         """the data process."""
         operations = self.long_memory.update_stage(data)
+
+        skip = False
         for operation in operations:
             self.__send_operation__(operation)
+            if operation['operation'] == 'dialogue':
+                skip = True
+        
+        if skip:
+            self.__skip_stage__()
+
 
     def __start_game_init__(self , room_data):
         """the game started setting , update player name"""
