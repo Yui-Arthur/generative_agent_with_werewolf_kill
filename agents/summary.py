@@ -3,6 +3,8 @@ import json
 import openai
 import re
 from pathlib import Path  
+import os
+from sentence_transformers import SentenceTransformer, util
 
 class summary():
     def __init__(self , logger , engine ,prompt_dir = "generative_agent_with_werewolf_kill/doc/prompt/summary"):
@@ -26,6 +28,11 @@ class summary():
         self.logger : logging.Logger = logger
         self.prompt_dir = Path(prompt_dir)
         self.__load_prompt_and_example__(self.prompt_dir)
+
+        self.summary_limit = 20
+        self.similarly_sentence_num = 5
+
+        self.embedding_model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
 
     def __load_prompt_and_example__(self , prompt_dir):
         """load prompt json to dict"""
@@ -83,7 +90,7 @@ class summary():
                 fail_idx+=1
                 continue
             
-            
+
             splited_result = result.split('\n')
             keyword_name = ""
             for line in splited_result:
@@ -118,6 +125,62 @@ class summary():
         for i in range(0, len(self.game_info)):
             # if 'stage'
             print(f"{i}- {self.game_info[i]['stage']}")
+
+    def set_score(self, role, stage, summary):
+
+        final_prompt = self.prompt_template["score"].replace("%summary", summary)
+        self.logger.debug("Prompt: "+str(final_prompt))
+        response = self.__openai_send__(final_prompt)
+        self.logger.debug("Response: "+str(response))
+
+        try:
+            score = response["分數"]
+        except:
+            self.logger.debug("Error: Don't match key")
+            self.set_score(summary= summary)
+
+        file_path = os.path.join(role, f"{stage}.json")
+        try:
+            summary_set = self.__load_summary(file_path= file_path)
+        except:
+            summary_set = []
+        updated_summary_set = self.__update_summary(summary_set= summary_set, summary= summary, score= score)
+    
+        self.__write_summary(file_path= file_path, data= updated_summary_set)
+
+    def __load_summary(self, file_path):
+        
+        with open(self.prompt_dir / file_path, encoding="utf-8") as json_file: summary_set = json.load(json_file)
+        return summary_set
+    
+    def __write_summary(self, file_path, data):
+        
+        with open(self.prompt_dir / file_path, "w") as json_file: 
+            new_data = json.dumps(data, indent= 1)
+            json_file.write(new_data)
+
+    def __update_summary(self, summary_set, summary, score):
+        
+        summary_set.append({"summary": summary, "score": score})
+        summary_set = sorted(summary_set, key= lambda x : x["score"], reverse= True)
+
+        if len(summary_set) > self.summary_limit:            
+            summary_set.pop()
+        return 
+    
+    def find_similarly_summary(self, role, stage, current_content):
+        
+        file_path = os.path.join(role, f"{stage}.json")
+        summary_set = self.__load_summary(file_path= file_path)
+        similarly_scores = []
+        for idx, summary_each in enumerate(summary_set):
+            embeddings = self.embedding_model.encode([summary_each, current_content])
+            cos_sim = util.cos_sim(embeddings, embeddings)
+            similarly_scores.append([cos_sim[0][1], idx])
+
+        similarly_scores = sorted(similarly_scores,key= lambda x: x[1], reverse= True)
+
+        return similarly_scores[0: self.similarly_sentence_num]
 
 if __name__ == '__main__':
 
