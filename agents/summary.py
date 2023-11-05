@@ -170,7 +170,7 @@ class summary():
             self.memory_stream += ob
 
 
-    def get_summary(self, file_name = "11_05_14_59.jsonl"):
+    def get_summary(self, file_name = "10_31_14_21.jsonl"):
 
         self.logger.debug("load game info")
         with open(f"generative_agent_with_werewolf_kill/doc/game_info/{file_name}" , encoding="utf-8") as json_file: game_info = [json.loads(line) for line in json_file.readlines()]
@@ -182,23 +182,23 @@ class summary():
         day = 1
         for info in game_info:
             if "stage" in info:
-                if day != int(info["stage"].split("-")[0]):
+                if  "-" in info["stage"] and day!=int(info["stage"].split("-")[0]):
                     day_str = f"第{day}天"
                     # vote、dialogue、operation summary
                     all_summary = self.__get_day_summary__(day_str, self.memory_stream, self.operation_info, result)
-                    self.__write_summary_score(all_summary, role="女巫")
+                    # self.__write_summary_score(all_summary, role="女巫")
                     
                     day = int(info["stage"].split("-")[0])
                     self.memory_stream = ""
                     self.operation_info = ""
 
                 self.__process_announcement__(info)
-            else:
+            elif info['stage_name'].split('-')[-1] != "check":
                 self.operation_info += f"你使用了{self.role_to_chinese[info['stage_name'].split('-')[-1]]}的技能，目標是{info['target']}號玩家\n"
         
         day_str = f"第{day}天"
         all_summary = self.__get_day_summary__(day_str, self.memory_stream, self.operation_info, result)
-        self.__write_summary_score(all_summary, role="女巫")
+        # self.__write_summary_score(all_summary, role="女巫")
 
     def __get_day_summary__(self, day, day_memory, day_operation, result):
         """day summary to openai"""
@@ -215,15 +215,15 @@ class summary():
             "dialogue" : "dialogue_summary",
             "operation" : "operation_summary",
         }        
-        info = self.__process_LLM_output__(final_prompt , ["vote", "dialogue", "operation"] , info)
+        # info = self.__process_LLM_output__(final_prompt , ["vote", "dialogue", "operation"] , info)
 
         return info['vote'], info['dialogue'], info['operation']
 
-    def __write_summary_score(self,summary , role):
+    def __write_summary_score(self, summary , role):
         """summary + score"""
-        self.set_score(self, role, "vote", summary[0])
-        self.set_score(self, role, "dialogue", summary[1])
-        self.set_score(self, role, "operation", summary[2])
+        self.set_score(role, "vote", summary[0])
+        self.set_score(role, "dialogue", summary[1])
+        self.set_score(role, "operation", summary[2])
 
     def set_score(self, role, stage, summary):
 
