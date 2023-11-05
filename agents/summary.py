@@ -7,7 +7,7 @@ import os
 from sentence_transformers import SentenceTransformer, util
 
 class summary():
-    def __init__(self , logger , engine ,prompt_dir = "generative_agent_with_werewolf_kill/doc/prompt/summary"):
+    def __init__(self , logger , engine ,prompt_dir = "generative_agent_with_werewolf_kill/doc/prompt/summary", api_key = "generative_agent_with_werewolf_kill/doc/secret/chatgpt_api_key.key"):
         self.max_fail_cnt = -1
         self.token_used = 0
         self.prompt_template : dict[str , str] = None
@@ -30,6 +30,8 @@ class summary():
         self.prompt_dir = Path(prompt_dir)
         self.__load_prompt_and_example__(self.prompt_dir)
 
+        with open(Path(api_key), "r") as file : self.api_key = file.readline() 
+        
         self.summary_limit = 20
         self.similarly_sentence_num = 5
 
@@ -237,6 +239,29 @@ class summary():
 
         return similarly_scores[0: self.similarly_sentence_num]
 
+    def __chatgpt_send__(self):
+        
+        openai.api_key = self.api_key
+        response = openai.ChatCompletion.create(
+            model = "gpt-3.5-turbo",
+            messages = [
+                {"role": "system", "content": "You are a helpful assistant."},
+                {"role": "user", "content": "Who won the world series in 2020?"},
+                {"role": "assistant", "content": "The Los Angeles Dodgers won the World Series in 2020."},
+                {"role": "user", "content": "Where was it played?"}
+            ],
+            temperature = 0.7,
+            max_tokens = 800,
+            top_p = 0.95,
+            frequency_penalty = 0,
+            presence_penalty = 0,
+            stop = None
+        )
+
+        res_content = response['choices'][0]['message']['content']
+
+        return res_content
+    
 if __name__ == '__main__':
 
     s = summary(logger = logging.getLogger(__name__), engine = "werewolf")
