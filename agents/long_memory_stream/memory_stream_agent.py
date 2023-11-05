@@ -15,7 +15,7 @@ from ..agent import agent
 from .role import role , werewolf , seer , witch , hunter
 
 class memory_stream_agent(agent):
-    def __init__(self , openai_token = None , api_base = None , engine = None , api_json = "doc/secret/yui.key",  
+    def __init__(self , api_json = "doc/secret/yui.key",  
                  server_url = "140.127.208.185" , agent_name = "Agent1" , room_name = "TESTROOM" , 
                  color = "f9a8d4" , prompt_dir = "doc/prompt/memory_stream"):
         
@@ -63,7 +63,7 @@ class memory_stream_agent(agent):
             "village" : role,
         }
         
-        self.long_memory : role = role_to_class[self.role](self.prompt_dir , self.logger, self.engine)
+        self.long_memory : role = role_to_class[self.role](self.prompt_dir , self.logger, self.api_kwargs)
         if self.role != "werewolf":
             self.long_memory.update_game_info(self.player_name , self.role)
         else:
@@ -73,7 +73,7 @@ class memory_stream_agent(agent):
 
 
 class memory_stream_agent_test(memory_stream_agent):
-    def __init__(self , openai_token = None , api_base = None , engine = None , api_json = "doc/secret/yui.key",  
+    def __init__(self , api_json = "doc/secret/yui.key",  
                  server_url = "140.127.208.185" , agent_name = "Agent1" , room_name = "TESTROOM" , 
                  color = "f9a8d4" , prompt_dir = "doc/prompt/memory_stream"):
         self.__reset_server__(server_url)
