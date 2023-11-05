@@ -10,7 +10,7 @@ import json
 import datetime
 
 class agent():
-    def __init__(self , openai_token = None , api_base = None , engine = None , api_json = None,  
+    def __init__(self , api_json = None, 
                  server_url = "140.127.208.185" , agent_name = "Agent1" , room_name = "TESTROOM" , 
                  color = "f9a8d4"):
         
@@ -27,10 +27,11 @@ class agent():
         self.operation_info = {}
 
         # openai api setting
-        self.engine = engine
-        if openai_token is not None: self.__openai_init__(openai_token , api_base)
-        elif api_json is not None : self.__openai_init_v2_(api_json)
-        else: raise Exception("Not give api_init parameter")
+        self.api_kwargs = {}
+        try:
+            self.__openai_init__(api_json)
+        except:
+            raise Exception("API Init failed")
 
         # game info 
         self.user_token = None
@@ -43,12 +44,10 @@ class agent():
         self.checker = True
         self.timer = None
 
-        self.chat_func = None
-
         # game_over = True => game is not started or game is over
         #           = False => game is running
         self.game_over = True
-        
+
         self.__logging_setting__()
         self.__join_room__()
 
@@ -64,32 +63,26 @@ class agent():
 
         return return_sample
 
-    def __openai_init__(self , openai_token , api_base):
-        """openai api setting , can override this"""
-        with open(openai_token,'r') as f : openai_token = f.readline()
-        openai.api_type = "azure"
-        openai.api_base = api_base
-        openai.api_version = "2023-09-15-preview"
-        openai.api_key = openai_token
 
-        self.chat_func = self.__openai_send__
-    
-    def __openai_init_v2_(self , api_json):
-        """openai api setting , can override this"""
+    def __openai_init__(self , api_json):
+        """azure openai api setting , can override this"""
         with open(api_json,'r') as f : api_info = json.load(f)
-        openai.api_type = api_info["api_type"]
-        openai.api_base = api_info["api_base"]
-        openai.api_version = api_info["api_version"] 
         openai.api_key = api_info["key"]
-        self.engine = api_info['engine']
+
+        if api_info["api_type"] == "azure":
+            openai.api_type = api_info["api_type"]
+            openai.api_base = api_info["api_base"]
+            openai.api_version = api_info["api_version"] 
+            self.api_kwargs["engine"] = api_info['engine']
+        else:
+            self.api_kwargs["model"] = api_info["model"]
         
 
-        self.chat_func = self.__openai_send__
 
     def __openai_send__(self , prompt):
         """openai api send prompt , can override this."""
         response = openai.ChatCompletion.create(
-            engine=self.engine,
+            **self.api_kwargs,
             messages = [
                 {"role":"system","content":"You are an AI assistant that helps people find information."},
                 {"role":"user","content":prompt}
