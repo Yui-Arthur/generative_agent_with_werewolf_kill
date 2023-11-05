@@ -34,6 +34,7 @@ class summary():
         
         self.summary_limit = 20
         self.similarly_sentence_num = 5
+        self.get_score_fail_times = 3
 
         self.embedding_model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
 
@@ -185,16 +186,19 @@ class summary():
 
     def set_score(self, role, stage, summary):
 
-        final_prompt = self.prompt_template["score"].replace("%summary", summary)
+        final_prompt = self.prompt_template["score"].replace("%s", summary)
         self.logger.debug("Prompt: "+str(final_prompt))
-        response = self.__openai_send__(final_prompt)
+        response = self.__chatgpt_send__(final_prompt)
+        print(final_prompt)
         self.logger.debug("Response: "+str(response))
-
+        print(response)
         try:
-            score = response["分數"]
+            score = response.split(":")[1]
         except:
             self.logger.debug("Error: Don't match key")
-            self.set_score(summary= summary)
+            self.get_score_fail_times -= 1
+            if self.get_score_fail_times >= 0:
+                self.set_score(role= role, stage= stage, summary= summary)
 
         file_path = os.path.join(role, f"{stage}.json")
         try:
@@ -211,19 +215,24 @@ class summary():
         return summary_set
     
     def __write_summary(self, file_path, data):
-        
-        with open(self.prompt_dir / file_path, "w") as json_file: 
-            new_data = json.dumps(data, indent= 1)
-            json_file.write(new_data)
+
+        try:
+            with open(self.prompt_dir / file_path, "w") as json_file: 
+                new_data = json.dumps(data, indent= 1)
+                json_file.write(new_data)
+        except:
+            os.mkdir(self.prompt_dir / file_path.split("\\")[0])
+            self.__write_summary(file_path, data)
+        self.get_score_fail_times = 3
 
     def __update_summary(self, summary_set, summary, score):
         
         summary_set.append({"summary": summary, "score": score})
         summary_set = sorted(summary_set, key= lambda x : x["score"], reverse= True)
-
+        
         if len(summary_set) > self.summary_limit:            
             summary_set.pop()
-        return 
+        return summary_set
     
     def find_similarly_summary(self, role, stage, current_content):
         
@@ -239,16 +248,14 @@ class summary():
 
         return similarly_scores[0: self.similarly_sentence_num]
 
-    def __chatgpt_send__(self):
+    def __chatgpt_send__(self, prompt):
         
         openai.api_key = self.api_key
         response = openai.ChatCompletion.create(
             model = "gpt-3.5-turbo",
             messages = [
                 {"role": "system", "content": "You are a helpful assistant."},
-                {"role": "user", "content": "Who won the world series in 2020?"},
-                {"role": "assistant", "content": "The Los Angeles Dodgers won the World Series in 2020."},
-                {"role": "user", "content": "Where was it played?"}
+                {"role": "user", "content": prompt}
             ],
             temperature = 0.7,
             max_tokens = 800,
@@ -265,4 +272,5 @@ class summary():
 if __name__ == '__main__':
 
     s = summary(logger = logging.getLogger(__name__), engine = "werewolf")
-    game_summary = s.get_summary()
+    # game_summary = s.get_summary()
+    # s.set_score(role= "witch", stage= "skill", summary= "女巫沒有使用解藥救被狼人殺的人(預言家)")
