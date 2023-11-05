@@ -2,15 +2,15 @@ import logging
 import json
 import openai
 import re
-import requests
 from pathlib import Path  
 
 class summary():
-    def __init__(self , logger , engine , server_url = "140.127.208.185" , room_name = "TESTROOM" ,prompt_dir = "doc/prompt/summary"):
+    def __init__(self , logger , engine ,prompt_dir = "generative_agent_with_werewolf_kill/doc/prompt/summary"):
         self.max_fail_cnt = -1
         self.token_used = 0
         self.prompt_template : dict[str , str] = None
         self.example : dict[str , str] = None
+        self.game_info : list(dict[str, str]) = None
         self.chinese_to_english = {
             # summary
             "總結" : "summary"
@@ -23,8 +23,6 @@ class summary():
             "hunter" : "獵人"
         }
         self.engine = engine
-        self.server_url = server_url
-        self.room_name = room_name
         self.logger : logging.Logger = logger
         self.prompt_dir = Path(prompt_dir)
         self.__load_prompt_and_example__(self.prompt_dir)
@@ -63,12 +61,11 @@ class summary():
 
         return response['choices'][0]['message']['content']
     
-    def __process_LLM_output__(self , prompt , keyword_list , sample_output , max_fail_cnt = -1):
+    def __process_LLM_output__(self , prompt , keyword_list , sample_output):
         """
-        communication with LLM , repeat {max_fail_cnt} util find the {keyword_list} in LLM response .
+        communication with LLM , repeat {self.max_fail_cnt} util find the {keyword_list} in LLM response .
         return the {keyword_list} dict , if fail get {keyword_list} in LLM response , return {sample_output}.
         """
-        # max_fail_cnt = self.max_fail_cnt
         success_get_keyword = False
         fail_idx = 0
 
@@ -103,6 +100,26 @@ class summary():
         
         self.logger.debug(f"LLM output : {info}")
 
-        if fail_idx >= max_fail_cnt: info = sample_output
+        if fail_idx >= self.max_fail_cnt: info = sample_output
 
         return info
+    
+    # def __register_keywords__(self , keywords:dict[str,str]):
+    #     self.logger.debug(f"Register new keyword : {keywords}")
+    #     self.chinese_to_english.update(keywords)
+
+    def get_summary(self, file_name = "11_05_01_12.jsonl"):
+
+        self.logger.debug("load game info")
+        
+        # self.game_info = pd.read_json(path_or_buf=f"generative_agent_with_werewolf_kill/doc/game_info/{file_name}", lines=True)   
+        with open(f"generative_agent_with_werewolf_kill/doc/game_info/{file_name}" , encoding="utf-8") as json_file: self.game_info = [json.loads(line) for line in json_file.readlines()]
+       
+        for i in range(0, len(self.game_info)):
+            # if 'stage'
+            print(f"{i}- {self.game_info[i]['stage']}")
+
+if __name__ == '__main__':
+
+    s = summary(logger = logging.getLogger(__name__), engine = "werewolf")
+    game_summary = s.get_summary()
