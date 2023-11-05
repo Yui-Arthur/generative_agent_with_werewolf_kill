@@ -7,16 +7,19 @@ import os
 from sentence_transformers import SentenceTransformer, util
 
 class summary():
-    def __init__(self , logger , engine ,prompt_dir = "generative_agent_with_werewolf_kill/doc/prompt/summary"):
-        self.max_fail_cnt = -1
+    def __init__(self , logger , prompt_dir="generative_agent_with_werewolf_kill/doc/prompt/summary", api_json = "generative_agent_with_werewolf_kill/doc/secret/openai.key"):
+        self.max_fail_cnt = 3
         self.token_used = 0
         self.prompt_template : dict[str , str] = None
         self.example : dict[str , str] = None
-        self.memory_stream = []
-        self.operation_info = []
+        self.memory_stream = ""
+        self.operation_info = ""
+        self.chat_func = None
         self.chinese_to_english = {
             # summary
-            "總結" : "summary"
+            "投票總結" : "vote",
+            "發言總結" : "dialogue",
+            "技能總結" : "operation",
         }
         self.role_to_chinese = {
             "seer" : "預言家",
@@ -25,10 +28,12 @@ class summary():
             "werewolf" : "狼人",
             "hunter" : "獵人"
         }
-        self.engine = engine
+
         self.logger : logging.Logger = logger
         self.prompt_dir = Path(prompt_dir)
         self.__load_prompt_and_example__(self.prompt_dir)
+        if api_json is not None : self.__openai_init_v2_(api_json)
+        else: raise Exception("Not give api_init parameter")
 
         self.summary_limit = 20
         self.similarly_sentence_num = 5
@@ -45,6 +50,19 @@ class summary():
             self.prompt_template[key] = '\n'.join(prompt_li)
         for key , prompt_li in self.example.items():
             self.example[key] = '\n'.join(prompt_li)
+
+    def __openai_init_v2_(self , api_json):
+        """openai api setting , can override this"""
+        with open(api_json,'r') as f : api_info = json.load(f)
+        openai.api_type = api_info["api_type"]
+        openai.api_base = api_info["api_base"]
+        openai.api_version = api_info["api_version"] 
+        openai.api_key = api_info["key"]
+        self.engine = api_info['engine']
+        
+
+        self.chat_func = self.__openai_send__
+    
 
     def __openai_send__(self , prompt):
         """openai api send prompt , can override this."""
@@ -107,6 +125,7 @@ class summary():
             else : fail_idx+=1
         
         self.logger.debug(f"LLM output : {info}")
+        # print(f"LLM output : {info}")
 
         if fail_idx >= self.max_fail_cnt: info = sample_output
 
@@ -119,67 +138,88 @@ class summary():
         if any(data["vote_info"].values()) :
             self.__push_vote_info__(data["vote_info"] , data["stage"])
 
-
         for anno in announcement:
             observation = ""
             if anno["operation"] == "chat":
                 # observation = f"{anno['user'][0]}號玩家({self.player_name[anno['user'][0]]})說「{anno['description']}」"    
-                observation = f"{anno['user'][0]}號玩家說「{anno['description']}」"    
+                observation = f"{anno['user'][0]}號玩家說「{anno['description']}」\n"    
             elif anno["operation"] == "died":
                 # observation = f"{anno['user'][0]}號玩家({self.player_name[anno['user'][0]]})死了"    
-                observation = f"{anno['user'][0]}號玩家死了"    
-            elif anno["operation"] == "game_over":
-                result = anno['description']
+                observation = f"{anno['user'][0]}號玩家死了\n"    
             
                 
-            self.memory_stream.append(observation)
-            # self.push(self.day , len(self.memory_stream)+1 , observation)
+            self.memory_stream += observation
 
     def __push_vote_info__(self , vote_info : dict , stage):
-
+        """add vote info to memory stream"""
         prefix = "狼人投票殺人階段:" if stage.split('-')[-1] == "seer" else "玩家票人出去階段:"
 
         for player , voted in vote_info.items():
             player = int(player)
             if voted != -1:
                 # ob = f"{prefix} {player}號玩家({self.player_name[player]})投給{voted}號玩家({self.player_name[voted]})"
-                ob = f"{prefix} {player}號玩家投給{voted}號玩家"
+                ob = f"{prefix} {player}號玩家投給{voted}號玩家\n"
             else:
                 # ob = f"{prefix} {player}號玩家({self.player_name[player]})棄票"
-                ob = f"{prefix} {player}號玩家棄票"
+                ob = f"{prefix} {player}號玩家棄票\n"
 
-            self.memory_stream.append(ob)
-            # self.push(self.day , len(self.memory_stream)+1 , ob)
-    
-    # def push(self , day , turn , observation):
-    #     """push the observation in memeory stream"""
-    #     full_observation = {
-    #         "day" : day,
-    #         "trun" : turn,
-    #         "last_used" : turn,
-    #         "observation" : observation 
-    #     }
-    #     self.logger.debug(f"push observation {full_observation}")
-    #     self.memory_stream.append(full_observation)
+            self.memory_stream += ob
 
 
     def get_summary(self, file_name = "11_05_14_59.jsonl"):
 
         self.logger.debug("load game info")
-         
         with open(f"generative_agent_with_werewolf_kill/doc/game_info/{file_name}" , encoding="utf-8") as json_file: game_info = [json.loads(line) for line in json_file.readlines()]
-       
+        for anno in game_info[-1]["announcement"]:
+            if anno["operation"] == "game_over":
+                result = anno["description"]
+
+        # 分天summary
+        day = 1
         for info in game_info:
             if "stage" in info:
+                if day != int(info["stage"].split("-")[0]):
+                    day_str = f"第{day}天"
+                    # vote、dialogue、operation summary
+                    all_summary = self.__get_day_summary__(day_str, self.memory_stream, self.operation_info, result)
+                    self.__write_summary_score(all_summary, role="女巫")
+                    
+                    day = int(info["stage"].split("-")[0])
+                    self.memory_stream = ""
+                    self.operation_info = ""
+
                 self.__process_announcement__(info)
             else:
-                self.operation_info.append(info)
+                self.operation_info += f"你使用了{self.role_to_chinese[info['stage_name'].split('-')[-1]]}的技能，目標是{info['target']}號玩家\n"
+        
+        day_str = f"第{day}天"
+        all_summary = self.__get_day_summary__(day_str, self.memory_stream, self.operation_info, result)
+        self.__write_summary_score(all_summary, role="女巫")
 
-        print(f"memory_stream = {self.memory_stream}")
-        print(f"operation_info = {self.operation_info}")
+    def __get_day_summary__(self, day, day_memory, day_operation, result):
+        """day summary to openai"""
+        print("day summary")
+        self.logger.debug(f"day summary")        
+        self.max_fail_cnt = 3
+        # memory_str = self.__memory_to_str__(day_memory)
+        # player_list = self.__get_player_list__()
+        player_list = ""
+        final_prompt = self.prompt_template['day_summary'].replace("%l" , self.example['day_summary']).replace("%z", day).replace("%m" , day_memory).replace("%o" , day_operation).replace("%y" , player_list).replace("%p" , result)
+        print(f"final_prompt = {final_prompt}")
+        info = {
+            "vote" : "vote_summary",
+            "dialogue" : "dialogue_summary",
+            "operation" : "operation_summary",
+        }        
+        info = self.__process_LLM_output__(final_prompt , ["vote", "dialogue", "operation"] , info)
 
-    def __total_summary(self, result):
-        pass
+        return info['vote'], info['dialogue'], info['operation']
+
+    def __write_summary_score(self,summary , role):
+        """summary + score"""
+        self.set_score(self, role, "vote", summary[0])
+        self.set_score(self, role, "dialogue", summary[1])
+        self.set_score(self, role, "operation", summary[2])
 
     def set_score(self, role, stage, summary):
 
@@ -239,5 +279,5 @@ class summary():
 
 if __name__ == '__main__':
 
-    s = summary(logger = logging.getLogger(__name__), engine = "werewolf")
+    s = summary(logger = logging.getLogger(__name__))
     game_summary = s.get_summary()
