@@ -19,7 +19,7 @@ class agent():
         self.name = agent_name
         self.room = room_name
         self.color = color
-        self.logger : logging.Logger = logging.getLogger(__name__)
+        self.logger : logging.Logger = logging.getLogger(f"{__name__}.{self.name}")
         self.logger_handler = []
 
         # save the info for experience
@@ -43,7 +43,10 @@ class agent():
         self.timer = None
 
         self.chat_func = None
-        self.game_over = False
+
+        # game_over = True => game is not started or game is over
+        #           = False => game is running
+        self.game_over = True
         
         self.__logging_setting__()
         self.__join_room__()
@@ -59,12 +62,6 @@ class agent():
         }
 
         return return_sample
-
-    def stop_agent(self):
-        self.logger.debug("Stop the timer & cancel the checker")
-        self.checker = False
-        if self.timer != None:
-            self.timer.cancel()
 
     def __openai_init__(self , openai_token , api_base):
         """openai api setting , can override this"""
@@ -131,13 +128,15 @@ class agent():
         self.logger.info(f"Game is over , {anno['description']} , waiting  {wait_time}s for room state change")
         self.__save__game__info__()
         self.role = None
+        self.game_over = True
         
-        threading.Timer(wait_time , self.__del__).start()
+        if wait_time > 0:
+            threading.Timer(wait_time , self.__del__).start()
         # self.__del__()
 
     def __logging_setting__(self):
         """logging setting , can override this."""
-        log_format = logging.Formatter('[%(asctime)s] [%(levelname)s] - %(message)s')
+        log_format = logging.Formatter(f'[%(asctime)s] [{self.name}] [%(levelname)s] - %(message)s ')
         self.logger.setLevel(logging.DEBUG)
 
         handler = logging.FileHandler(filename=f'logs/{self.name}_{self.room}.log', encoding='utf-8' , mode="w")
@@ -190,6 +189,7 @@ class agent():
             r = requests.get(f'{self.server_url}/api/room/{self.room}' , timeout=3)
 
             if r.status_code == 200 and r.json()["room_state"] == "started":
+                self.game_over = False
                 self.__start_game_init__(r.json())
                 
             elif self.checker:
@@ -294,13 +294,22 @@ class agent():
                 f.write('\n')
     
     def __del__(self):
-        self.game_over = True
-        
+        self.logger.debug("Stop the timer & cancel the checker")
+        self.checker = False
+        if self.timer != None:
+            self.timer.cancel()
 
-        if self.role == None and self.user_token != None:
+        # the agent join room faild
+        if self.user_token == None:
+            pass
+        # the game is over or the game not started yet
+        elif self.game_over:
             self.__quit_room__()
             self.logger.debug("Quit Room")
-        
+        #  the game is not end but force to delete agent
+        else:
+            self.__game_over_process__({'description' : "force to delete agent"} , -1)
+
         self.logger.debug("Agent deleted")
 
         for handler in self.logger_handler:

@@ -49,7 +49,6 @@ class agent_service(agent_pb2_grpc.agentServicer):
         if agent_id not in self.agent_dict.keys():
             context.abort(grpc.StatusCode.NOT_FOUND, "Agent not found")
 
-        self.agent_dict[agent_id].stop_agent()
         del self.agent_dict[agent_id]
         
         return empty()
