@@ -90,8 +90,6 @@ def print_agent_dict(agent_dict : dict[str , agent]):
 
 def serve(opt):
 
-    model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
-    del model
     agent_dict = {}
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
     agent_pb2_grpc.add_agentServicer_to_server((agent_service(opt["api_server"] , agent_dict)), server)

@@ -14,7 +14,9 @@ from sentence_transformers import SentenceTransformer, util
 
 class long_memeory_stream():
     
-    def __init__(self , prompt_dir , logger , gpt_agent , sentence_model = None):
+    sentence_model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
+
+    def __init__(self , prompt_dir , logger , gpt_agent):
         self.memory_stream = []
         self.agent = gpt_agent
         self.logger : logging.Logger = logger
@@ -62,13 +64,6 @@ class long_memeory_stream():
             "chat" : None
         }
 
-
-        if sentence_model == None:
-            self.logger.debug("loadding model")
-            self.model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
-            self.logger.debug("success load model")
-        else:
-            self.model = sentence_model
 
     def update_game_info(self , player_name , role):
         """update the player name & init suspect_role_list"""
@@ -309,12 +304,12 @@ class long_memeory_stream():
     
     def __cal_relevance__(self , query : str):
         """cal the relevance score"""
-        query_embedding = self.model.encode(query , convert_to_tensor=True)
+        query_embedding = self.sentence_model.encode(query , convert_to_tensor=True)
         score = [0 for i in range(len(self.memory_stream))]
 
         self.logger.debug('start relevance')
         text = [i['observation'] for i in self.memory_stream]
-        embeddings = self.model.encode(text, convert_to_tensor=True)
+        embeddings = self.sentence_model.encode(text, convert_to_tensor=True)
 
         for idx in range(embeddings.shape[0]):
             score[idx] = util.pytorch_cos_sim(query_embedding, embeddings[idx]).to("cpu").item()
