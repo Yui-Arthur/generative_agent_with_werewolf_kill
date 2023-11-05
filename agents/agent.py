@@ -210,11 +210,13 @@ class agent():
                 data = r.json()
                 # block realtime werewolf vote info 
                 if data['stage'].split('-')[-1] == "werewolf" : data['vote_info'] = {}
+                # clear the agent info 
+                data['agent_info'] = {}
 
                 if self.current_info != data:
                     self.current_info = data
                     self.logger.debug(data)
-                    self.__record_agent_game_info__(data.copy())
+                    self.__record_agent_game_info__(data)
 
                     # check game over
                     for anno in self.current_info['announcement']: 
@@ -309,13 +311,13 @@ class agent():
             self.logger.warning(f"__skip_stage__ Server Error , {e}")
 
     def __record_agent_game_info__(self , data):
-        # save the last stage operation info & clear it
+        # 1.save the last stage operation info (if has) & clear it
         self.game_info += [_ for _ in self.operation_info.values()]
         self.operation_info = {}
-        # save the game info & delete agent info
+        # 2.save the game info & delete agent info
         data['agent_info'] = {}
         self.game_info.append(data)
-        # save the last stage guess roles
+        # 3.save the last stage guess roles
         self.game_info.append(self.__get_guess_role__())
         del data
 
