@@ -37,6 +37,7 @@ class agent():
         self.role = None
         self.current_info = None
         self.player_name = None
+        self.player_id = None
 
         # thread setting        
         self.checker = True
@@ -122,6 +123,7 @@ class agent():
         self.logger.debug(f"game is started , this final room info : {room_data}")
         self.player_name = [name for name in room_data["room_user"]]
         self.__get_role__()
+        self.__get_all_role__()
         self.__check_game_state__(0)
         
     def __game_over_process__(self, anno , wait_time):
@@ -212,10 +214,7 @@ class agent():
                 if self.current_info != data:
                     self.current_info = data
                     self.logger.debug(data)
-                    # save the last stage operation info & clear it
-                    self.game_info += [_ for _ in self.operation_info.values()]
-                    self.operation_info = {}
-                    self.game_info.append(data)
+                    self.__record_agent_game_info__(data.copy())
 
                     # check game over
                     for anno in self.current_info['announcement']: 
@@ -244,12 +243,36 @@ class agent():
 
             if r.status_code == 200:
                 self.role = r.json()["game_info"]["user_role"]
-                self.logger.debug(f"Agent Role: {self.role}")
+                self.player_id = r.json()['player_id']
+                self.game_info.append({self.player_id: self.role})
+                self.logger.debug(f"Agent id {self.player_id} Role: {self.role}")
                 return r.json()
             else:
                 self.logger.warning(f"Get role Error : {r.json()}")
         except Exception as e:
             self.logger.warning(f"__get_role__ Server Error , {e}")
+
+    def __get_all_role__(self):
+        """get the all player's role after the game is started"""
+        try:
+            r = requests.get(f'{self.server_url}/api/game/{self.room}/', timeout=5)
+
+            if r.status_code == 200:
+                
+                player_info = r.json()["player"]
+                
+                player_info = {player_id:{"user_name" : info['user_name'],"user_role" : info['user_role']} for player_id , info in player_info.items()}
+                self.game_info.append(player_info)
+                self.logger.debug(f"Get the all player's info : {player_info}")
+
+            else:
+                self.logger.warning(f"Get the all player's info Error : {r.json()}")
+        except Exception as e:
+            self.logger.warning(f"__get_all_role__ Server Error , {e}")
+
+    def __get_guess_role__(self):
+        """must override this , format = dict[str , list[str]]"""
+        return {"guess_role" : ["狼人","狼人","狼人","狼人","狼人","狼人","狼人"]}
 
     def __send_operation__(self , data):
         """send operation to server"""
@@ -285,10 +308,21 @@ class agent():
         except Exception as e:
             self.logger.warning(f"__skip_stage__ Server Error , {e}")
 
+    def __record_agent_game_info__(self , data):
+        # save the last stage operation info & clear it
+        self.game_info += [_ for _ in self.operation_info.values()]
+        self.operation_info = {}
+        # save the game info & delete agent info
+        data['agent_info'] = {}
+        self.game_info.append(data)
+        # save the last stage guess roles
+        self.game_info.append(self.__get_guess_role__())
+        del data
+
     def __save__game__info__(self):
         current_datetime = datetime.datetime.today()
         current_datetime_str = current_datetime.strftime("%m_%d_%H_%M")
-        with open(f"doc/game_info/{current_datetime_str}.jsonl" , "w" , encoding='utf-8') as f:
+        with open(f"doc/game_info/{current_datetime_str}_{self.name}.jsonl" , "w" , encoding='utf-8') as f:
             for info in self.game_info:
                 json.dump(info , f , ensure_ascii=False)
                 f.write('\n')
