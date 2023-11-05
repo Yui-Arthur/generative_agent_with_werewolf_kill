@@ -56,6 +56,7 @@ class memory_stream_agent(agent):
         self.logger.debug(f"game is started , this final room info : {room_data}")
         self.player_name = [name for name in room_data["room_user"]]
         role_info = self.__get_role__()
+        self.__get_all_role__()
         role_to_class = {
             "werewolf" : werewolf,
             "seer" : seer,
