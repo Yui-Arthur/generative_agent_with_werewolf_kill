@@ -241,12 +241,15 @@ class long_memeory_stream():
         }
         info = self.__process_LLM_output__(final_prompt , ["vote" , "reason"] , info)
 
-        ret = self.ret_format.copy()
-        ret['operation'] = "vote_or_not"
-        ret['target'] = int(info["vote"].strip("\n"))
-        ret['chat'] = ""
+        try:
+            ret = self.ret_format.copy()
+            ret['operation'] = "vote_or_not"
+            ret['target'] = int(info["vote"].strip("\n"))
+            ret['chat'] = ""
 
-        return ret
+            return ret
+        except:
+            return ret
     
     def __gen_dialgue__(self , day ,turn):
         """gen the dialgue"""
