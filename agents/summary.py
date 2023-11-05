@@ -30,11 +30,12 @@ class summary():
             "hunter" : "獵人"
         }
 
+        self.player2identity = [f"玩家{num}" for num in range(10)] + [f"玩家{num}號" for num in range(10)]
         self.logger : logging.Logger = logger
         self.prompt_dir = Path(prompt_dir)
         self.__load_prompt_and_example__(self.prompt_dir)
-        if api_json is not None : self.__openai_init_v2_(api_json)
-        else: raise Exception("Not give api_init parameter")
+        # if api_json is not None : self.__openai_init_v2_(api_json)
+        # else: raise Exception("Not give api_init parameter")
 
         with open(Path(api_key), "r") as file : self.api_key = file.readline() 
         
@@ -275,6 +276,37 @@ class summary():
             summary_set.pop()
         return summary_set
     
+    def get_current_summary(self):
+
+        with open("", encoding="utf-8") as json_file: summary_set = json.load(json_file)
+    
+    
+    def __load_game_info(self, file_path):        
+        with open(self.prompt_dir / file_path, encoding="utf-8") as json_file: game_info = json.load(json_file)
+        # {"0": {"user_name": "yui:838", "user_role": "hunter"}, "1": {"user_name": "Player965", "user_role": "werewolf"}
+        self.all_player_role = game_info[1]
+
+        for idx, info in enumerate(game_info):
+            # skip to third line
+            if idx in [0, 1]:
+                continue
+            # stage info
+            if "stage" in info.key():
+                pass
+            # operation
+            elif "stage-name" in info.key():
+                pass
+            # guess role
+            else:
+                pass
+
+    def __transform_player2identity(self, summary):
+        
+        for player_number in self.player2identity:
+            if player_number in summary:
+                identity = self.all_player_role[player_number[2]]["user_role"]
+                summary.replace(player_number, f"{player_number}({identity})")
+
     def find_similarly_summary(self, role, stage, current_content):
         
         file_path = os.path.join(role, f"{stage}.json")
