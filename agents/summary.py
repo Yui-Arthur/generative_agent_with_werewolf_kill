@@ -7,7 +7,7 @@ import os
 from sentence_transformers import SentenceTransformer, util
 
 class summary():
-    def __init__(self , logger , prompt_dir="generative_agent_with_werewolf_kill/doc/prompt/summary", api_json = "generative_agent_with_werewolf_kill/doc/secret/openai.key", api_key = "generative_agent_with_werewolf_kill/doc/secret/chatgpt_api_key.key"):
+    def __init__(self , logger , prompt_dir="./doc/prompt/summary", api_json = None):
         self.max_fail_cnt = 3
         self.max_fail_cnt = -1
         self.token_used = 0
@@ -30,19 +30,21 @@ class summary():
             "hunter" : "獵人"
         }
 
-        self.player2identity = [f"玩家{num}" for num in range(10)] + [f"玩家{num}號" for num in range(10)]
+        self.player2identity =  [f"玩家{num}號" for num in range(10)] + [f"玩家{num}" for num in range(10)] 
         self.logger : logging.Logger = logger
         self.prompt_dir = Path(prompt_dir)
         self.__load_prompt_and_example__(self.prompt_dir)
-        # if api_json is not None : self.__openai_init_v2_(api_json)
-        # else: raise Exception("Not give api_init parameter")
-
-        with open(Path(api_key), "r") as file : self.api_key = file.readline() 
+        
+        # openai api setting
+        self.api_kwargs = {}
+        try:
+            self.__openai_init__(api_json)
+        except:
+            raise Exception("API Init failed")
         
         self.summary_limit = 20
         self.similarly_sentence_num = 5
         self.get_score_fail_times = 3
-
         self.embedding_model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
 
     def __load_prompt_and_example__(self , prompt_dir):
@@ -56,24 +58,26 @@ class summary():
         for key , prompt_li in self.example.items():
             self.example[key] = '\n'.join(prompt_li)
 
-    def __openai_init_v2_(self , api_json):
-        """openai api setting , can override this"""
+    def __openai_init__(self , api_json):
+        """azure openai api setting , can override this"""
         with open(api_json,'r') as f : api_info = json.load(f)
-        openai.api_type = api_info["api_type"]
-        openai.api_base = api_info["api_base"]
-        openai.api_version = api_info["api_version"] 
         openai.api_key = api_info["key"]
-        self.engine = api_info['engine']
-        
 
-        self.chat_func = self.__openai_send__
+        if api_info["api_type"] == "azure":
+            openai.api_type = api_info["api_type"]
+            openai.api_base = api_info["api_base"]
+            openai.api_version = api_info["api_version"] 
+            self.api_kwargs["engine"] = api_info['engine']
+        else:
+            self.api_kwargs["model"] = api_info["model"]
     
 
     def __openai_send__(self , prompt):
         """openai api send prompt , can override this."""
         response = openai.ChatCompletion.create(
-            engine = self.engine,
+            **self.api_kwargs,
             messages = [
+                # You are a helpful assistant.
                 {"role":"system","content":"You are an AI assistant that helps people find information."},
                 {"role":"user","content":prompt}
             ],
@@ -84,12 +88,6 @@ class summary():
             presence_penalty=0,
             stop=None)
         
-        self.token_used += response["usage"]["total_tokens"]
-        
-        if response['choices'][0]["finish_reason"] == "content_filter":
-            self.logger.debug("Block By Openai")
-            return None
-
         return response['choices'][0]['message']['content']
     
     def __process_LLM_output__(self , prompt , keyword_list , sample_output):
@@ -230,7 +228,7 @@ class summary():
 
         final_prompt = self.prompt_template["score"].replace("%s", summary)
         self.logger.debug("Prompt: "+str(final_prompt))
-        response = self.__chatgpt_send__(final_prompt)
+        response = self.__openai_send__(final_prompt)
         print(final_prompt)
         self.logger.debug("Response: "+str(response))
         print(response)
@@ -300,12 +298,22 @@ class summary():
             else:
                 pass
 
-    def __transform_player2identity(self, summary):
-        
+    def transform_player2identity(self, summary):
+        # test use 
+        # self.all_player_role = {"0": {"user_name": "yui:838", "user_role": "hunter"},
+        #                         "1": {"user_name": "Player965", "user_role": "werewolf"},
+        #                         "2": {"user_name": "er:868", "user_role": "seer"}, 
+        #                         "3": {"user_name": "df", "user_role": "werewolf"},
+        #                         "4": {"user_name": "as:88", "user_role": "witch"}, 
+        #                         "5": {"user_name": "fd:45", "user_role": "village"},
+        #                         "6": {"user_name": "asd:123", "user_role": "village"}}
         for player_number in self.player2identity:
             if player_number in summary:
-                identity = self.all_player_role[player_number[2]]["user_role"]
-                summary.replace(player_number, f"{player_number}({identity})")
+                identity = self.role_to_chinese[self.all_player_role[player_number[2]]["user_role"]]
+                summary = summary.replace(player_number, f"{identity}")
+
+        return summary
+
 
     def find_similarly_summary(self, role, stage, current_content):
         
@@ -321,30 +329,10 @@ class summary():
 
         return similarly_scores[0: self.similarly_sentence_num]
 
-    def __chatgpt_send__(self, prompt):
-        
-        openai.api_key = self.api_key
-        response = openai.ChatCompletion.create(
-            model = "gpt-3.5-turbo",
-            messages = [
-                {"role": "system", "content": "You are a helpful assistant."},
-                {"role": "user", "content": prompt}
-            ],
-            temperature = 0.7,
-            max_tokens = 800,
-            top_p = 0.95,
-            frequency_penalty = 0,
-            presence_penalty = 0,
-            stop = None
-        )
 
-        res_content = response['choices'][0]['message']['content']
-
-        return res_content
     
 if __name__ == '__main__':
 
     s = summary(logger = logging.getLogger(__name__))
-    game_summary = s.get_summary()
     # game_summary = s.get_summary()
     # s.set_score(role= "witch", stage= "skill", summary= "女巫沒有使用解藥救被狼人殺的人(預言家)")
