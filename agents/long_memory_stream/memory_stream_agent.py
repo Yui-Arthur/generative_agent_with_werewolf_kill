@@ -16,7 +16,7 @@ from .role import role , werewolf , seer , witch , hunter
 from ..summary import summary
 
 class memory_stream_agent(agent):
-    def __init__(self , openai_token = None , api_base = None , engine = None , api_json = "doc/secret/yui.key",  
+    def __init__(self , api_json = "doc/secret/yui.key",  
                  server_url = "140.127.208.185" , agent_name = "Agent1" , room_name = "TESTROOM" , 
                  color = "f9a8d4" , prompt_dir = "doc/prompt/memory_stream"):
         
@@ -25,7 +25,6 @@ class memory_stream_agent(agent):
                                        color = color) 
         
         # init long memory class & models
-        self.__loading_sentence_model___()
         self.long_memory : role = None
         # start the game
         self.day = None
@@ -65,7 +64,7 @@ class memory_stream_agent(agent):
             "village" : role,
         }
         
-        self.long_memory : role = role_to_class[self.role](self.prompt_dir , self.logger, self.engine , self.model)
+        self.long_memory : role = role_to_class[self.role](self.prompt_dir , self.logger, self.api_kwargs)
         if self.role != "werewolf":
             self.long_memory.update_game_info(self.player_name , self.role)
         else:
@@ -73,13 +72,9 @@ class memory_stream_agent(agent):
 
         self.__check_game_state__(0)
 
-    def __loading_sentence_model___(self):
-        self.logger.debug("loadding model")
-        self.model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
-        self.logger.debug("success load model")
 
 class memory_stream_agent_test(memory_stream_agent):
-    def __init__(self , openai_token = None , api_base = None , engine = None , api_json = "doc/secret/yui.key",  
+    def __init__(self , api_json = "doc/secret/yui.key",  
                  server_url = "140.127.208.185" , agent_name = "Agent1" , room_name = "TESTROOM" , 
                  color = "f9a8d4" , prompt_dir = "doc/prompt/memory_stream"):
         self.__reset_server__(server_url)
@@ -147,23 +142,4 @@ class memory_stream_agent_test(memory_stream_agent):
         
         except Exception as e :
             self.logger.warning(f"__setting_game Server Error , {e}")
-    
-    
-    def __game_over_process__(self, anno):
-        result = anno['description']
-        self.logger.info(f"Game is over , {result}")
-        memory = self.long_memory.memory_stream
-        s = summary(logger = self.logger, engine = self.engine, server_url = self.server_url, room_name = self.room)
-        game_summary = s.get_summary(memory, result)
-
-        self.game_over = True
-        self.role = None
-        self.__del__()
-
-if __name__ == '__main__':
-    a = memory_stream_agent_test(server_url = "http://localhost:8001" , openai_token=Path("doc/secret/openai.key"), api_base = "https://pinyu.openai.azure.com/" , engine = "werewolf" )
-    # a = memory_stream_agent_test(server_url = "http://localhost:8001" , openai_token=Path("doc/secret/openai.key") )
-    while a.checker != False: pass
-    
-    
     
