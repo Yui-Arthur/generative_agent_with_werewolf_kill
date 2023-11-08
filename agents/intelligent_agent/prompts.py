@@ -218,45 +218,50 @@ class prompts:
                 self.choices = informations[0]['target']
 
                 response = self.prompts_response(prompt_type+'_save')
-                res = response.split("，", 1)
-
-                text = f"{self.stage_detail[prompt_type+'_save']['save']}{res[0]}{informations[0]['target'][0]}號玩家，{res[1]}"
-                self.memory[self.day-1].append(text)
-
                 
-
-                # 不救，可以考慮使用毒藥
-                if res[0] == '不救' and len(informations)>1:
-                
-                    self.choices = informations[1]['target']
-
-                    response = self.prompts_response(prompt_type+'_poison')
+                try:
                     res = response.split("，", 1)
-                    who = int(res[0].split('號')[0])
 
+                    text = f"{self.stage_detail[prompt_type+'_save']['save']}{res[0]}{informations[0]['target'][0]}號玩家，{res[1]}"
+                    self.memory[self.day-1].append(text)
 
-                    # 使用毒藥
-                    if who != -1:
-                        text = f"{self.stage_detail[prompt_type+'_poison']['save']}{response}"
-                        self.memory[self.day-1].append(text)
-                        
-                        op_data = {
-                            "stage_name" : stage,
-                            "operation" : informations[1]['operation'],
-                            "target" : who,
-                            "chat" : 'poison'
-                        }
-                        # operations.append(op_data)
                     
 
-                else:
-                    op_data = {
-                        "stage_name" : stage,
-                        "operation" : informations[0]['operation'],
-                        "target" : self.choices[0],
-                        "chat" : 'save'
-                    }
-                    # operations.append(op_data)
+                    # 不救，可以考慮使用毒藥
+                    if res[0] == '不救' and len(informations)>1:
+                    
+                        self.choices = informations[1]['target']
+
+                        response = self.prompts_response(prompt_type+'_poison')
+                        res = response.split("，", 1)
+                        who = int(res[0].split('號')[0])
+
+
+                        # 使用毒藥
+                        if who != -1:
+                            text = f"{self.stage_detail[prompt_type+'_poison']['save']}{response}"
+                            self.memory[self.day-1].append(text)
+                            
+                            op_data = {
+                                "stage_name" : stage,
+                                "operation" : informations[1]['operation'],
+                                "target" : who,
+                                "chat" : 'poison'
+                            }
+                            operations.append(op_data)
+                        
+
+                    else:
+                        op_data = {
+                            "stage_name" : stage,
+                            "operation" : informations[0]['operation'],
+                            "target" : self.choices[0],
+                            "chat" : 'save'
+                        }
+                        operations.append(op_data)
+                
+                except Exception as e:
+                    self.logger.warning(f"Response error , {e}")
 
                     
             
@@ -264,24 +269,28 @@ class prompts:
                 self.choices = informations[0]['target']
 
                 response = self.prompts_response(prompt_type+'_poison')
-                res = response.split("，", 1)
-                who = int(res[0].split('號')[0])
                 
+                try:
+                    res = response.split("，", 1)
+                    who = int(res[0].split('號')[0])
+                    
 
-                # 使用毒藥
-                if who != -1:
-                    text = f"{self.stage_detail[prompt_type+'_poison']['save']}{response}"
-                    self.memory[self.day-1].append(text)
+                    # 使用毒藥
+                    if who != -1:
+                        text = f"{self.stage_detail[prompt_type+'_poison']['save']}{response}"
+                        self.memory[self.day-1].append(text)
 
-                    op_data = {
-                        "stage_name" : stage,
-                        "operation" : informations[0]['operation'],
-                        "target" : who,
-                        "chat" : 'poison'
-                    }
+                        op_data = {
+                            "stage_name" : stage,
+                            "operation" : informations[0]['operation'],
+                            "target" : who,
+                            "chat" : 'poison'
+                        }
 
-            operations.append(op_data)
-
+                        operations.append(op_data)
+                
+                except Exception as e:
+                    self.logger.warning(f"Response error , {e}")
 
 
         else:
@@ -297,63 +306,67 @@ class prompts:
                     
                 response = self.prompts_response(prompt_type)
                 
-                # combine save text with response
-                save_text = f"{self.stage_detail[prompt_type]['save']}{response}"
-                send_text = f"{self.stage_detail[prompt_type]['save']}{response}"
+                try:
+                    # combine save text with response
+                    save_text = f"{self.stage_detail[prompt_type]['save']}{response}"
+                    send_text = f"{self.stage_detail[prompt_type]['save']}{response}"
 
 
-                # process text in special cases
-                if prompt_type == 'werewolf_dialogue':
-                    res = response.split("，", 1)
-                    if "1" in res[0]:
-                        res = response.split("，", 2)
-                        save_text = f"我在狼人階段發言\"我同意{res[1]}的發言\"。{res[2]}"
-                        send_text = f"我同意{res[1]}的發言"
-                    elif "2" in res[0]:
-                        res = response.split("，", 3)
-                        save_text = f"我在狼人階段發言\"我想刀{res[1]}，我覺得他是{res[2]}\"。{res[3]}"
-                        send_text = f"我想刀{res[1]}，我覺得他是{res[2]}"
-                    elif "3" in res[0]:
-                        save_text = f"我在狼人發言階段不發言。{res[1]}"
-                        send_text = f"我不發言。{res[1]}"
+                    # process text in special cases
+                    if prompt_type == 'werewolf_dialogue':
+                        res = response.split("，", 1)
+                        if "1" in res[0]:
+                            res = response.split("，", 2)
+                            save_text = f"我在狼人階段發言\"我同意{res[1]}的發言\"。{res[2]}"
+                            send_text = f"我同意{res[1]}的發言"
+                        elif "2" in res[0]:
+                            res = response.split("，", 3)
+                            save_text = f"我在狼人階段發言\"我想刀{res[1]}，我覺得他是{res[2]}\"。{res[3]}"
+                            send_text = f"我想刀{res[1]}，我覺得他是{res[2]}"
+                        elif "3" in res[0]:
+                            save_text = f"我在狼人發言階段不發言。{res[1]}"
+                            send_text = f"我不發言。{res[1]}"
 
-                elif prompt_type == 'dialogue':
-                    try:
-                        res_json = json.loads(response)
-                        save_text = f"{self.stage_detail[prompt_type]['save']}{res_json['最終的分析']['發言']}{res_json['最終的分析']['理由']}"
-                        send_text = f"{self.stage_detail[prompt_type]['save']}{res_json['最終的分析']['發言']}{res_json['最終的分析']['理由']}"
+                    elif prompt_type == 'dialogue':
+                        try:
+                            res_json = json.loads(response)
+                            save_text = f"{self.stage_detail[prompt_type]['save']}{res_json['最終的分析']['發言']}{res_json['最終的分析']['理由']}"
+                            send_text = f"{self.stage_detail[prompt_type]['save']}{res_json['最終的分析']['發言']}{res_json['最終的分析']['理由']}"
 
-                    except Exception as e:
-                        if self.player_id in self.alive:
-                            save_text = '我無發言'
-                            send_text = '我無發言'
-                        else:
-                            save_text = '我無遺言'
-                            send_text = '我無遺言'
-                        self.logger.warning(f"Dialogue prompts error , {e}")
-
-
-                if save_text == '':
-                    save_text = '無操作'
+                        except Exception as e:
+                            if self.player_id in self.alive:
+                                save_text = '我無發言'
+                                send_text = '我無發言'
+                            else:
+                                save_text = '我無遺言'
+                                send_text = '我無遺言'
+                            self.logger.warning(f"Dialogue prompts error , {e}")
 
 
-                # save operation's target
-                target = -1
-                if '號玩家，' in response:
-                    target = int(response.split('號玩家，')[0][-1])
+                    if save_text == '':
+                        save_text = '無操作'
 
-                # save_text += "。"
-                # save text to memory
-                self.memory[self.day-1].append(save_text)
 
-                # process operation data 
-                op_data = {
-                    "stage_name" : stage,
-                    "operation" : i['operation'],
-                    "target" : target,
-                    "chat" : send_text
-                }
-                operations.append(op_data)
+                    # save operation's target
+                    target = -1
+                    if '號玩家，' in response:
+                        target = int(response.split('號玩家，')[0][-1])
+
+                    # save_text += "。"
+                    # save text to memory
+                    self.memory[self.day-1].append(save_text)
+
+                    # process operation data 
+                    op_data = {
+                        "stage_name" : stage,
+                        "operation" : i['operation'],
+                        "target" : target,
+                        "chat" : send_text
+                    }
+                    operations.append(op_data)
+
+                except Exception as e:
+                    self.logger.warning(f"Response error , {e}")
 
         return operations 
 
@@ -371,9 +384,9 @@ class prompts:
         self.api_guess_roles= []
         self.api_guess_confidence= []
 
-        lines = response.splitlines()
-
         try:
+            lines = response.splitlines()
+
             for i in range(self.room_setting["player_num"]):
             
                 [player, role, degree, reason] = lines[i].split('，', 3)
@@ -448,7 +461,7 @@ class prompts:
         # question
         # [你必須知道的資訊] = 上述提供資訊內容
         stage_question={
-            "guess_role": f'根據以上你知道的資訊中，判斷{all_choices}玩家的角色及你認為正確的機率百分比(直接回答"[玩家]號玩家，[角色]，[正確的機率百分比]，[原因]"，不需要其他廢話，回答完直接結束回答)',
+            "guess_role": f'根據以上你知道的資訊中，判斷{all_choices}玩家的角色及你認為正確的機率百分比(直接回答"[玩家]號玩家，[角色]，[正確的機率百分比]，[原因]"，不需要其他廢話，回答完直接結束回答，[]一定要回答)',
             "werewolf_dialogue":f'''根據以上綜合資訊，你有三個選項，請選擇其中一個選項當作發言？
 1. 我同意隊友的發言。請在{self.player_array_to_string(self.teammate)}號玩家中，選擇一位隊友(若選擇此選項，請直接回答"選項1，[玩家]號玩家，[原因]"，不需要其他廢話，回答完直接結束回答)
 2. 想殺某位玩家，並猜測玩家的角色。從{self.player_array_to_string(self.alive)}中，只能選擇一位想殺的玩家，且從預言家和女巫{"和獵人" if self.room_setting["hunter"] else ""}中選一位你認為是此玩家的角色(若選擇此選項，請直接回答"選項2，[玩家]號玩家，[角色]，[原因]"，不需要其他廢話，回答完直接結束回答)
