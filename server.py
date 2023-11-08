@@ -49,6 +49,7 @@ class agent_service(agent_pb2_grpc.agentServicer):
         if agent_id not in self.agent_dict.keys():
             context.abort(grpc.StatusCode.NOT_FOUND, "Agent not found")
 
+        self.agent_dict[agent_id].__del__()
         del self.agent_dict[agent_id]
         
         return empty()
@@ -89,8 +90,6 @@ def print_agent_dict(agent_dict : dict[str , agent]):
 
 def serve(opt):
 
-    model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
-    del model
     agent_dict = {}
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
     agent_pb2_grpc.add_agentServicer_to_server((agent_service(opt["api_server"] , agent_dict)), server)
