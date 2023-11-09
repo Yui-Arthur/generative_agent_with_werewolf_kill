@@ -231,9 +231,10 @@ class summary():
 
         self.__memory_stream_push(stage, ob)
 
-    def __load_game_info(self, file_path):       
+    def __load_game_info(self, file_path = None, game_info = None):       
 
-        with open(self.prompt_dir / file_path, encoding="utf-8") as json_file: game_info = [json.loads(line) for line in json_file.readlines()]
+        if file_path != None:
+            with open(self.prompt_dir / file_path, encoding="utf-8") as json_file: game_info = [json.loads(line) for line in json_file.readlines()]
         self.player_name = game_info[1]
         self.all_game_info["self_role"] = self.role_to_chinese[list(game_info[0].values())[0]]
         self.all_game_info["all_role_info"] = self.__process_user_role(game_info[1])
