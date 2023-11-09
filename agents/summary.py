@@ -7,14 +7,20 @@ import os
 from sentence_transformers import SentenceTransformer, util
 
 class summary():
-    def __init__(self , logger , prompt_dir="./doc/prompt/summary", api_json = None):
+    def __init__(self , logger , prompt_dir="./doc", api_json = None):
         self.max_fail_cnt = 3
-        self.max_fail_cnt = -1
         self.token_used = 0
         self.prompt_template : dict[str , str] = None
         self.example : dict[str , str] = None
-        self.memory_stream = ""
-        self.operation_info = ""
+        self.player_name = None
+        self.all_game_info = {
+            "self_role" : "",
+            "all_role_info" : "",
+            "result" : "",
+        }
+        self.memory_stream = {} 
+        self.operation_info = {}
+        self.guess_role = {}
         self.chat_func = None
         self.chinese_to_english = {
             # summary
@@ -22,6 +28,15 @@ class summary():
             "發言總結" : "dialogue",
             "技能總結" : "operation",
         }
+        self.operation_to_chinese = {
+            "seer" : "預言家查驗，目標是",
+            "witch" : "女巫的技能，目標是",
+            "village" : "村民",
+            "werewolf" : "狼人殺人，目標是",
+            "werewolf_dialogue" : "狼人發言，想要殺掉",
+            "hunter" : "獵人獵殺，目標是"
+        }
+
         self.role_to_chinese = {
             "seer" : "預言家",
             "witch" : "女巫",
@@ -46,12 +61,15 @@ class summary():
         self.similarly_sentence_num = 5
         self.get_score_fail_times = 3
         self.embedding_model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
+        
+        self.__load_game_info(file_path = "./game_info/11_09_00_44_iAgent396.jsonl")
+        # self.__load_game_info(file_path = "./game_info/11_06_18_31_mAgent112.jsonl")
 
     def __load_prompt_and_example__(self , prompt_dir):
         """load prompt json to dict"""
         self.logger.debug("load common json")
-        with open(prompt_dir / "common_prompt.json" , encoding="utf-8") as json_file: self.prompt_template = json.load(json_file)
-        with open(prompt_dir / "common_example.json" , encoding="utf-8") as json_file: self.example = json.load(json_file)
+        with open(prompt_dir / "./prompt/summary/common_prompt.json" , encoding="utf-8") as json_file: self.prompt_template = json.load(json_file)
+        with open(prompt_dir / "./prompt/summary/common_example.json" , encoding="utf-8") as json_file: self.example = json.load(json_file)
 
         for key , prompt_li in self.prompt_template.items():
             self.prompt_template[key] = '\n'.join(prompt_li)
@@ -134,6 +152,41 @@ class summary():
 
         return info
     
+    def __process_user_role(self, data):
+        
+        role_info = ""
+        for idx, key in enumerate(data):
+            role_info += f"{idx}. {data[key]['user_name']}({idx})是{self.role_to_chinese[data[key]['user_role']]}\n"
+        
+        return role_info
+    
+    def __process_guess_role(self, stage, data):
+        
+        guess_info = ""
+        for idx, role in enumerate(data['guess_role']):
+            num = str(idx)
+            guess_info += f"{idx}. {self.player_name[num]['user_name']}({idx})可能是{role}\n"
+
+        day = stage.split('-')[0]
+        if day != "check_role":
+            self.guess_role[day] = guess_info
+
+
+    def __memory_stream_push(self, stage, ob):
+        day = stage.split('-')[0]
+        if day in self.memory_stream.keys():
+            self.memory_stream[day] += ob
+        else:
+            self.memory_stream[day] = ob
+
+    def __operation_info_push(self, stage, ob):
+        day = stage.split('-')[0]
+        if day in self.operation_info.keys():
+            self.operation_info[day] += ob
+        else:
+            self.operation_info[day] = ob
+
+    
     def __process_announcement__(self , data):
         """add announcement to memory stream"""
         announcement = data['announcement']
@@ -142,31 +195,80 @@ class summary():
             self.__push_vote_info__(data["vote_info"] , data["stage"])
 
         for anno in announcement:
-            observation = ""
+            ob = ""
+            if len(anno['user']) > 0:
+                player = str(anno['user'][0])
             if anno["operation"] == "chat":
-                # observation = f"{anno['user'][0]}號玩家({self.player_name[anno['user'][0]]})說「{anno['description']}」"    
-                observation = f"{anno['user'][0]}號玩家說「{anno['description']}」\n"    
+                ob = f"{self.player_name[player]['user_name']}({player})說「{anno['description']}」"    
             elif anno["operation"] == "died":
-                # observation = f"{anno['user'][0]}號玩家({self.player_name[anno['user'][0]]})死了"    
-                observation = f"{anno['user'][0]}號玩家死了\n"    
+                ob = f"{self.player_name[player]['user_name']}({player})死了"    
             
-                
-            self.memory_stream += observation
+            self.__memory_stream_push(data["stage"], ob)
+
+    def __info_init(self, stage):
+
+        if stage.split('-')[0] != "check_role":
+
+            day = str(int(stage.split('-')[0]))
+
+            if day not in self.memory_stream.keys():
+                self.memory_stream[day] = ""
+            if day not in self.operation_info.keys():
+                self.operation_info[day] = ""
+            if day not in self.guess_role.keys():
+                self.guess_role[day] = ""
 
     def __push_vote_info__(self , vote_info : dict , stage):
         """add vote info to memory stream"""
         prefix = "狼人投票殺人階段:" if stage.split('-')[-1] == "seer" else "玩家票人出去階段:"
 
+        ob = ""
         for player , voted in vote_info.items():
-            player = int(player)
             if voted != -1:
-                # ob = f"{prefix} {player}號玩家({self.player_name[player]})投給{voted}號玩家({self.player_name[voted]})"
-                ob = f"{prefix} {player}號玩家投給{voted}號玩家\n"
+                ob += f"{prefix} {self.player_name[player]['user_name']}({player})投給{self.player_name[str(voted)]['user_name']}({voted})\n"
             else:
-                # ob = f"{prefix} {player}號玩家({self.player_name[player]})棄票"
-                ob = f"{prefix} {player}號玩家棄票\n"
+                ob += f"{prefix} {self.player_name[player]['user_name']}({player})棄票\n"
 
-            self.memory_stream += ob
+        self.__memory_stream_push(stage, ob)
+
+    def __load_game_info(self, file_path):       
+
+        with open(self.prompt_dir / file_path, encoding="utf-8") as json_file: game_info = [json.loads(line) for line in json_file.readlines()]
+        self.player_name = game_info[1]
+        self.all_game_info["self_role"] = self.role_to_chinese[list(game_info[0].values())[0]]
+        self.all_game_info["all_role_info"] = self.__process_user_role(game_info[1])
+
+        no_save_op = ["dialogue", "vote1", "vote2"]
+        for idx, info in enumerate(game_info):
+
+            # stage info
+            if "stage" in info.keys():
+                self. __info_init(info["stage"])
+                self.__process_announcement__(info)
+
+                if "guess_role" in game_info[idx+1].keys():
+                    self.__process_guess_role(info["stage"] , game_info[idx+1])
+
+            # operation
+            elif "stage_name" in info.keys() and (not info['stage_name'].split('-')[-1] in no_save_op):
+                self. __info_init(info["stage_name"])
+                ob = f"你使用了{self.operation_to_chinese[info['stage_name'].split('-')[-1]]}{info['target']}號玩家\n"
+                self.__operation_info_push(info["stage_name"], ob)
+                
+                if "guess_role" in game_info[idx+1].keys():
+                    self.__process_guess_role(info["stage_name"], game_info[idx+1])
+
+        for anno in game_info[-2]["announcement"]:
+            if anno["operation"] == "game_over":
+                self.all_game_info["result"] = anno["description"]
+
+        # print(self.all_game_info)
+        # for i in range(1, len(self.memory_stream)+1):
+        #     day = str(i)
+        #     print(f"第{day}天")
+        #     print(f"memory_stream: {self.memory_stream[day]}")
+        #     print(f"operation_info: {self.operation_info[day]}")
+        #     print(f"guess_role: {self.guess_role[day]}")
 
 
     def get_summary(self, file_name = "10_31_14_21.jsonl"):
@@ -193,7 +295,7 @@ class summary():
 
                 self.__process_announcement__(info)
             elif info['stage_name'].split('-')[-1] != "check":
-                self.operation_info += f"你使用了{self.role_to_chinese[info['stage_name'].split('-')[-1]]}的技能，目標是{info['target']}號玩家\n"
+                self.operation_info += f"你使用了{self.operation_to_chinese[info['stage_name'].split('-')[-1]]}是{info['target']}號玩家\n"
         
         day_str = f"第{day}天"
         all_summary = self.__get_day_summary__(day_str, self.memory_stream, self.operation_info, result)
@@ -278,25 +380,6 @@ class summary():
 
         with open("", encoding="utf-8") as json_file: summary_set = json.load(json_file)
     
-    
-    def __load_game_info(self, file_path):        
-        with open(self.prompt_dir / file_path, encoding="utf-8") as json_file: game_info = json.load(json_file)
-        # {"0": {"user_name": "yui:838", "user_role": "hunter"}, "1": {"user_name": "Player965", "user_role": "werewolf"}
-        self.all_player_role = game_info[1]
-
-        for idx, info in enumerate(game_info):
-            # skip to third line
-            if idx in [0, 1]:
-                continue
-            # stage info
-            if "stage" in info.key():
-                pass
-            # operation
-            elif "stage-name" in info.key():
-                pass
-            # guess role
-            else:
-                pass
 
     def transform_player2identity(self, summary):
         # test use 
@@ -334,5 +417,6 @@ class summary():
 if __name__ == '__main__':
 
     s = summary(logger = logging.getLogger(__name__))
+    # s = summary(logger = logging.getLogger(__name__), prompt_dir="./generative_agent_with_werewolf_kill/doc", api_json = "./generative_agent_with_werewolf_kill/doc/secret/openai.key")
     # game_summary = s.get_summary()
     # s.set_score(role= "witch", stage= "skill", summary= "女巫沒有使用解藥救被狼人殺的人(預言家)")
