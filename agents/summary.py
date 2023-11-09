@@ -374,7 +374,7 @@ class summary():
             summary_set.pop()
         return summary_set
     
-    def get_current_summary(self, game_info):
+    def __get_current_summary(self, game_info):
 
         self.__load_game_info(game_info= game_info)
     
@@ -386,8 +386,9 @@ class summary():
             self.prompt_template['current_summary'] += f"[第{day}天猜測其他玩家的身分]\n"
             self.prompt_template['current_summary'] += f"{self.guess_role[day]}\n"
             
-            self.prompt_template['current_summary'] +=f"[你所進行的操作]\n"
-            self.prompt_template['current_summary'] += f"{self.operation_info[day]}\n"
+            if len(self.operation_info[day]) != 0:
+                self.prompt_template['current_summary'] +=f"[你所進行的操作]\n"
+                self.prompt_template['current_summary'] += f"{self.operation_info[day]}\n"
 
         self.prompt_template['current_summary'] = self.prompt_template['current_summary'].replace("%l", self.example['current_summary'])
         self.prompt_template['current_summary'] += f"* 回應\n"
@@ -405,13 +406,15 @@ class summary():
         return summary
 
 
-    def find_similarly_summary(self, role, stage, current_content):
+    def find_similarly_summary(self, role, stage, game_info):
         
+        self.__get_current_summary(game_info= game_info)
+
         file_path = os.path.join(role, f"{stage}.json")
         summary_set = self.__load_summary(file_path= file_path)
         similarly_scores = []
         for idx, summary_each in enumerate(summary_set):
-            embeddings = self.embedding_model.encode([summary_each, current_content])
+            embeddings = self.embedding_model.encode([summary_each, game_info])
             cos_sim = util.cos_sim(embeddings, embeddings)
             similarly_scores.append([cos_sim[0][1], idx])
 
