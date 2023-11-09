@@ -30,7 +30,7 @@ class summary_agent(agent):
         elif cur_stage in ["seer", "witch", "hunter"]:
             stage = "operation"
         
-        self.similarly_sentences = self.summary_generator.find_similarly_summary(self.role, stage, game_info = self.game_info)
+        self.similarly_sentences = self.summary_generator.find_similarly_summary(stage, game_info = self.game_info)
         
         if(len(data['information']) == 0):
             return

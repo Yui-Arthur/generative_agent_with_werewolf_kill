@@ -62,7 +62,7 @@ class summary():
         self.get_score_fail_times = 3
         self.embedding_model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
 
-        # self.__load_game_info(file_path = "./game_info/11_06_18_31_mAgent112.jsonl")
+        # self.__load_game_info(file_path = "./game_info/11_09_20_44_iAgent932.jsonl")
 
     def __load_prompt_and_example__(self , prompt_dir):
         """load prompt json to dict"""
@@ -234,9 +234,15 @@ class summary():
 
         if file_path != None:
             with open(self.prompt_dir / file_path, encoding="utf-8") as json_file: game_info = [json.loads(line) for line in json_file.readlines()]
+        for val in game_info[0].values():
+            self.my_player_role = val
+        
         self.player_name = game_info[1]
         self.all_game_info["self_role"] = self.role_to_chinese[list(game_info[0].values())[0]]
         self.all_game_info["all_role_info"] = self.__process_user_role(game_info[1])
+        for number, info in self.player_name.items():
+            user_name = info["user_name"]
+            self.player2identity.extend([user_name, f"{user_name}({number})"])
 
         no_save_op = ["dialogue", "vote1", "vote2"]
         for idx, info in enumerate(game_info):
@@ -406,11 +412,11 @@ class summary():
         return summary
 
 
-    def find_similarly_summary(self, role, stage, game_info):
+    def find_similarly_summary(self, stage, game_info):
         
         self.__get_current_summary(game_info= game_info)
 
-        file_path = os.path.join(role, f"{stage}.json")
+        file_path = os.path.join(self.my_player_role, f"{stage}.json")
         summary_set = self.__load_summary(file_path= file_path)
         similarly_scores = []
         for idx, summary_each in enumerate(summary_set):
