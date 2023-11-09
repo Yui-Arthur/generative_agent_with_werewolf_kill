@@ -1,7 +1,7 @@
 import requests
 import threading
 import logging
-import openai
+from openai import OpenAI , AzureOpenAI
 import sys   
 from pathlib import Path   
 import time
@@ -16,9 +16,10 @@ class long_memeory_stream():
     
     sentence_model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
 
-    def __init__(self , prompt_dir , logger , openai_kwargs):
+    def __init__(self , prompt_dir , logger , client , openai_kwargs):
         self.memory_stream = []
         self.openai_kwargs = openai_kwargs
+        self.client : OpenAI | AzureOpenAI = client
         self.logger : logging.Logger = logger
         self.max_fail_cnt = -1
         self.token_used = 0
@@ -424,7 +425,7 @@ class long_memeory_stream():
 
     def __openai_send__(self , prompt):
         """openai api send prompt , can override this."""
-        response = openai.ChatCompletion.create(
+        response = self.client.chat.completions.create(
             **self.openai_kwargs,
             messages = [
                 {"role":"system","content":"You are an AI assistant that helps people find information."},
@@ -437,13 +438,14 @@ class long_memeory_stream():
             presence_penalty=0,
             stop=None)
         
+        response = response.model_dump()
+        
         self.token_used += response["usage"]["total_tokens"]
         
         if response['choices'][0]["finish_reason"] == "content_filter":
             self.logger.debug("Block By Openai")
             return None
 
-        
         
         return response['choices'][0]['message']['content']
     
