@@ -61,8 +61,11 @@ class summary():
         self.similarly_sentence_num = 5
         self.get_score_fail_times = 3
         self.embedding_model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
-        
-        self.__load_game_info(file_path = "./game_info/11_09_00_44_iAgent396.jsonl")
+
+        file_path = "./game_info/11_09_20_44_iAgent932.jsonl"
+        with open(self.prompt_dir / file_path, encoding="utf-8") as json_file: game_info = [json.loads(line) for line in json_file.readlines()]
+        self.get_current_summary(game_info)
+        # self.__load_game_info(game_info= game_info)
         # self.__load_game_info(file_path = "./game_info/11_06_18_31_mAgent112.jsonl")
 
     def __load_prompt_and_example__(self , prompt_dir):
@@ -231,9 +234,9 @@ class summary():
 
         self.__memory_stream_push(stage, ob)
 
-    def __load_game_info(self, file_path):       
+    def __load_game_info(self, file_path = None, game_info = None):       
 
-        with open(self.prompt_dir / file_path, encoding="utf-8") as json_file: game_info = [json.loads(line) for line in json_file.readlines()]
+        # with open(self.prompt_dir / file_path, encoding="utf-8") as json_file: game_info = [json.loads(line) for line in json_file.readlines()]
         self.player_name = game_info[1]
         self.all_game_info["self_role"] = self.role_to_chinese[list(game_info[0].values())[0]]
         self.all_game_info["all_role_info"] = self.__process_user_role(game_info[1])
@@ -376,11 +379,27 @@ class summary():
             summary_set.pop()
         return summary_set
     
-    def get_current_summary(self):
-
-        with open("", encoding="utf-8") as json_file: summary_set = json.load(json_file)
+    def get_current_summary(self, game_info):
+        self.__load_game_info(game_info= game_info)
+        # with open("", encoding="utf-8") as json_file: summary_set = json.load(json_file)
     
+        for i in range(1, len(self.memory_stream)+1):
+            day = str(i)
+            self.prompt_template['current_summary'] += f"[第{day}天遊戲資訊]\n"
+            self.prompt_template['current_summary'] += f"{self.memory_stream[day]}\n"
 
+            self.prompt_template['current_summary'] += f"[第{day}天猜測其他玩家的身分]\n"
+            self.prompt_template['current_summary'] += f"{self.guess_role[day]}\n"
+            
+            self.prompt_template['current_summary'] +=f"[你所進行的操作]\n"
+            self.prompt_template['current_summary'] += f"{self.operation_info[day]}\n"
+
+        self.prompt_template['current_summary'] = self.prompt_template['current_summary'].replace("%l", self.example['current_summary'])
+        self.prompt_template['current_summary'] += f"* 回應\n"
+        self.prompt_template['current_summary'] += f"[目前總結]\n"
+        print(self.prompt_template['current_summary'])
+        
+        # print(self.prompt_template['current_summary'])
     def transform_player2identity(self, summary):
         # test use 
         # self.all_player_role = {"0": {"user_name": "yui:838", "user_role": "hunter"},
@@ -416,7 +435,7 @@ class summary():
     
 if __name__ == '__main__':
 
-    s = summary(logger = logging.getLogger(__name__))
+    s = summary(logger = logging.getLogger(__name__), api_json="./doc/secret/api.json")
     # s = summary(logger = logging.getLogger(__name__), prompt_dir="./generative_agent_with_werewolf_kill/doc", api_json = "./generative_agent_with_werewolf_kill/doc/secret/openai.key")
     # game_summary = s.get_summary()
     # s.set_score(role= "witch", stage= "skill", summary= "女巫沒有使用解藥救被狼人殺的人(預言家)")
