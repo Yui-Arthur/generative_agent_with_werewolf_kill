@@ -62,10 +62,6 @@ class summary():
         self.get_score_fail_times = 3
         self.embedding_model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
 
-        file_path = "./game_info/11_09_20_44_iAgent932.jsonl"
-        with open(self.prompt_dir / file_path, encoding="utf-8") as json_file: game_info = [json.loads(line) for line in json_file.readlines()]
-        self.get_current_summary(game_info)
-        # self.__load_game_info(game_info= game_info)
         # self.__load_game_info(file_path = "./game_info/11_06_18_31_mAgent112.jsonl")
 
     def __load_prompt_and_example__(self , prompt_dir):
@@ -335,9 +331,7 @@ class summary():
         final_prompt = self.prompt_template["score"].replace("%s", summary)
         self.logger.debug("Prompt: "+str(final_prompt))
         response = self.__openai_send__(final_prompt)
-        print(final_prompt)
         self.logger.debug("Response: "+str(response))
-        print(response)
         try:
             score = response.split(":")[1]
         except:
@@ -381,8 +375,8 @@ class summary():
         return summary_set
     
     def get_current_summary(self, game_info):
+
         self.__load_game_info(game_info= game_info)
-        # with open("", encoding="utf-8") as json_file: summary_set = json.load(json_file)
     
         for i in range(1, len(self.memory_stream)+1):
             day = str(i)
@@ -402,14 +396,7 @@ class summary():
         
         # print(self.prompt_template['current_summary'])
     def transform_player2identity(self, summary):
-        # test use 
-        # self.all_player_role = {"0": {"user_name": "yui:838", "user_role": "hunter"},
-        #                         "1": {"user_name": "Player965", "user_role": "werewolf"},
-        #                         "2": {"user_name": "er:868", "user_role": "seer"}, 
-        #                         "3": {"user_name": "df", "user_role": "werewolf"},
-        #                         "4": {"user_name": "as:88", "user_role": "witch"}, 
-        #                         "5": {"user_name": "fd:45", "user_role": "village"},
-        #                         "6": {"user_name": "asd:123", "user_role": "village"}}
+        
         for player_number in self.player2identity:
             if player_number in summary:
                 identity = self.role_to_chinese[self.all_player_role[player_number[2]]["user_role"]]
@@ -438,5 +425,3 @@ if __name__ == '__main__':
 
     s = summary(logger = logging.getLogger(__name__), api_json="./doc/secret/api.json")
     # s = summary(logger = logging.getLogger(__name__), prompt_dir="./generative_agent_with_werewolf_kill/doc", api_json = "./generative_agent_with_werewolf_kill/doc/secret/openai.key")
-    # game_summary = s.get_summary()
-    # s.set_score(role= "witch", stage= "skill", summary= "女巫沒有使用解藥救被狼人殺的人(預言家)")
