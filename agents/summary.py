@@ -199,9 +199,9 @@ class summary():
             if len(anno['user']) > 0:
                 player = str(anno['user'][0])
             if anno["operation"] == "chat":
-                ob = f"{self.player_name[player]['user_name']}({player})說「{anno['description']}」"    
+                ob = f"{self.player_name[player]['user_name']}({player})說「{anno['description']}」\n"    
             elif anno["operation"] == "died":
-                ob = f"{self.player_name[player]['user_name']}({player})死了"    
+                ob = f"{self.player_name[player]['user_name']}({player})死了\n"    
             
             self.__memory_stream_push(data["stage"], ob)
 
@@ -384,13 +384,13 @@ class summary():
 
     def transform_player2identity(self, summary):
         # test use 
-        # self.all_player_role = {"0": {"user_name": "yui:838", "user_role": "hunter"},
-        #                         "1": {"user_name": "Player965", "user_role": "werewolf"},
-        #                         "2": {"user_name": "er:868", "user_role": "seer"}, 
-        #                         "3": {"user_name": "df", "user_role": "werewolf"},
-        #                         "4": {"user_name": "as:88", "user_role": "witch"}, 
-        #                         "5": {"user_name": "fd:45", "user_role": "village"},
-        #                         "6": {"user_name": "asd:123", "user_role": "village"}}
+        # self.all_player_role = {"0": {"user_name": "yui:838", "user_role": "hunter", "identity": "好人"},
+        #                         "1": {"user_name": "Player965", "user_role": "werewolf", "identity": "壞人"},
+        #                         "2": {"user_name": "er:868", "user_role": "seer", "identity": "好人"}, 
+        #                         "3": {"user_name": "df", "user_role": "werewolf, "identity": "壞人""},
+        #                         "4": {"user_name": "as:88", "user_role": "witch", "identity": "好人"}, 
+        #                         "5": {"user_name": "fd:45", "user_role": "village", "identity": "好人"},
+        #                         "6": {"user_name": "asd:123", "user_role": "village", "identity": "好人"}}
         for player_number in self.player2identity:
             if player_number in summary:
                 identity = self.role_to_chinese[self.all_player_role[player_number[2]]["user_role"]]
