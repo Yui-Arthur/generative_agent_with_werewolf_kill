@@ -75,6 +75,7 @@ class long_memeory_stream():
         
         self.logger.debug(f"{self.player_name}")
         self.__load_prompt_and_example__(self.prompt_dir)
+        self.push(0 , 0 , f"您本場為{self.player_id}號玩家，名字為{player_name}" , importantance=False)
         self.push(0 , 0 , f"您本場的身分為{self.role_to_chinese[role]}" , importantance=False)
 
         self.suspect_role_list = {i:"未知" for i in range(self.player_num)}
@@ -171,13 +172,15 @@ class long_memeory_stream():
         """
         self.logger.debug(f"start retrieval")
         self.logger.debug(f"  query : {query}")
-        importantance_score = [ob['importantance'] for ob in self.memory_stream]
+        importantance_score = [ob['importantance'] for ob in self.memory_stream] 
+        
+        importantance_score /= np.linalg.norm(importantance_score)
         recency_score = self.__cal_recency__(day , turn)
         relevance_score = self.__cal_relevance__(query)
 
         for idx in range(len(self.memory_stream)):
             memory = self.memory_stream[idx]['observation'].strip('\n')
-            self.logger.debug(f"  importantance {importantance_score[idx]} | recency {recency_score[idx]} | relevance {relevance_score[idx]} | memory {memory} ")
+            self.logger.debug(f"  importantance {importantance_score[idx]:3} | recency {recency_score[idx]:.4f} | relevance {relevance_score[idx]:.4f} |  {memory} ")
 
 
         importantance_factor = 1
@@ -413,10 +416,12 @@ class long_memeory_stream():
             # check the keyword is in keyword_list and the type is satisfy require
             if info.keys() == keyword_dict.keys() and all(_.strip('\n').isnumeric() for keyword , _ in info.items() if keyword_dict[keyword] == int):
                 success_get_keyword = True
-                # change data type
+                # change data type & remove the '\n'
                 for keyword , _ in info.items() : 
                     if keyword_dict[keyword] == int :
                         info[keyword] = int(_.strip('\n'))
+                    else:
+                        info[keyword] = _.strip('\n')
             else : 
                 fail_idx+=1
                 self.logger.debug(f"  {fail_idx} failed")
