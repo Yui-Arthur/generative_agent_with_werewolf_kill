@@ -27,6 +27,7 @@ class summary():
             "投票總結" : "vote",
             "發言總結" : "dialogue",
             "技能總結" : "operation",
+            "猜測角色總結" : "guess",
         }
         self.operation_to_chinese = {
             "seer" : "預言家查驗，目標是",
@@ -268,55 +269,44 @@ class summary():
             if anno["operation"] == "game_over":
                 self.all_game_info["result"] = anno["description"]
 
-        # print(self.all_game_info)
-        # for i in range(1, len(self.memory_stream)+1):
-        #     day = str(i)
-        #     print(f"第{day}天")
-        #     print(f"memory_stream: {self.memory_stream[day]}")
-        #     print(f"operation_info: {self.operation_info[day]}")
-        #     print(f"guess_role: {self.guess_role[day]}")
+        # self.__print_game_info()
+
+    def __print_game_info(self):
+
+        print(self.all_game_info)
+        for i in range(1, len(self.memory_stream)+1):
+            day = str(i)
+            print(f"第{day}天")
+            print(f"memory_stream: {self.memory_stream[day]}")
+            print(f"operation_info: {self.operation_info[day]}")
+            print(f"guess_role: {self.guess_role[day]}")
 
 
-    def get_summary(self, file_name = "10_31_14_21.jsonl"):
+    def get_summary(self, file_name = "11_09_00_44_iAgent396.jsonl"):
 
         self.logger.debug("load game info")
-        with open(f"generative_agent_with_werewolf_kill/doc/game_info/{file_name}" , encoding="utf-8") as json_file: game_info = [json.loads(line) for line in json_file.readlines()]
-        for anno in game_info[-1]["announcement"]:
-            if anno["operation"] == "game_over":
-                result = anno["description"]
 
-        # 分天summary
-        day = 1
-        for info in game_info:
-            if "stage" in info:
-                if  "-" in info["stage"] and day!=int(info["stage"].split("-")[0]):
-                    day_str = f"第{day}天"
-                    # vote、dialogue、operation summary
-                    all_summary = self.__get_day_summary__(day_str, self.memory_stream, self.operation_info, result)
-                    # self.__write_summary_score(all_summary, role="女巫")
-                    
-                    day = int(info["stage"].split("-")[0])
-                    self.memory_stream = ""
-                    self.operation_info = ""
+        self.__load_game_info(file_path = f"./game_info/{file_name}")
 
-                self.__process_announcement__(info)
-            elif info['stage_name'].split('-')[-1] != "check":
-                self.operation_info += f"你使用了{self.operation_to_chinese[info['stage_name'].split('-')[-1]]}是{info['target']}號玩家\n"
-        
-        day_str = f"第{day}天"
-        all_summary = self.__get_day_summary__(day_str, self.memory_stream, self.operation_info, result)
-        # self.__write_summary_score(all_summary, role="女巫")
+        for day in self.memory_stream:
+            all_summary = self.__get_day_summary__(day, self.memory_stream[day], self.operation_info[day], self.all_game_info["result"])
+            guess_role_summary = self.__get_guess_role_summary(day, self.memory_stream[day], self.guess_role[day])
+            
+            """summary + score"""
+            # self.set_score(self.all_game_info["self_role"], "vote", all_summary[0])
+            # self.set_score(self.all_game_info["self_role"], "dialogue", all_summary[1])
+            # self.set_score(self.all_game_info["self_role"], "operation", all_summary[2])
+            # self.set_score(self.all_game_info["self_role"], "guess_role", guess_role_summary)
 
     def __get_day_summary__(self, day, day_memory, day_operation, result):
         """day summary to openai"""
-        print("day summary")
-        self.logger.debug(f"day summary")        
+
+        day = f"第{day}天"
+        print(f"{day}day summary")      
         self.max_fail_cnt = 3
-        # memory_str = self.__memory_to_str__(day_memory)
-        # player_list = self.__get_player_list__()
-        player_list = ""
-        final_prompt = self.prompt_template['day_summary'].replace("%l" , self.example['day_summary']).replace("%z", day).replace("%m" , day_memory).replace("%o" , day_operation).replace("%y" , player_list).replace("%p" , result)
-        print(f"final_prompt = {final_prompt}")
+    
+        final_prompt = self.prompt_template['day_summary'].replace("%l" , self.example['day_summary']).replace("%z", day).replace("%m" , day_memory).replace("%o" , day_operation).replace("%y" , self.all_game_info["all_role_info"]).replace("%p" , result)
+        # print(f"final_prompt = {final_prompt}")
         info = {
             "vote" : "vote_summary",
             "dialogue" : "dialogue_summary",
@@ -325,12 +315,22 @@ class summary():
         # info = self.__process_LLM_output__(final_prompt , ["vote", "dialogue", "operation"] , info)
 
         return info['vote'], info['dialogue'], info['operation']
+    
+    def __get_guess_role_summary(self, day, day_memory, guess_role):
+        """guess_role summary to openai"""
 
-    def __write_summary_score(self, summary , role):
-        """summary + score"""
-        self.set_score(role, "vote", summary[0])
-        self.set_score(role, "dialogue", summary[1])
-        self.set_score(role, "operation", summary[2])
+        day = f"第{day}天"
+        print(f"{day}guess_role summary")      
+        self.max_fail_cnt = 3
+    
+        final_prompt = self.prompt_template['guess_role'].replace("%l" , self.example['guess_role']).replace("%z", day).replace("%m" , day_memory).replace("%g" , guess_role).replace("%y" , self.all_game_info["all_role_info"])
+        # print(f"final_prompt = {final_prompt}")
+        info = {
+            "guess" : "guess_role_summary",
+        }        
+        # info = self.__process_LLM_output__(final_prompt , ["guess"] , info)
+
+        return info['guess']
 
     def set_score(self, role, stage, summary):
 
@@ -432,5 +432,6 @@ class summary():
     
 if __name__ == '__main__':
 
-    s = summary(logger = logging.getLogger(__name__), api_json="./doc/secret/api.json")
-    # s = summary(logger = logging.getLogger(__name__), prompt_dir="./generative_agent_with_werewolf_kill/doc", api_json = "./generative_agent_with_werewolf_kill/doc/secret/openai.key")
+    # s = summary(logger = logging.getLogger(__name__), api_json="./doc/secret/api.json")
+    s = summary(logger = logging.getLogger(__name__), prompt_dir="./generative_agent_with_werewolf_kill/doc", api_json = "./generative_agent_with_werewolf_kill/doc/secret/openai.key")
+    s.get_summary()
