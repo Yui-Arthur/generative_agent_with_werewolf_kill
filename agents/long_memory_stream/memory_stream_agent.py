@@ -18,11 +18,11 @@ class memory_stream_agent(agent):
     def __init__(self , api_json = "doc/secret/yui.key",  
                  server_url = "140.127.208.185" , agent_name = "Agent1" , room_name = "TESTROOM" , 
                  color = "f9a8d4" , prompt_dir = "doc/prompt/memory_stream"):
-
+        
         super().__init__(api_json = api_json, server_url = server_url ,
                          agent_name = agent_name , room_name = room_name , 
                                        color = color) 
-
+        
         # init long memory class & models
         self.long_memory : role = None
         # start the game
