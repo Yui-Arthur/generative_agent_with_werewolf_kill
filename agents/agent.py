@@ -2,6 +2,7 @@
 import requests
 import threading
 import logging
+from openai import OpenAI , AzureOpenAI
 import openai
 import sys   
 from pathlib import Path   
@@ -67,21 +68,38 @@ class agent():
     def __openai_init__(self , api_json):
         """azure openai api setting , can override this"""
         with open(api_json,'r') as f : api_info = json.load(f)
-        openai.api_key = api_info["key"]
 
         if api_info["api_type"] == "azure":
+            # version 1.0 of Openai api
+            self.client = AzureOpenAI(
+                api_version = api_info["api_version"] ,
+                azure_endpoint = api_info["api_base"],
+                api_key=api_info["key"],
+            )
+
+            # legacy version
+            openai.api_key = api_info["key"]
             openai.api_type = api_info["api_type"]
-            openai.api_base = api_info["api_base"]
+            openai.azure_endpoint = api_info["api_base"]
             openai.api_version = api_info["api_version"] 
-            self.api_kwargs["engine"] = api_info['engine']
+
+            self.api_kwargs["model"] = api_info["engine"]
         else:
+            self.client = OpenAI(
+                api_key=api_info["key"],
+            )
+            # legacy version
+            openai.api_key = api_info["key"]
+
             self.api_kwargs["model"] = api_info["model"]
         
 
 
     def __openai_send__(self , prompt):
-        """openai api send prompt , can override this."""
-        response = openai.ChatCompletion.create(
+        # """openai api send prompt , can override this."""
+
+        ### version 1.0 of Openai api ###
+        response = self.client.chat.completions.create(
             **self.api_kwargs,
             messages = [
                 {"role":"system","content":"You are an AI assistant that helps people find information."},
@@ -94,7 +112,25 @@ class agent():
             presence_penalty=0,
             stop=None)
         
-        return response['choices'][0]['message']['content']
+        return response.model_dump()['choices'][0]['message']['content']
+        
+    
+    def __legacy_oepnai_send__(self , prompt):
+        # legacy version 
+        response = openai.chat.completions.create(
+            **self.api_kwargs,
+            messages = [
+                {"role":"system","content":"You are an AI assistant that helps people find information."},
+                {"role":"user","content":prompt}
+            ],
+            temperature=0.7,
+            max_tokens=800,
+            top_p=0.95,
+            frequency_penalty=0,
+            presence_penalty=0,
+            stop=None)
+            
+        return response.model_dump()['choices'][0]['message']['content']
     
     def __process_data__(self , data):
         """the data process , must override this."""
@@ -228,6 +264,7 @@ class agent():
 
         except Exception as e:
             self.logger.warning(f"__check_game_state__ Server Error , {e}")
+            self.__del__()
 
     def __get_role__(self):
         """get the agent's role after the game is started"""

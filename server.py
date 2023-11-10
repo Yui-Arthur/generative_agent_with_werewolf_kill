@@ -55,12 +55,13 @@ class agent_service(agent_pb2_grpc.agentServicer):
         return empty()
     
     def get_agent_info(self , request , context):
-        print(f"Get Info with {request}")
         agent_id = request.agentID
 
+        # api server testing the agent server
         if agent_id == -1:
             return agent_info(agentInfo = {"This is test agent grpc server state , you should not send the agentID less then 0" : info_list(info = ["!"])})
-
+        
+        print(f"Get Info with {agent_id}")
         if agent_id not in self.agent_dict.keys():
             context.abort(grpc.StatusCode.NOT_FOUND, "Agent not found")
             
@@ -68,9 +69,6 @@ class agent_service(agent_pb2_grpc.agentServicer):
             del self.agent_dict[agent_id]
             context.abort(grpc.StatusCode.NOT_FOUND, "The game of the agent is end")
 
-        # agent_info = 
-
-        # return agent_info(agentInfo = self.agent_dict[agent_id].get_info())
         return agent_info(agentInfo = {key: info_list(info = value)for key , value in self.agent_dict[agent_id].get_info().items()})
     
 def print_agent_dict(agent_dict : dict[str , agent]):
@@ -80,7 +78,7 @@ def print_agent_dict(agent_dict : dict[str , agent]):
             del agent_dict[id]
         else:
             print(f"{agent_dict[id].name} , {agent_dict[id].room}")
-
+    print("-----------------------")
     
     global thread_id
     thread_id = threading.Timer(60 , print_agent_dict , args=[agent_dict])
