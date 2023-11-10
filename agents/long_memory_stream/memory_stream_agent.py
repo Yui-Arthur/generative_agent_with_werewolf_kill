@@ -12,6 +12,7 @@ import time
 import math
 from sentence_transformers import SentenceTransformer, util
 from ..agent import agent
+from ..script_agent import script_agent
 from .role import role , werewolf , seer , witch , hunter
 
 class memory_stream_agent(agent):
@@ -143,4 +144,39 @@ class memory_stream_agent_test(memory_stream_agent):
             self.logger.warning(f"__setting_game Server Error , {e}")
     
     
+class memory_stream_agent_script(script_agent):
+    def __init__(self , api_json = None, game_info_path = None,
+                agent_name = "ScriptGame" , game_room = "ScriptGame" , prompt_dir = "doc/prompt/memory_stream"):
+        self.prompt_dir = Path(prompt_dir)
+        super().__init__(api_json, game_info_path, agent_name , game_room)
     
+    def __process_data__(self, data):
+        """the data process."""
+        operations = self.long_memory.update_stage(data)
+
+        skip = False
+        for operation in operations:
+            self.__send_operation__(operation)
+            if operation['operation'] == 'dialogue':
+                skip = True
+        
+        if skip:
+            self.__skip_stage__()
+
+
+    def __start_game_init__(self , room_data):
+        """the game started setting , update player name"""
+        self.logger.debug(f"game is started , this final room info : {room_data}")
+        role_to_class = {
+            "werewolf" : werewolf,
+            "seer" : seer,
+            "witch" : witch,
+            "hunter" : hunter,
+            "village" : role,
+        }
+        
+        self.long_memory : role = role_to_class[self.role](self.prompt_dir , self.logger, self.api_kwargs)
+        if self.role != "werewolf":
+            self.long_memory.update_game_info(self.player_name , self.role)
+        else:
+            self.long_memory.update_game_info(self.player_name , self.role , self.teamate)
