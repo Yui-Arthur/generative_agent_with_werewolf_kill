@@ -175,8 +175,8 @@ class memory_stream_agent_script(script_agent):
             "village" : role,
         }
         
-        self.long_memory : role = role_to_class[self.role](self.prompt_dir , self.logger, self.api_kwargs)
+        self.long_memory : role = role_to_class[self.role](self.prompt_dir , self.logger , self.client , self.api_kwargs)
         if self.role != "werewolf":
-            self.long_memory.update_game_info(self.player_name , self.role)
+            self.long_memory.update_game_info(self.player_id , self.player_name , self.role)
         else:
-            self.long_memory.update_game_info(self.player_name , self.role , self.teamate)
+            self.long_memory.update_game_info(self.player_id , self.player_name , self.role , self.teamate)
