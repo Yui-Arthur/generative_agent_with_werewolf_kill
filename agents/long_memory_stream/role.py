@@ -6,7 +6,7 @@ class role(long_memeory_stream):
 
     def __init__(self , prompt_dir , logger , client , openai_kwargs):
         super().__init__(prompt_dir, logger , client, openai_kwargs)
-        self.max_fail_cnt = 1
+        self.max_fail_cnt = 3
         
     def __processs_information__(self , data):
         return super().__process_information__(data)

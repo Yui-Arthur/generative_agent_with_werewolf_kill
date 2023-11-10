@@ -21,7 +21,7 @@ class long_memeory_stream():
         self.openai_kwargs = openai_kwargs
         self.client : OpenAI | AzureOpenAI = client
         self.logger : logging.Logger = logger
-        self.max_fail_cnt = -1
+        self.max_fail_cnt = 3
         self.token_used = 0
         self.chinese_to_english = {
             # importantance
@@ -35,8 +35,8 @@ class long_memeory_stream():
             "該玩家身分" : "role",
             # vote
             "投票" : "vote",
-            # dialgue
-            "發言" : "dialgue",
+            # dialogue
+            "發言" : "dialogue",
             # importantance / suspect role list / vote
             "原因" : "reason",
         }
@@ -66,39 +66,45 @@ class long_memeory_stream():
         }
 
 
-    def update_game_info(self , player_name , role):
+    def update_game_info(self , player_id , player_name , role):
         """update the player name & init suspect_role_list"""
         self.player_num = len(player_name)
+        self.player_id = player_id
         self.player_name = player_name
         self.role = role
         
         self.logger.debug(f"{self.player_name}")
         self.__load_prompt_and_example__(self.prompt_dir)
-        self.push(0 , 0 , f"您本場的身分為{self.role_to_chinese[role]}")
+        self.push(0 , 0 , f"您本場的身分為{self.role_to_chinese[role]}" , importantance=False)
 
         self.suspect_role_list = {i:"未知" for i in range(self.player_num)}
         self.remain_player = [i for i in range(self.player_num)]
 
-    def push(self , day , turn , observation):
+    def push(self , day , turn , observation , importantance = True):
         """push the observation in memeory stream"""
-        info = self.__cal_importantance__(observation)
+        if importantance:
+            info = self.__cal_importantance__(observation)
+        else:
+            info = {"score" : 5,"reason" : "const"}    
+
         full_observation = {
             "day" : day,
             "trun" : turn,
             "last_used" : turn,
             "observation" : observation ,
-            "importantance" : int(info["score"]),
+            "importantance" : info["score"],
             "impo_reason" : info['reason']
         }
         self.logger.debug(f"push observation {full_observation}")
         self.memory_stream.append(full_observation)
 
     def update_stage(self , data):
+        # a new day init
         if self.day != data['stage'].split('-')[0]:
             self.day = data['stage'].split('-')[0]
             self.__day_init__()
 
-
+        # if have vote info 
         if any(data["vote_info"].values()) :
             self.__push_vote_info__(data["vote_info"] , data["stage"])
 
@@ -124,18 +130,19 @@ class long_memeory_stream():
         chat_flag = False
         for anno in announcement:
             observation = ""
-            if anno["operation"] == "chat":
+            # player (except this agent) last stage chat 
+            if anno["operation"] == "chat" and anno['user'][0] != self.player_id:
                 observation = f"{anno['user'][0]}號玩家({self.player_name[anno['user'][0]]})說「{anno['description']}」"    
                 chat_flag = True
+                self.push(self.day , len(self.memory_stream)+1 , observation , importantance=True)
+            # player died
             elif anno["operation"] == "died":
                 observation = f"{anno['user'][0]}號玩家({self.player_name[anno['user'][0]]})死了"    
                 self.remain_player.remove(int(anno['user'][0]))
+                self.push(self.day , len(self.memory_stream)+1 , observation , importantance=False)
                 # self.suspect_role_list.pop(int(anno['user'][0]))
 
-            self.push(self.day , len(self.memory_stream)+1 , observation)
-
-        
-
+        # if has chat , generation reflection & update guess roles
         if chat_flag:
             self.__reflection__(self.day , len(self.memory_stream))
             self.__gen_suspect_role_list__(self.day , len(self.memory_stream))
@@ -147,10 +154,11 @@ class long_memeory_stream():
         
         operation = []
     
-
         for info in informations:
+            # generate dialouge operation
             if info['operation'] == "dialogue":
-                operation.append(self.__gen_dialgue__(self.day , len(self.memory_stream)))
+                operation.append(self.__gen_dialogue__(self.day , len(self.memory_stream)))
+            # generate vote operation
             elif info['operation'] == "vote_or_not" and "vote" in data["stage"]:
                 operation.append(self.__gen_vote__(self.day , len(self.memory_stream)))
 
@@ -161,14 +169,15 @@ class long_memeory_stream():
         the retrieval process , will call importantance,recency,relevance func
         and return the top {pick_num} memory sored by score.
         """
+        self.logger.debug(f"start retrieval")
+        self.logger.debug(f"  query : {query}")
         importantance_score = [ob['importantance'] for ob in self.memory_stream]
         recency_score = self.__cal_recency__(day , turn)
         relevance_score = self.__cal_relevance__(query)
 
-
-        self.logger.debug(f"importantance {importantance_score}")
-        self.logger.debug(f"imporecency {recency_score}")
-        self.logger.debug(f"relevance {relevance_score}")
+        for idx in range(len(self.memory_stream)):
+            memory = self.memory_stream[idx]['observation'].strip('\n')
+            self.logger.debug(f"  importantance {importantance_score[idx]} | recency {recency_score[idx]} | relevance {relevance_score[idx]} | memory {memory} ")
 
 
         importantance_factor = 1
@@ -183,12 +192,14 @@ class long_memeory_stream():
             sorted_memory_streams[idx]["ori_idx"] = idx
 
         sorted_memory_streams.sort(key=lambda element: element['score'] , reverse=True)
-
+        
+        self.logger.debug(f"  retrieval memory:")
         for idx in range(min(pick_num , len(sorted_memory_streams))):
             self.memory_stream[sorted_memory_streams[idx]['ori_idx']]['lasted_used'] = turn
+            memory = sorted_memory_streams[idx]['observation'].strip('\n')
+            self.logger.debug(f"  {idx}.  {memory}")
 
-
-        self.logger.debug(f"retrieval memory {sorted_memory_streams[:pick_num]}")
+    
         return sorted_memory_streams[:pick_num]
     
     def __reflection__(self , day , turn):
@@ -219,7 +230,7 @@ class long_memeory_stream():
                 "role" : "村民",
                 "reason" : "test"
             }
-            info = self.__process_LLM_output__(final_prompt , ["role" , "reason"] , info)
+            info = self.__process_LLM_output__(final_prompt , {"role" : str , "reason" : str} , info , "guess roles")
             self.suspect_role_list[player] = info["role"]
 
         self.logger.info(f"update suspect role list : {self.suspect_role_list}")
@@ -235,31 +246,31 @@ class long_memeory_stream():
             "vote" : "4",
             "reason" : "test"
         }
-        info = self.__process_LLM_output__(final_prompt , ["vote" , "reason"] , info)
+        info = self.__process_LLM_output__(final_prompt , {"vote" : int , "reason" : str} , info , "vote")
 
         ret = self.ret_format.copy()
         ret['operation'] = "vote_or_not"
-        ret['target'] = int(info["vote"].strip("\n"))
+        ret['target'] = info["vote"]
         ret['chat'] = ""
 
         return ret
     
-    def __gen_dialgue__(self , day ,turn):
-        """gen the dialgue"""
+    def __gen_dialogue__(self , day ,turn):
+        """gen the dialogue"""
         memory = self.__retrieval__(day , turn , "現在有什麼重要訊息?")
         memory_str = self.__memory_to_str__(memory)
         sus_role_str , know_role_str = self.__role_list_to_str__()
-        final_prompt = self.prompt_template['dialgue'].replace("%m" , memory_str).replace("%e" , self.example['dialgue']).replace("%l" , sus_role_str).replace("%kl" , know_role_str)
+        final_prompt = self.prompt_template['dialogue'].replace("%m" , memory_str).replace("%e" , self.example['dialogue']).replace("%l" , sus_role_str).replace("%kl" , know_role_str)
         
         info = {
-            "dialgue" : "test",
+            "dialogue" : "test",
         }
-        info = self.__process_LLM_output__(final_prompt , ["dialgue"] , info)
+        info = self.__process_LLM_output__(final_prompt , {"dialogue" : str} , info , "dialogue")
 
         ret = self.ret_format.copy()
         ret['operation'] = "dialogue"
         ret['target'] = -1
-        ret['chat'] = info['dialgue']
+        ret['chat'] = info['dialogue']
 
         return ret
     
@@ -284,7 +295,7 @@ class long_memeory_stream():
             "reason" : "test"
         }
 
-        info = self.__process_LLM_output__(final_prompt, ["score","reason"] , info , -1)
+        info = self.__process_LLM_output__(final_prompt, {"score" : int, "reason" : str} , info , "importantance")
     
         return info
 
@@ -330,7 +341,7 @@ class long_memeory_stream():
             "question" : "test",
         }
 
-        info = self.__process_LLM_output__(final_prompt, ["question"] , info , 3)
+        info = self.__process_LLM_output__(final_prompt, {"question" : str} , info , "reflection question")
 
         
         return info
@@ -344,7 +355,7 @@ class long_memeory_stream():
             "opinion" : "test",
             "reference" : "test",
         }
-        info = self.__process_LLM_output__(final_prompt, ["opinion" , "reference"] , info , 3)
+        info = self.__process_LLM_output__(final_prompt, {"opinion" : str , "reference" : str } , info , "reflection opinion")
         
         return info
         
@@ -359,26 +370,26 @@ class long_memeory_stream():
             else:
                 ob = f"{prefix} {player}號玩家({self.player_name[player]})棄票"
 
-            self.push(self.day , len(self.memory_stream)+1 , ob)
+            self.push(self.day , len(self.memory_stream)+1 , ob , importantance=False)
 
     def __day_init__(self):
         pass
 
-    def __process_LLM_output__(self , prompt , keyword_list , sample_output , max_fail_cnt = -1):
+    def __process_LLM_output__(self , prompt , keyword_dict : dict, sample_output , task_name):
         """
         communication with LLM , repeat {max_fail_cnt} util find the {keyword_list} in LLM response .
         return the {keyword_list} dict , if fail get {keyword_list} in LLM response , return {sample_output}.
         """
-        max_fail_cnt = self.max_fail_cnt
         success_get_keyword = False
         fail_idx = 0
 
-        self.logger.debug(f"LLM keyword : {keyword_list}")
+        self.logger.debug(f"Start Task : {task_name}")
+        self.logger.debug(f"  LLM keyword : {keyword_dict}")
         info = {}
 
-        while not success_get_keyword and fail_idx < max_fail_cnt:
+        while not success_get_keyword and fail_idx < self.max_fail_cnt:
 
-            self.logger.debug(f"start {fail_idx} prompt")
+            self.logger.debug(f"  {fail_idx} response generate...")
             info = {}
             result = self.__openai_send__(prompt)
 
@@ -399,13 +410,23 @@ class long_memeory_stream():
                 elif keyword_name != "":
                     info[keyword_name] += line + "\n"
 
-            if all(_ in info.keys() for _ in keyword_list): success_get_keyword = True
-            else : fail_idx+=1
+            # check the keyword is in keyword_list and the type is satisfy require
+            if info.keys() == keyword_dict.keys() and all(_.strip('\n').isnumeric() for keyword , _ in info.items() if keyword_dict[keyword] == int):
+                success_get_keyword = True
+                # change data type
+                for keyword , _ in info.items() : 
+                    if keyword_dict[keyword] == int :
+                        info[keyword] = int(_.strip('\n'))
+            else : 
+                fail_idx+=1
+                self.logger.debug(f"  {fail_idx} failed")
         
-        self.logger.debug(f"LLM output : {info}")
 
-        if fail_idx >= max_fail_cnt: info = sample_output
+        if fail_idx >= self.max_fail_cnt: 
+            info = sample_output
+            self.logger.debug(f"  failure cnt exceed {self.max_fail_cnt}")
 
+        self.logger.debug(f"Task output : {info}")
         return info
     
     def __memory_to_str__(self , memory , add_idx=True):
