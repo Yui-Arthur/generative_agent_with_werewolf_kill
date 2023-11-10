@@ -48,7 +48,7 @@ class intelligent_agent(agent):
                 "target" : i["target"],
                 "chat" : i["chat"]
             }
-            # self.__send_operation__(op_data)
+            self.__send_operation__(op_data)
 
 
     def __start_game_init__(self, room_data):
@@ -61,7 +61,7 @@ class intelligent_agent(agent):
         self.logger.debug(f'User data: {data}')
 
 
-        self.prompts : prompts = prompts(data['player_id'], data['game_info'], room_data['game_setting'], self.logger)
+        self.prompts : prompts = prompts(data['player_id'], data['game_info'], room_data['game_setting'], self.logger, self.client, self.api_kwargs)
         self.__get_all_role__()
 
         self.__check_game_state__(0)
@@ -70,14 +70,14 @@ class intelligent_agent(agent):
     
 class intelligent_agent_test(agent):
     
-    def __init__(self ,  api_json = "doc/secret/yui.key",
-                 server_url = "140.127.208.185" , agent_name = "Agent1" , room_name = "TESTROOM" , 
-                 color = "f9a8d4" , prompt_dir = Path("prompt/memory_stream/")):
+    def __init__(self , api_json = "doc/secret/yui.key", 
+                server_url = "140.127.208.185" , agent_name = "Agent1" , room_name = "TESTROOM" , 
+                color = "f9a8d4" , prompt_dir = Path("prompt/memory_stream/")):
         self.__reset_server__(server_url)
         
         super().__init__(api_json = api_json, server_url = server_url , 
-                         agent_name = agent_name , room_name = room_name , 
-                            color = color, prompt_dir = prompt_dir) 
+                        agent_name = agent_name , room_name = room_name , 
+                        color = color) 
         # used for start game for test
         self.master_token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX25hbWUiOiJ5dWkiLCJyb29tX25hbWUiOiJURVNUUk9PTSIsImxlYWRlciI6dHJ1ZSwiaWF0IjoxNjkwMzc5NTM0LCJleHAiOjE2OTkwMTk1MzR9.BEmD52DuK657YQezsqNgJAwbPfl54o8Pb--Dh7VQMMA"
         
@@ -207,7 +207,7 @@ class intelligent_agent_test(agent):
         self.logger.debug(f'User data: {data}')
 
 
-        self.prompts : prompts = prompts(data['player_id'], data['game_info'], self.room_setting, self.logger)
+        self.prompts : prompts = prompts(data['player_id'], data['game_info'], self.room_setting, self.logger, self)
 
 
         self.__check_game_state__(0)

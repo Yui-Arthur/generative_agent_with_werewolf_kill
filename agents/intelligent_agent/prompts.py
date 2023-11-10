@@ -3,13 +3,15 @@ import openai
 import json
 
 class prompts:
-    def __init__(self, player_id, game_info, room_setting, logger):
+    def __init__(self, player_id, game_info, room_setting, logger, client, api_kwargs):
         self.logger : logging.Logger = logger
 
         self.player_id = player_id
         self.teammate = game_info['teamate']
         self.user_role = game_info['user_role']
         self.room_setting = room_setting
+        self.client = client
+        self.api_kwargs = api_kwargs
         self.memory = []
         self.guess_roles = []
         self.alive = [] # alive players
@@ -331,7 +333,7 @@ class prompts:
                         try:
                             res_json = json.loads(response)
                             save_text = f"{self.stage_detail[prompt_type]['save']}{res_json['最終的分析']['發言']}{res_json['最終的分析']['理由']}"
-                            send_text = f"{self.stage_detail[prompt_type]['save']}{res_json['最終的分析']['發言']}{res_json['最終的分析']['理由']}"
+                            send_text = f"{res_json['最終的分析']['發言']}{res_json['最終的分析']['理由']}"
 
                         except Exception as e:
                             if self.player_id in self.alive:
@@ -461,7 +463,7 @@ class prompts:
         # question
         # [你必須知道的資訊] = 上述提供資訊內容
         stage_question={
-            "guess_role": f'根據以上你知道的資訊中，判斷{all_choices}玩家的角色及你認為正確的機率百分比(直接回答"[玩家]號玩家，[角色]，[正確的機率百分比]，[原因]"，不需要其他廢話，回答完直接結束回答，[]一定要回答)',
+            "guess_role": f'根據以上你知道的資訊中，判斷{all_choices}玩家的角色及你認為正確的機率百分比(直接回答"[玩家]號玩家，[角色]，[正確的機率百分比]，[原因]"，不需要其他廢話，回答完直接結束回答，每個[]都一定要回答)',
             "werewolf_dialogue":f'''根據以上綜合資訊，你有三個選項，請選擇其中一個選項當作發言？
 1. 我同意隊友的發言。請在{self.player_array_to_string(self.teammate)}號玩家中，選擇一位隊友(若選擇此選項，請直接回答"選項1，[玩家]號玩家，[原因]"，不需要其他廢話，回答完直接結束回答)
 2. 想殺某位玩家，並猜測玩家的角色。從{self.player_array_to_string(self.alive)}中，只能選擇一位想殺的玩家，且從預言家和女巫{"和獵人" if self.room_setting["hunter"] else ""}中選一位你認為是此玩家的角色(若選擇此選項，請直接回答"選項2，[玩家]號玩家，[角色]，[原因]"，不需要其他廢話，回答完直接結束回答)
@@ -517,28 +519,33 @@ class prompts:
     
     def __openai_send__(self , prompt):
         """ openai api send prompt , can override this. """
-        
-        response = openai.Completion.create(
-            engine="gpt-35-turbo", # this will correspond to the custom name you chose for your deployment when you deployed a model.      
-            prompt=prompt, 
+
+        response = self.client.chat.completions.create(
+            **self.api_kwargs,
+            messages = [
+                {"role":"system","content":"You are an AI assistant that helps people find information."},
+                {"role":"user","content":prompt}
+            ],
             max_tokens=2000, 
             temperature=0.7, 
-            stop="\n\n")
+            stop=None)
         
-        self.token_used += response["usage"]["total_tokens"]
+        # ["\n\n",'<', '\"', '`']
+
         
-        res = response['choices'][0]['text']
-        
+        res = response.choices[0].message.content
+        self.token_used += response.usage.total_tokens
+
+        if response.choices[0].finish_reason == "content_filter":
+            self.logger.debug("Block By Openai")
+            res = self.__openai_send__(prompt)
+            
+
         # if res == '' (no words), resend to get the data
         if not (res and res.strip()):
             res = self.__openai_send__(prompt)
 
 
-        # cut unused string (ex. <|end|>、 """ 、 "`")
-        unused_ch = ['<', '\"', '`']
-        for unused in unused_ch:
-            if unused in res:
-                res = res.split(unused, 1)[0]
             
         
         return res
