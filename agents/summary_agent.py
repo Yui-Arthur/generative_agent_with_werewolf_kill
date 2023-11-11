@@ -1,8 +1,9 @@
 from agent import agent
-from pathlib import Path   
 from summary import summary
-import json
-import datetime
+import requests
+import threading
+from pathlib import Path   
+
 
 class summary_agent(agent):
     
@@ -17,6 +18,7 @@ class summary_agent(agent):
         
         self.summary_generator = summary(logger= self.logger, api_json = api_json)
     
+
     def __get_summary(self, cur_stage):
 
         # 狼人發言、一般人發言
@@ -37,13 +39,42 @@ class summary_agent(agent):
 
         return self.similarly_sentences
 
-    # process summary at the end game
-    def __save__game__info__(self):
-        current_datetime = datetime.datetime.today()
-        current_datetime_str = current_datetime.strftime("%m_%d_%H_%M")
-        with open(f"doc/game_info/{current_datetime_str}_{self.name}.jsonl" , "w" , encoding='utf-8') as f:
-            for info in self.game_info:
-                json.dump(info , f , ensure_ascii=False)
-                f.write('\n')
-    
-        self.summary_generator.get_summary(file_name= f"doc/game_info/{current_datetime_str}_{self.name}.jsonl")
+    def __check_game_state__(self , failure_cnt):
+        """check the game state every 1s until game over , if the game state is chaged , call the process data func"""
+        try:
+            r = requests.get(f'{self.server_url}/api/game/{self.room}/information/{self.name}' ,  headers ={
+            "Authorization" : f"Bearer {self.user_token}"
+            } , timeout=3)
+
+            if r.status_code == 200:
+                data = r.json()
+                # block realtime werewolf vote info 
+                if data['stage'].split('-')[-1] == "werewolf" : data['vote_info'] = {}
+                # clear the agent info 
+                data['agent_info'] = {}
+
+                if self.current_info != data:
+                    self.current_info = data
+                    self.logger.debug(data)
+                    self.__record_agent_game_info__(data)
+
+                    # check game over
+                    for anno in self.current_info['announcement']: 
+                        if anno['operation'] == "game_over" : 
+                            self.checker = False
+                            self.__game_over_process__(anno , data['timer'])
+                            break
+                    
+                    self.current_info["guess_summary"] = self.__get_summary(cur_stage= "guess_role")
+                    self.current_info["stage_summary"] = self.__get_summary(cur_stage= data['stage'].split('-')[-1])
+                    self.__process_data__(self.current_info) 
+            else:
+                self.logger.warning(r.json())
+                failure_cnt+=1
+
+            if failure_cnt >= 5 : self.checker = False
+            if self.checker : self.timer = threading.Timer(1.0, self.__check_game_state__ , args=(failure_cnt,)).start()
+
+        except Exception as e:
+            self.logger.warning(f"__check_game_state__ Server Error , {e}")
+            self.__del__()
