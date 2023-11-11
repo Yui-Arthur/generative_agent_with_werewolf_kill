@@ -1,6 +1,7 @@
 import logging
 import json
 import openai
+from openai import OpenAI , AzureOpenAI
 import re
 from pathlib import Path  
 import os
@@ -46,7 +47,7 @@ class summary():
             "hunter" : "獵人"
         }
 
-        self.player2identity =  [f"玩家{num}號" for num in range(10)] + [f"玩家{num}" for num in range(10)] 
+        
         self.logger : logging.Logger = logger
         self.prompt_dir = Path(prompt_dir)
         self.__load_prompt_and_example__(self.prompt_dir)
@@ -79,23 +80,38 @@ class summary():
     def __openai_init__(self , api_json):
         """azure openai api setting , can override this"""
         with open(api_json,'r') as f : api_info = json.load(f)
-        openai.api_key = api_info["key"]
 
         if api_info["api_type"] == "azure":
+            # version 1.0 of Openai api
+            self.client = AzureOpenAI(
+                api_version = api_info["api_version"] ,
+                azure_endpoint = api_info["api_base"],
+                api_key=api_info["key"],
+            )
+
+            # legacy version
+            openai.api_key = api_info["key"]
             openai.api_type = api_info["api_type"]
-            openai.api_base = api_info["api_base"]
+            openai.azure_endpoint = api_info["api_base"]
             openai.api_version = api_info["api_version"] 
-            self.api_kwargs["engine"] = api_info['engine']
+
+            self.api_kwargs["model"] = api_info["engine"]
         else:
+            self.client = OpenAI(
+                api_key=api_info["key"],
+            )
+            # legacy version
+            openai.api_key = api_info["key"]
+
             self.api_kwargs["model"] = api_info["model"]
-    
 
     def __openai_send__(self , prompt):
-        """openai api send prompt , can override this."""
-        response = openai.ChatCompletion.create(
+        # """openai api send prompt , can override this."""
+
+        ### version 1.0 of Openai api ###
+        response = self.client.chat.completions.create(
             **self.api_kwargs,
             messages = [
-                # You are a helpful assistant.
                 {"role":"system","content":"You are an AI assistant that helps people find information."},
                 {"role":"user","content":prompt}
             ],
@@ -106,7 +122,7 @@ class summary():
             presence_penalty=0,
             stop=None)
         
-        return response['choices'][0]['message']['content']
+        return response.model_dump()['choices'][0]['message']['content']
     
     def __process_LLM_output__(self , prompt , keyword_list , sample_output):
         """
@@ -231,6 +247,14 @@ class summary():
 
         self.__memory_stream_push(stage, ob)
 
+    def __set_player2identity(self):
+
+        self.player2identity =  [f"玩家{num}號" for num in range(10)] + [f"玩家{num}" for num in range(10)] + \
+                                [f"{num}號玩家" for num in range(10)] + [f"{num}號" for num in range(10)] 
+        for number, info in self.player_name.items():
+            user_name = info["user_name"]
+            self.player2identity.extend([user_name, f"{user_name}({number})"])
+
     def __load_game_info(self, file_path = None, game_info = None):       
 
         if file_path != None:
@@ -241,10 +265,8 @@ class summary():
         self.player_name = game_info[1]
         self.all_game_info["self_role"] = self.role_to_chinese[list(game_info[0].values())[0]]
         self.all_game_info["all_role_info"] = self.__process_user_role(game_info[1])
-        for number, info in self.player_name.items():
-            user_name = info["user_name"]
-            self.player2identity.extend([user_name, f"{user_name}({number})"])
-
+        
+        self.__set_player2identity()
         no_save_op = ["dialogue", "vote1", "vote2"]
         for idx, info in enumerate(game_info):
 
@@ -282,7 +304,7 @@ class summary():
             print(f"guess_role: {self.guess_role[day]}")
 
 
-    def get_summary(self, file_name = "11_09_00_44_iAgent396.jsonl"):
+    def get_summary(self, file_name = "11_09_20_44_iAgent932.jsonl"):
 
         self.logger.debug("load game info")
 
@@ -291,28 +313,28 @@ class summary():
         for day in self.memory_stream:
             all_summary = self.__get_day_summary__(day, self.memory_stream[day], self.operation_info[day], self.all_game_info["result"])
             guess_role_summary = self.__get_guess_role_summary(day, self.memory_stream[day], self.guess_role[day])
-            
+            print(all_summary)
             """summary + score"""
-            # self.set_score(self.all_game_info["self_role"], "vote", all_summary[0])
-            # self.set_score(self.all_game_info["self_role"], "dialogue", all_summary[1])
-            # self.set_score(self.all_game_info["self_role"], "operation", all_summary[2])
-            # self.set_score(self.all_game_info["self_role"], "guess_role", guess_role_summary)
+            self.set_score(self.my_player_role, "vote", all_summary[0])
+            self.set_score(self.my_player_role, "dialogue", all_summary[1])
+            self.set_score(self.my_player_role, "operation", all_summary[2])
+            self.set_score(self.my_player_role, "guess_role", guess_role_summary)
 
     def __get_day_summary__(self, day, day_memory, day_operation, result):
         """day summary to openai"""
 
         day = f"第{day}天"
-        print(f"{day}day summary")      
+        #print(f"{day}day summary")      
         self.max_fail_cnt = 3
     
         final_prompt = self.prompt_template['day_summary'].replace("%l" , self.example['day_summary']).replace("%z", day).replace("%m" , day_memory).replace("%o" , day_operation).replace("%y" , self.all_game_info["all_role_info"]).replace("%p" , result)
-        # print(f"final_prompt = {final_prompt}")
+        print(f"final_prompt = {final_prompt}")
         info = {
             "vote" : "vote_summary",
             "dialogue" : "dialogue_summary",
             "operation" : "operation_summary",
         }        
-        # info = self.__process_LLM_output__(final_prompt , ["vote", "dialogue", "operation"] , info)
+        info = self.__process_LLM_output__(final_prompt , ["vote", "dialogue", "operation"] , info)
 
         return info['vote'], info['dialogue'], info['operation']
     
@@ -324,34 +346,43 @@ class summary():
         self.max_fail_cnt = 3
     
         final_prompt = self.prompt_template['guess_role'].replace("%l" , self.example['guess_role']).replace("%z", day).replace("%m" , day_memory).replace("%g" , guess_role).replace("%y" , self.all_game_info["all_role_info"])
-        # print(f"final_prompt = {final_prompt}")
+        print(f"final_prompt = {final_prompt}")
         info = {
             "guess" : "guess_role_summary",
         }        
-        # info = self.__process_LLM_output__(final_prompt , ["guess"] , info)
+        # 
+        info = self.__process_LLM_output__(final_prompt , ["guess"] , info)
 
         return info['guess']
 
     def set_score(self, role, stage, summary):
-
-        final_prompt = self.prompt_template["score"].replace("%s", summary)
+        
+        trans_summary = self.transform_player2identity(summary= summary)
+        final_prompt = self.prompt_template["score"].replace("%s", trans_summary)
         self.logger.debug("Prompt: "+str(final_prompt))
+        print(final_prompt)
+        
         response = self.__openai_send__(final_prompt)
         self.logger.debug("Response: "+str(response))
+        print(response)
+        
         try:
-            score = response.split(":")[1]
+            score = int(response.split(":")[1])
         except:
             self.logger.debug("Error: Don't match key")
             self.get_score_fail_times -= 1
             if self.get_score_fail_times >= 0:
                 self.set_score(role= role, stage= stage, summary= summary)
-
+                return
+            else :
+                score = 0
+        print(score)
         file_path = os.path.join(role, f"{stage}.json")
         try:
             summary_set = self.__load_summary(file_path= file_path)
         except:
             summary_set = []
-        updated_summary_set = self.__update_summary(summary_set= summary_set, summary= summary, score= score)
+        updated_summary_set = self.__update_summary(summary_set= summary_set, summary= trans_summary, score= score)
     
         self.__write_summary(file_path= file_path, data= updated_summary_set)
 
@@ -363,8 +394,8 @@ class summary():
     def __write_summary(self, file_path, data):
 
         try:
-            with open(self.prompt_dir / file_path, "w") as json_file: 
-                new_data = json.dumps(data, indent= 1)
+            with open(self.prompt_dir / file_path, "w", encoding='utf-8') as json_file: 
+                new_data = json.dumps(data, indent= 1, ensure_ascii=False)
                 json_file.write(new_data)
         except:
             os.mkdir(self.prompt_dir / file_path.split("\\")[0])
@@ -432,6 +463,8 @@ class summary():
     
 if __name__ == '__main__':
 
-    # s = summary(logger = logging.getLogger(__name__), api_json="./doc/secret/api.json")
-    s = summary(logger = logging.getLogger(__name__), prompt_dir="./generative_agent_with_werewolf_kill/doc", api_json = "./generative_agent_with_werewolf_kill/doc/secret/openai.key")
+    s = summary(logger = logging.getLogger(__name__), api_json="./doc/secret/api.json")
+    # s = summary(logger = logging.getLogger(__name__), prompt_dir="./generative_agent_with_werewolf_kill/doc", api_json = "./generative_agent_with_werewolf_kill/doc/secret/openai.key")
     s.get_summary()
+
+    # s.set_score( "village", "vote", "這回合中，我沒有進行任何投票，下次需要更主動參與投票，並且評估場上的情況，將票投給懷疑的對象。")

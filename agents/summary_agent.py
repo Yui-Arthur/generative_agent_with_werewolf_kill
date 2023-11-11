@@ -1,6 +1,8 @@
 from agent import agent
 from pathlib import Path   
 from summary import summary
+import json
+import datetime
 
 class summary_agent(agent):
     
@@ -15,6 +17,8 @@ class summary_agent(agent):
         
         self.summary_generator = summary(logger= self.logger, api_json = api_json)
 
+
+    # using summary in the game 
     def __process_data__(self , data):
         """the data process , must override this."""
 
@@ -43,3 +47,15 @@ class summary_agent(agent):
             "chat" : "123"
         }
         self.__send_operation__(op_data)
+
+
+    # process summary at the end game
+    def __save__game__info__(self):
+        current_datetime = datetime.datetime.today()
+        current_datetime_str = current_datetime.strftime("%m_%d_%H_%M")
+        with open(f"doc/game_info/{current_datetime_str}_{self.name}.jsonl" , "w" , encoding='utf-8') as f:
+            for info in self.game_info:
+                json.dump(info , f , ensure_ascii=False)
+                f.write('\n')
+    
+        self.summary_generator.get_summary(file_name= f"doc/game_info/{current_datetime_str}_{self.name}.jsonl")
