@@ -11,13 +11,13 @@ import json
 
 class intelligent_agent(agent):
     
-    def __init__(self , openai_token = None , api_base = "https://wolf-openai-llm.openai.azure.com/" , engine = "agent", api_json = "doc/secret/yui.key", 
+    def __init__(self , api_json = "doc/secret/yui.key", 
                 server_url = "140.127.208.185" , agent_name = "Agent1" , room_name = "TESTROOM" , 
                 color = "f9a8d4" , prompt_dir = Path("prompt/memory_stream/")):
         
-        
-        super().__init__(openai_token = openai_token, api_base = api_base , engine = engine, api_json = api_json,
-                        server_url = server_url , agent_name = agent_name , room_name = room_name , 
+
+        super().__init__(api_json = api_json, server_url = server_url , 
+                        agent_name = agent_name , room_name = room_name , 
                         color = color) 
         # used for start game for test
         self.master_token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX25hbWUiOiJ5dWkiLCJyb29tX25hbWUiOiJURVNUUk9PTSIsImxlYWRlciI6dHJ1ZSwiaWF0IjoxNjkwMzc5NTM0LCJleHAiOjE2OTkwMTk1MzR9.BEmD52DuK657YQezsqNgJAwbPfl54o8Pb--Dh7VQMMA"
@@ -29,18 +29,10 @@ class intelligent_agent(agent):
         self.day = None
         self.turn = 0
 
+
+    def get_info(self) -> dict[str,str]:
         
-
-    def __openai_init__(self , openai_token, api_base):
-        """openai api setting , can override this"""
-        with open(openai_token,'r') as f : openai_token = f.readline()
-        openai.api_type = "azure"
-        openai.api_base = api_base
-        openai.api_version = "2023-05-15"
-        openai.api_key = openai_token
-        self.chat_func = self.__openai_send__ 
-
-
+        return self.prompts.__get_agent_info__()
     
 
     def __process_data__(self, data):
@@ -49,7 +41,6 @@ class intelligent_agent(agent):
         operations = self.prompts.agent_process(data)
         # self.logger.debug("Operations "+str(operations))
 
-    
         for i in operations:
             op_data = {
                 "stage_name" : data['stage'],
@@ -59,9 +50,6 @@ class intelligent_agent(agent):
             }
             self.__send_operation__(op_data)
 
-
-    
-    
 
     def __start_game_init__(self, room_data):
         """the game started setting , update player name"""
@@ -73,8 +61,8 @@ class intelligent_agent(agent):
         self.logger.debug(f'User data: {data}')
 
 
-        self.prompts : prompts = prompts(data['player_id'], data['game_info'], room_data['game_setting'], self.logger)
-
+        self.prompts : prompts = prompts(data['player_id'], data['game_info'], room_data['game_setting'], self.logger, self.client, self.api_kwargs)
+        self.__get_all_role__()
 
         self.__check_game_state__(0)
         
@@ -82,14 +70,14 @@ class intelligent_agent(agent):
     
 class intelligent_agent_test(agent):
     
-    def __init__(self , openai_token = None , api_base = "https://wolf-openai-llm.openai.azure.com/" , engine = "agent", api_json = "doc/secret/yui.key",
-                 server_url = "140.127.208.185" , agent_name = "Agent1" , room_name = "TESTROOM" , 
-                 color = "f9a8d4" , prompt_dir = Path("prompt/memory_stream/")):
+    def __init__(self , api_json = "doc/secret/yui.key", 
+                server_url = "140.127.208.185" , agent_name = "Agent1" , room_name = "TESTROOM" , 
+                color = "f9a8d4" , prompt_dir = Path("prompt/memory_stream/")):
         self.__reset_server__(server_url)
         
-        super().__init__(openai_token = openai_token, api_base = api_base , engine = engine, api_json = api_json,
-                                       server_url = server_url , agent_name = agent_name , room_name = room_name , 
-                                       color = color) 
+        super().__init__(api_json = api_json, server_url = server_url , 
+                        agent_name = agent_name , room_name = room_name , 
+                        color = color) 
         # used for start game for test
         self.master_token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX25hbWUiOiJ5dWkiLCJyb29tX25hbWUiOiJURVNUUk9PTSIsImxlYWRlciI6dHJ1ZSwiaWF0IjoxNjkwMzc5NTM0LCJleHAiOjE2OTkwMTk1MzR9.BEmD52DuK657YQezsqNgJAwbPfl54o8Pb--Dh7VQMMA"
         
@@ -116,18 +104,6 @@ class intelligent_agent_test(agent):
         # start the game for test
         self.__start_server__()
 
-    def __openai_init__(self , openai_token, api_base):
-        """openai api setting , can override this"""
-        with open(openai_token,'r') as f : openai_token = f.readline()
-        openai.api_type = "azure"
-        openai.api_base = api_base
-        openai.api_version = "2023-05-15"
-        openai.api_key = openai_token
-        self.chat_func = self.__openai_send__ 
-
-    
-
-
     def __logging_setting__(self):
         """logging setting , can override this."""
         log_format = logging.Formatter('[%(asctime)s] [%(levelname)s] - %(message)s')
@@ -145,6 +121,12 @@ class intelligent_agent_test(agent):
         self.logger.addHandler(handler)   
 
         logging.getLogger("requests").propagate = False
+
+    
+    def get_info(self) -> dict[str,str]:
+        
+        return self.prompts.__get_agent_info__()
+    
 
     def __process_data__(self, data):
         """Process the data got from server"""
@@ -225,7 +207,7 @@ class intelligent_agent_test(agent):
         self.logger.debug(f'User data: {data}')
 
 
-        self.prompts : prompts = prompts(data['player_id'], data['game_info'], self.room_setting, self.logger)
+        self.prompts : prompts = prompts(data['player_id'], data['game_info'], self.room_setting, self.logger, self)
 
 
         self.__check_game_state__(0)
