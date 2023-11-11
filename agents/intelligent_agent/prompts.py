@@ -2,6 +2,7 @@ import logging
 import openai
 import json
 
+
 class prompts:
     def __init__(self, player_id, game_info, room_setting, logger, client, api_kwargs):
         self.logger : logging.Logger = logger
@@ -129,6 +130,9 @@ class prompts:
     
     def agent_process(self, data):
         ''' Agent process all the data including announcements and information '''
+
+        self.logger.debug("Day "+str(self.day))
+        
 
         if(data['stage'] == 'check_role'):
             return []

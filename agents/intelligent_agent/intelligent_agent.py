@@ -207,7 +207,7 @@ class intelligent_agent_test(agent):
         self.logger.debug(f'User data: {data}')
 
 
-        self.prompts : prompts = prompts(data['player_id'], data['game_info'], self.room_setting, self.logger, self)
+        self.prompts : prompts = prompts(data['player_id'], data['game_info'], self.room_setting, self.logger, self.client, self.api_kwargs)
 
 
         self.__check_game_state__(0)
