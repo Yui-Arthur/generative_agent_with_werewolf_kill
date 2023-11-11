@@ -131,8 +131,6 @@ class prompts:
     def agent_process(self, data):
         ''' Agent process all the data including announcements and information '''
 
-        self.logger.debug("Day "+str(self.day))
-        
 
         if(data['stage'] == 'check_role'):
             return []
