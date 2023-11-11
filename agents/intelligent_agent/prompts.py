@@ -2,7 +2,6 @@ import logging
 import openai
 import json
 
-
 class prompts:
     def __init__(self, player_id, game_info, room_setting, logger, client, api_kwargs):
         self.logger : logging.Logger = logger
@@ -130,7 +129,6 @@ class prompts:
     
     def agent_process(self, data):
         ''' Agent process all the data including announcements and information '''
-
 
         if(data['stage'] == 'check_role'):
             return []
@@ -391,9 +389,12 @@ class prompts:
         try:
             lines = response.splitlines()
 
+            self.guess_role = {"guess_role" : []}
             for i in range(self.room_setting["player_num"]):
             
                 [player, role, degree, reason] = lines[i].split('，', 3)
+                
+                self.guess_role["guess_role"].append(role)
                 
                 # save to guess roles array
                 roles_prompt = player+self.stage_detail['guess_role']['save'][0]+degree+self.stage_detail['guess_role']['save'][1]+role+self.stage_detail['guess_role']['save'][2]+reason
@@ -546,10 +547,11 @@ class prompts:
         # if res == '' (no words), resend to get the data
         if not (res and res.strip()):
             res = self.__openai_send__(prompt)
-
-
-            
-        
         return res
+    
+    def __get_guess_role__(self):
+        """must override this , format = dict[str , list[str]]"""
+        return self.guess_role
+
 
     
