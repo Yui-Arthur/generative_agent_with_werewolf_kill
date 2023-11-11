@@ -164,8 +164,8 @@ class summary():
         self.logger.debug(f"LLM output : {info}")
         # print(f"LLM output : {info}")
 
-        if fail_idx >= self.max_fail_cnt: info = sample_output
-
+        if fail_idx >= self.max_fail_cnt: info = None
+        
         return info
     
     def __process_user_role(self, data):
@@ -248,12 +248,17 @@ class summary():
         self.__memory_stream_push(stage, ob)
 
     def __set_player2identity(self):
+        
+        self.player2identity = {}
 
-        self.player2identity =  [f"玩家{num}號" for num in range(10)] + [f"玩家{num}" for num in range(10)] + \
-                                [f"{num}號玩家" for num in range(10)] + [f"{num}號" for num in range(10)] 
         for number, info in self.player_name.items():
             user_name = info["user_name"]
-            self.player2identity.extend([user_name, f"{user_name}({number})"])
+            self.player2identity[f"玩家{number}號"] = number
+            self.player2identity[f"玩家{number}"] = number
+            self.player2identity[f"{number}號玩家"] = number
+            self.player2identity[f"{number}號"] = number
+            self.player2identity[f"{user_name}({number})"] = number
+            self.player2identity[user_name] = number
 
     def __load_game_info(self, file_path = None, game_info = None):       
 
@@ -267,6 +272,7 @@ class summary():
         self.all_game_info["all_role_info"] = self.__process_user_role(game_info[1])
         
         self.__set_player2identity()
+
         no_save_op = ["dialogue", "vote1", "vote2"]
         for idx, info in enumerate(game_info):
 
@@ -309,16 +315,18 @@ class summary():
         self.logger.debug("load game info")
 
         self.__load_game_info(file_path = f"./game_info/{file_name}")
-
-        for day in self.memory_stream:
+        for day in self.memory_stream: 
+            print("day ", day)
             all_summary = self.__get_day_summary__(day, self.memory_stream[day], self.operation_info[day], self.all_game_info["result"])
             guess_role_summary = self.__get_guess_role_summary(day, self.memory_stream[day], self.guess_role[day])
-            print(all_summary)
+            # print(all_summary)
             """summary + score"""
-            self.set_score(self.my_player_role, "vote", all_summary[0])
-            self.set_score(self.my_player_role, "dialogue", all_summary[1])
-            self.set_score(self.my_player_role, "operation", all_summary[2])
-            self.set_score(self.my_player_role, "guess_role", guess_role_summary)
+            if all_summary != None:
+                self.set_score(self.my_player_role, "vote", all_summary[0])
+                self.set_score(self.my_player_role, "dialogue", all_summary[1])
+                self.set_score(self.my_player_role, "operation", all_summary[2])
+            if guess_role_summary != None:
+                self.set_score(self.my_player_role, "guess_role", guess_role_summary)
 
     def __get_day_summary__(self, day, day_memory, day_operation, result):
         """day summary to openai"""
@@ -328,43 +336,46 @@ class summary():
         self.max_fail_cnt = 3
     
         final_prompt = self.prompt_template['day_summary'].replace("%l" , self.example['day_summary']).replace("%z", day).replace("%m" , day_memory).replace("%o" , day_operation).replace("%y" , self.all_game_info["all_role_info"]).replace("%p" , result)
-        print(f"final_prompt = {final_prompt}")
-        info = {
+        # print(f"final_prompt = {final_prompt}")
+        sample_info = {
             "vote" : "vote_summary",
             "dialogue" : "dialogue_summary",
             "operation" : "operation_summary",
         }        
-        info = self.__process_LLM_output__(final_prompt , ["vote", "dialogue", "operation"] , info)
-
+        info = self.__process_LLM_output__(final_prompt , ["vote", "dialogue", "operation"] , sample_info)
+        if info == None:
+            return None
         return info['vote'], info['dialogue'], info['operation']
     
     def __get_guess_role_summary(self, day, day_memory, guess_role):
         """guess_role summary to openai"""
 
         day = f"第{day}天"
-        print(f"{day}guess_role summary")      
+        # print(f"{day}guess_role summary")      
         self.max_fail_cnt = 3
     
         final_prompt = self.prompt_template['guess_role'].replace("%l" , self.example['guess_role']).replace("%z", day).replace("%m" , day_memory).replace("%g" , guess_role).replace("%y" , self.all_game_info["all_role_info"])
-        print(f"final_prompt = {final_prompt}")
+        # print(f"final_prompt = {final_prompt}")
         info = {
             "guess" : "guess_role_summary",
         }        
         # 
         info = self.__process_LLM_output__(final_prompt , ["guess"] , info)
-
+        if info == None:
+            return None
         return info['guess']
 
     def set_score(self, role, stage, summary):
-        
+        # print(summary)
         trans_summary = self.transform_player2identity(summary= summary)
+        
         final_prompt = self.prompt_template["score"].replace("%s", trans_summary)
         self.logger.debug("Prompt: "+str(final_prompt))
-        print(final_prompt)
+        # print(final_prompt)
         
         response = self.__openai_send__(final_prompt)
         self.logger.debug("Response: "+str(response))
-        print(response)
+        # print(response)
         
         try:
             score = int(response.split(":")[1])
@@ -376,7 +387,8 @@ class summary():
                 return
             else :
                 score = 0
-        print(score)
+        # print(score)
+        
         file_path = os.path.join(role, f"{stage}.json")
         try:
             summary_set = self.__load_summary(file_path= file_path)
@@ -435,10 +447,11 @@ class summary():
         # print(self.prompt_template['current_summary'])
     def transform_player2identity(self, summary):
         
-        for player_number in self.player2identity:
-            if player_number in summary:
-                identity = self.role_to_chinese[self.all_player_role[player_number[2]]["user_role"]]
-                summary = summary.replace(player_number, f"{identity}")
+        for key_word in self.player2identity.keys():
+            if key_word in summary:
+                key_number = self.player2identity[key_word]
+                identity = self.role_to_chinese[self.player_name[key_number]["user_role"]]
+                summary = summary.replace(key_word, f"{identity}")
 
         return summary
 
@@ -463,7 +476,7 @@ class summary():
     
 if __name__ == '__main__':
 
-    s = summary(logger = logging.getLogger(__name__), api_json="./doc/secret/api.json")
+    s = summary(logger = logging.getLogger(__name__), api_json="./doc/secret/azure.key")
     # s = summary(logger = logging.getLogger(__name__), prompt_dir="./generative_agent_with_werewolf_kill/doc", api_json = "./generative_agent_with_werewolf_kill/doc/secret/openai.key")
     s.get_summary()
 
