@@ -16,14 +16,9 @@ class summary_agent(agent):
                         color = color) 
         
         self.summary_generator = summary(logger= self.logger, api_json = api_json)
+    
+    def __get_summary(self, cur_stage):
 
-
-    # using summary in the game 
-    def __process_data__(self , data):
-        """the data process , must override this."""
-
-        cur_stage = data['stage'].split("-")[0]
-        
         # 狼人發言、一般人發言
         if cur_stage in ["dialogue", "werewolf_dialogue"]:
             stage = "dialogue"
@@ -33,21 +28,14 @@ class summary_agent(agent):
         # 預言家、女巫、獵人
         elif cur_stage in ["seer", "witch", "hunter"]:
             stage = "operation"
+        elif cur_stage == "guess_role":
+            stage = "guess_role"
+        else:
+            return None
         
         self.similarly_sentences = self.summary_generator.find_similarly_summary(stage, game_info = self.game_info)
-        
-        if(len(data['information']) == 0):
-            return
-        
-        # time.sleep(2)
-        op_data = {
-            "stage_name" : data['stage'],
-            "operation" : data['information'][0]["operation"],
-            "target" : -1,
-            "chat" : "123"
-        }
-        self.__send_operation__(op_data)
 
+        return self.similarly_sentences
 
     # process summary at the end game
     def __save__game__info__(self):
