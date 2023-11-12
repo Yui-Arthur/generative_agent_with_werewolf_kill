@@ -64,8 +64,6 @@ class summary():
         self.get_score_fail_times = 3
         self.embedding_model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
 
-        # self.__load_game_info(file_path = "./game_info/11_09_20_44_iAgent932.jsonl")
-
     def __load_prompt_and_example__(self , prompt_dir):
         """load prompt json to dict"""
         self.logger.debug("load common json")
@@ -310,7 +308,7 @@ class summary():
             print(f"guess_role: {self.guess_role[day]}")
 
 
-    def get_summary(self, file_name = "11_09_20_44_iAgent932.jsonl"):
+    def get_summary(self, file_name = "11_09_00_44_iAgent396.jsonl"):
 
         self.logger.debug("load game info")
 
@@ -476,8 +474,9 @@ class summary():
     
 if __name__ == '__main__':
 
-    s = summary(logger = logging.getLogger(__name__), api_json="./doc/secret/azure.key")
+    # s = summary(logger = logging.getLogger(__name__), api_json="./doc/secret/azure.key")
     # s = summary(logger = logging.getLogger(__name__), prompt_dir="./generative_agent_with_werewolf_kill/doc", api_json = "./generative_agent_with_werewolf_kill/doc/secret/openai.key")
+    s = summary(logger = logging.getLogger(__name__), prompt_dir="./generative_agent_with_werewolf_kill/doc", api_json = "./generative_agent_with_werewolf_kill/doc/secret/chatgpt_api_key.key")
     s.get_summary()
 
     # s.set_score( "village", "vote", "這回合中，我沒有進行任何投票，下次需要更主動參與投票，並且評估場上的情況，將票投給懷疑的對象。")

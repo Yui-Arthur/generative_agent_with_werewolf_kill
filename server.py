@@ -5,7 +5,7 @@ import threading
 from concurrent import futures
 from pathlib import Path
 import argparse
-from agents import memory_stream_agent , intelligent_agent , agent
+from agents import memory_stream_agent, memory_stream_summary_agent , intelligent_agent , agent
 from sentence_transformers import SentenceTransformer, util
 import threading
 import time

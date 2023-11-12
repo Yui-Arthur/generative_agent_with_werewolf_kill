@@ -1,5 +1,5 @@
-from agent import agent
-from summary import summary
+from .agent import agent
+from .summary import summary
 import requests
 import threading
 from pathlib import Path   
@@ -7,17 +7,16 @@ from pathlib import Path
 
 class summary_agent(agent):
     
-    def __init__(self , openai_token = None , api_base = "https://wolf-openai-llm.openai.azure.com/" , engine = "agent", api_json = "doc/secret/yui.key", 
+    def __init__(self , api_json = "doc/secret/openai.key", 
                 server_url = "140.127.208.185" , agent_name = "Agent1" , room_name = "TESTROOM" , 
                 color = "f9a8d4" , prompt_dir = Path("prompt/memory_stream/")):
         
         
-        super().__init__(openai_token = openai_token, api_base = api_base , engine = engine, api_json = api_json,
-                        server_url = server_url , agent_name = agent_name , room_name = room_name , 
+        super().__init__(api_json = api_json, server_url = server_url , 
+                        agent_name = agent_name , room_name = room_name , 
                         color = color) 
         
         self.summary_generator = summary(logger= self.logger, api_json = api_json)
-    
 
     def __get_summary(self, cur_stage):
 
@@ -36,7 +35,6 @@ class summary_agent(agent):
             return None
         
         self.similarly_sentences = self.summary_generator.find_similarly_summary(stage, game_info = self.game_info)
-
         return self.similarly_sentences
 
     def __check_game_state__(self , failure_cnt):
@@ -64,10 +62,12 @@ class summary_agent(agent):
                             self.checker = False
                             self.__game_over_process__(anno , data['timer'])
                             break
+
+                    copy_current_info = self.current_info.copy()
+                    copy_current_info["guess_summary"] = self.__get_summary(cur_stage= "guess_role")
+                    copy_current_info["stage_summary"] = self.__get_summary(cur_stage= data['stage'].split('-')[-1])
                     
-                    self.current_info["guess_summary"] = self.__get_summary(cur_stage= "guess_role")
-                    self.current_info["stage_summary"] = self.__get_summary(cur_stage= data['stage'].split('-')[-1])
-                    self.__process_data__(self.current_info) 
+                    self.__process_data__(copy_current_info) 
             else:
                 self.logger.warning(r.json())
                 failure_cnt+=1
@@ -78,3 +78,4 @@ class summary_agent(agent):
         except Exception as e:
             self.logger.warning(f"__check_game_state__ Server Error , {e}")
             self.__del__()
+    
