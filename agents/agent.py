@@ -264,7 +264,7 @@ class agent():
 
         except Exception as e:
             self.logger.warning(f"__check_game_state__ Server Error , {e}")
-            # self.__del__()
+            self.__del__()
 
     def __get_role__(self):
         """get the agent's role after the game is started"""
