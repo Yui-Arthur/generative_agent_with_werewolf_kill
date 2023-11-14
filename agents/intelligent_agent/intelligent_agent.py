@@ -18,7 +18,6 @@ class intelligent_agent(agent):
                 server_url = "140.127.208.185" , agent_name = "Agent1" , room_name = "TESTROOM" , 
                 color = "f9a8d4" , prompt_dir = Path("prompt/memory_stream/")):
         
-
         super().__init__(api_json = api_json, server_url = server_url , 
                         agent_name = agent_name , room_name = room_name , 
                         color = color) 
@@ -251,9 +250,6 @@ class intelligent_agent_test(agent):
         except Exception as e :
             self.logger.warning(f"__setting_game Server Error , {e}")
     
-
-
-
         self.__check_game_state__(0)
         
 
