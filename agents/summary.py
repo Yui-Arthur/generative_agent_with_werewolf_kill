@@ -64,6 +64,9 @@ class summary():
         self.get_score_fail_times = 3
         self.embedding_model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
 
+        if not os.path.exists(os.path.join(prompt_dir, "summary")):
+            os.mkdir(os.path.join(prompt_dir, "summary"))
+
         # self.__load_game_info(file_path = "./game_info/11_09_20_44_iAgent932.jsonl")
 
     def __load_prompt_and_example__(self , prompt_dir):
@@ -310,7 +313,7 @@ class summary():
             print(f"guess_role: {self.guess_role[day]}")
 
 
-    def get_summary(self, file_name = "11_09_20_44_iAgent932.jsonl"):
+    def get_summary(self, file_name = "11_06_18_31_mAgent112.jsonl"):
 
         self.logger.debug("load game info")
         self.__load_game_info(file_path = f"./game_info/{file_name}")
@@ -389,7 +392,7 @@ class summary():
                 score = 0
         # print(score)
         
-        file_path = os.path.join(role, f"{stage}.json")
+        file_path = os.path.join(os.path.join("summary", role), f"{stage}.json")
         try:
             summary_set = self.__load_summary(file_path= file_path)
         except:
@@ -410,7 +413,8 @@ class summary():
                 new_data = json.dumps(data, indent= 1, ensure_ascii=False)
                 json_file.write(new_data)
         except:
-            os.mkdir(self.prompt_dir / file_path.split("\\")[0])
+            file = file_path.split("\\")[0] + "\\" + file_path.split("\\")[1]
+            os.mkdir(self.prompt_dir / file)
             self.__write_summary(file_path, data)
         self.get_score_fail_times = 3
 

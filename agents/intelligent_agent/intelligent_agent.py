@@ -9,7 +9,7 @@ import logging
 from datetime import datetime
 import sys 
 import json
-from .summary_agent import summary_agent
+from ..summary_agent import summary_agent
 
 
 class intelligent_agent(agent):

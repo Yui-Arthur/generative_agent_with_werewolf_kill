@@ -1,6 +1,6 @@
-from ..agent import agent
-from .prompts import prompts
-from ..summary import summary
+from .agent import agent
+from .intelligent_agent.prompts import prompts
+from .summary import summary
 import requests
 import threading
 from pathlib import Path   
