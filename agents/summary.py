@@ -64,6 +64,9 @@ class summary():
         self.get_score_fail_times = 3
         self.embedding_model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
 
+        if not os.path.exists(os.path.join(prompt_dir, "summary")):
+            os.mkdir(os.path.join(prompt_dir, "summary"))
+
     def __load_prompt_and_example__(self , prompt_dir):
         """load prompt json to dict"""
         self.logger.debug("load common json")
@@ -308,11 +311,11 @@ class summary():
             print(f"guess_role: {self.guess_role[day]}")
 
 
-    def get_summary(self, file_name = "11_09_00_44_iAgent396.jsonl"):
+    def get_summary(self, file_name = "11_06_18_31_mAgent112.jsonl"):
 
         self.logger.debug("load game info")
-
         self.__load_game_info(file_path = f"./game_info/{file_name}")
+    
         for day in self.memory_stream: 
             print("day ", day)
             all_summary = self.__get_day_summary__(day, self.memory_stream[day], self.operation_info[day], self.all_game_info["result"])
@@ -387,7 +390,7 @@ class summary():
                 score = 0
         # print(score)
         
-        file_path = os.path.join(role, f"{stage}.json")
+        file_path = os.path.join(os.path.join("summary", role), f"{stage}.json")
         try:
             summary_set = self.__load_summary(file_path= file_path)
         except:
@@ -408,7 +411,8 @@ class summary():
                 new_data = json.dumps(data, indent= 1, ensure_ascii=False)
                 json_file.write(new_data)
         except:
-            os.mkdir(self.prompt_dir / file_path.split("\\")[0])
+            file = file_path.split("\\")[0] + "\\" + file_path.split("\\")[1]
+            os.mkdir(self.prompt_dir / file)
             self.__write_summary(file_path, data)
         self.get_score_fail_times = 3
 
@@ -440,9 +444,7 @@ class summary():
         self.prompt_template['current_summary'] = self.prompt_template['current_summary'].replace("%l", self.example['current_summary'])
         self.prompt_template['current_summary'] += f"* 回應\n"
         self.prompt_template['current_summary'] += f"[目前總結]\n"
-        print(self.prompt_template['current_summary'])
-        
-        # print(self.prompt_template['current_summary'])
+
     def transform_player2identity(self, summary):
         
         for key_word in self.player2identity.keys():
@@ -459,6 +461,8 @@ class summary():
         self.__get_current_summary(game_info= game_info)
 
         file_path = os.path.join(self.my_player_role, f"{stage}.json")
+        if not os.path.exists(file_path):
+            return "無"
         summary_set = self.__load_summary(file_path= file_path)
         similarly_scores = []
         for idx, summary_each in enumerate(summary_set):
@@ -474,7 +478,7 @@ class summary():
     
 if __name__ == '__main__':
 
-    # s = summary(logger = logging.getLogger(__name__), api_json="./doc/secret/azure.key")
+    s = summary(logger = logging.getLogger(__name__), api_json="./doc/secret/azure.key")
     # s = summary(logger = logging.getLogger(__name__), prompt_dir="./generative_agent_with_werewolf_kill/doc", api_json = "./generative_agent_with_werewolf_kill/doc/secret/openai.key")
     s = summary(logger = logging.getLogger(__name__), prompt_dir="./generative_agent_with_werewolf_kill/doc", api_json = "./generative_agent_with_werewolf_kill/doc/secret/chatgpt_api_key.key")
     s.get_summary()
