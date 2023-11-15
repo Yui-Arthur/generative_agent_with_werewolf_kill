@@ -383,37 +383,8 @@ class prompts:
         response = self.prompts_response('guess_role')
         
         self.guess_roles= []
-        self.api_guess_roles= []
-        self.api_guess_confidence= []
-
-        try:
-            lines = response.splitlines()
-
-            self.guess_role = {"guess_role" : []}
-            for i in range(self.room_setting["player_num"]):
-            
-                [player, role, degree, reason] = lines[i].split('，', 3)
-                
-                self.guess_role["guess_role"].append(role)
-                
-                # save to guess roles array
-                roles_prompt = player+self.stage_detail['guess_role']['save'][0]+degree+self.stage_detail['guess_role']['save'][1]+role+self.stage_detail['guess_role']['save'][2]+reason
-                self.guess_roles.append(roles_prompt)
-
-                # send to server (if it didn't print the percentage, how much we should get?)
-                self.api_guess_roles.append(role)
-                try:
-                    d = str(int(degree.split('%')[0])/100)
-                except ValueError:
-                    d = 0
-
-                self.api_guess_confidence.append(d)
-
-        except Exception as e:
-            self.logger.warning(f"Predict player error , {e}")
-        
-        self.logger.debug("Get Agent Info")
-        self.logger.debug(self.__get_agent_info__())
+        for i in response.splitlines():
+            self.guess_roles.append(i)
 
 
     def prompts_response(self, prompt_type):
@@ -547,6 +518,13 @@ class prompts:
         # if res == '' (no words), resend to get the data
         if not (res and res.strip()):
             res = self.__openai_send__(prompt)
+
+        # cut unused string (ex. <|end|>)
+        if '<' in res:
+            res = res.split('<')[0]
+        
+        
+        
         return res
     
     def __get_guess_role__(self):
