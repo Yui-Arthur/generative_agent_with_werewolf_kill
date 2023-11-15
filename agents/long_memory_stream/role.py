@@ -159,7 +159,6 @@ class seer(role):
 
         for anno in announcement:
             if anno['operation'] == 'role_info':
-                # print(anno)
                 role_type = anno['description'].split('是')[-1]
                 
                 self.know_role_list[int(anno['user'][0])] = role_type

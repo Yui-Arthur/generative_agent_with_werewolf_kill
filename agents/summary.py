@@ -317,10 +317,8 @@ class summary():
         self.__load_game_info(file_path = f"./game_info/{file_name}")
     
         for day in self.memory_stream: 
-            print("day ", day)
             all_summary = self.__get_day_summary__(day, self.memory_stream[day], self.operation_info[day], self.all_game_info["result"])
             guess_role_summary = self.__get_guess_role_summary(day, self.memory_stream[day], self.guess_role[day])
-            # print(all_summary)
             """summary + score"""
             if all_summary != None:
                 self.set_score(self.my_player_role, "vote", all_summary[0])
@@ -332,12 +330,10 @@ class summary():
     def __get_day_summary__(self, day, day_memory, day_operation, result):
         """day summary to openai"""
 
-        day = f"第{day}天"
-        #print(f"{day}day summary")      
+        day = f"第{day}天"    
         self.max_fail_cnt = 3
     
         final_prompt = self.prompt_template['day_summary'].replace("%l" , self.example['day_summary']).replace("%z", day).replace("%m" , day_memory).replace("%o" , day_operation).replace("%y" , self.all_game_info["all_role_info"]).replace("%p" , result)
-        # print(f"final_prompt = {final_prompt}")
         sample_info = {
             "vote" : "vote_summary",
             "dialogue" : "dialogue_summary",
@@ -351,12 +347,10 @@ class summary():
     def __get_guess_role_summary(self, day, day_memory, guess_role):
         """guess_role summary to openai"""
 
-        day = f"第{day}天"
-        # print(f"{day}guess_role summary")      
+        day = f"第{day}天"    
         self.max_fail_cnt = 3
     
         final_prompt = self.prompt_template['guess_role'].replace("%l" , self.example['guess_role']).replace("%z", day).replace("%m" , day_memory).replace("%g" , guess_role).replace("%y" , self.all_game_info["all_role_info"])
-        # print(f"final_prompt = {final_prompt}")
         info = {
             "guess" : "guess_role_summary",
         }        
@@ -367,16 +361,14 @@ class summary():
         return info['guess']
 
     def set_score(self, role, stage, summary):
-        # print(summary)
+        
         trans_summary = self.transform_player2identity(summary= summary)
         
         final_prompt = self.prompt_template["score"].replace("%s", trans_summary)
         self.logger.debug("Prompt: "+str(final_prompt))
-        # print(final_prompt)
         
         response = self.__openai_send__(final_prompt)
         self.logger.debug("Response: "+str(response))
-        # print(response)
         
         try:
             score = int(response.split(":")[1])
@@ -388,7 +380,6 @@ class summary():
                 return
             else :
                 score = 0
-        # print(score)
         
         file_path = os.path.join(os.path.join("summary", role), f"{stage}.json")
         try:
@@ -444,8 +435,6 @@ class summary():
         self.prompt_template['current_summary'] = self.prompt_template['current_summary'].replace("%l", self.example['current_summary'])
         self.prompt_template['current_summary'] += f"* 回應\n"
         self.prompt_template['current_summary'] += f"[目前總結]\n"
-        
-        # print(self.prompt_template['current_summary'])
 
     def transform_player2identity(self, summary):
         

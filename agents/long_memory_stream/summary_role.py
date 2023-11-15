@@ -1,14 +1,12 @@
-from .long_memory_stream import long_memeory_stream
+from .long_memory_stream import long_memeory_stream_summary
 
 import json
 
-class summary_role(long_memeory_stream):
+class summary_role(long_memeory_stream_summary):
 
     def __init__(self , prompt_dir , logger , openai_kwargs ):
         super().__init__(prompt_dir, logger , openai_kwargs)
         self.max_fail_cnt = 1
-        self.stage_summary = None
-        self.guess_summary = None
         
     def __processs_information__(self , data):
         
@@ -57,16 +55,6 @@ class summary_role(long_memeory_stream):
             op['stage_name'] = data['stage']
 
         return operations
-    
-    def summary_prompt(self, pre_prompt):
-
-        experience = ""
-        for idx, summary in enumerate(self.stage_summary):
-            experience += f'{idx+1}. {summary}\n'
-
-        final_prompt = self.prompt_template['experience'].replace("%e" , experience).replace("%e" , self.guess_summary)
-    
-        return f"{pre_prompt}\n{final_prompt}"
 
 
 class summary_werewolf(summary_role):
@@ -193,7 +181,6 @@ class summary_seer(summary_role):
 
         for anno in announcement:
             if anno['operation'] == 'role_info':
-                # print(anno)
                 role_type = anno['description'].split('是')[-1]
                 
                 self.know_role_list[int(anno['user'][0])] = role_type
