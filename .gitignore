@@ -9,7 +9,4 @@ grpc_client.py
 test.py
 /test/tes.py
 /test/test1.py
-doc/game_info/*.jsonl
 agent.json
-/agents/generate_script_agent.py
-/agents/script_agent.py
