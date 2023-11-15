@@ -67,8 +67,6 @@ class summary():
         if not os.path.exists(os.path.join(prompt_dir, "summary")):
             os.mkdir(os.path.join(prompt_dir, "summary"))
 
-        # self.__load_game_info(file_path = "./game_info/11_09_20_44_iAgent932.jsonl")
-
     def __load_prompt_and_example__(self , prompt_dir):
         """load prompt json to dict"""
         self.logger.debug("load common json")
@@ -446,9 +444,7 @@ class summary():
         self.prompt_template['current_summary'] = self.prompt_template['current_summary'].replace("%l", self.example['current_summary'])
         self.prompt_template['current_summary'] += f"* 回應\n"
         self.prompt_template['current_summary'] += f"[目前總結]\n"
-        # print(self.prompt_template['current_summary'])
-        
-        # print(self.prompt_template['current_summary'])
+
     def transform_player2identity(self, summary):
         
         for key_word in self.player2identity.keys():
@@ -484,6 +480,7 @@ if __name__ == '__main__':
 
     s = summary(logger = logging.getLogger(__name__), api_json="./doc/secret/azure.key")
     # s = summary(logger = logging.getLogger(__name__), prompt_dir="./generative_agent_with_werewolf_kill/doc", api_json = "./generative_agent_with_werewolf_kill/doc/secret/openai.key")
+    s = summary(logger = logging.getLogger(__name__), prompt_dir="./generative_agent_with_werewolf_kill/doc", api_json = "./generative_agent_with_werewolf_kill/doc/secret/chatgpt_api_key.key")
     s.get_summary()
 
     # s.set_score( "village", "vote", "這回合中，我沒有進行任何投票，下次需要更主動參與投票，並且評估場上的情況，將票投給懷疑的對象。")
