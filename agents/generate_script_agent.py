@@ -6,7 +6,7 @@ import threading
 from pathlib import Path   
 import json
 
-class script_agent(agent):
+class generate_script_agent(agent):
     
     def __init__(self ,script_game_path = "doc/game_script/game1", api_json = "doc/secret/yui.key", 
                 server_url = "140.127.208.185" , agent_name = "1" , room_name = "TESTROOM" , 
