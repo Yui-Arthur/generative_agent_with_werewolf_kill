@@ -13,7 +13,7 @@ import datetime
 class agent():
     def __init__(self , api_json = None, 
                  server_url = "140.127.208.185" , agent_name = "Agent1" , room_name = "TESTROOM" , 
-                 color = "f9a8d4"):
+                 color = "f9a8d4" , **kwargs):
         
         # basic setting
         self.server_url = server_url
@@ -49,18 +49,21 @@ class agent():
         #           = False => game is running
         self.game_over = True
 
+        # for test get info
+        self.update = 0
         self.__logging_setting__()
         self.__join_room__()
 
     def get_info(self) -> dict[str,list[str]]:
+        
         return_sample = {
-            "guess_roles": ["狼人" , "好人" , "壞人"],
-            "confidence" : ["0.25" ,"0.25" ,"0.25"],
-            "memeory" : ["123456"],
+            "guess_roles": ["狼人" , "好人" , "壞人" , "壞人" , "壞人" , "壞人" , "壞人"],
+            "confidence" : ["0.25" ,"0.25" ,"0.25" , "0.25" ,"0.25" ,"0.25","0.25"],
+            "memory" : ["123456"],
             "token_used" : ["123456"],
-            "other..." : ["..."],
-            "other2..." : ["..."]
+            "updated" : [str(self.update)]
         }
+        self.update = self.update^1
 
         return return_sample
 
@@ -247,14 +250,14 @@ class agent():
                     self.logger.debug(data)
                     self.__record_agent_game_info__(data)
 
+                    self.__process_data__(self.current_info) 
+
                     # check game over
                     for anno in self.current_info['announcement']: 
                         if anno['operation'] == "game_over" : 
                             self.checker = False
                             self.__game_over_process__(anno , data['timer'])
                             break
-
-                    self.__process_data__(self.current_info) 
             else:
                 self.logger.warning(r.json())
                 failure_cnt+=1
@@ -328,7 +331,7 @@ class agent():
         """skip the stage"""
         try:
             print(self.current_info["stage"])
-            r = requests.get(f'{self.server_url}/api/game/{self.room}/skip/{self.current_info["stage"]}/{self.player_name}' , headers ={
+            r = requests.get(f'{self.server_url}/api/game/{self.room}/skip/{self.current_info["stage"]}/{self.name}' , headers ={
                 "Authorization" : f"Bearer {self.user_token}"
             } , timeout=5)
 

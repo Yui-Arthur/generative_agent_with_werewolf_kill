@@ -5,7 +5,7 @@ import threading
 from concurrent import futures
 from pathlib import Path
 import argparse
-from agents import memory_stream_agent, memory_stream_summary_agent , intelligent_agent , agent
+from agents import memory_stream_agent , intelligent_agent , agent, summary_intelligent_agent, memory_stream_summary_agent
 from sentence_transformers import SentenceTransformer, util
 import threading
 import time
@@ -15,7 +15,8 @@ class agent_service(agent_pb2_grpc.agentServicer):
     def __init__(self , server_ip , agent_dict):
         self.agent_type_dict = {
             "memory_stream_agent" : memory_stream_agent , 
-            "intelligent_agent" : intelligent_agent
+            "intelligent_agent" : intelligent_agent,
+            "simple_agent" : agent
         }
         self.agent_dict : dict[int , agent] = agent_dict
         self.agent_idx = 1

@@ -469,7 +469,7 @@ class summary():
     
 if __name__ == '__main__':
 
-    s = summary(logger = logging.getLogger(__name__), api_json="./doc/secret/azure.key")
+    # s = summary(logger = logging.getLogger(__name__), api_json="./doc/secret/azure.key")
     # s = summary(logger = logging.getLogger(__name__), prompt_dir="./generative_agent_with_werewolf_kill/doc", api_json = "./generative_agent_with_werewolf_kill/doc/secret/openai.key")
     s = summary(logger = logging.getLogger(__name__), prompt_dir="./generative_agent_with_werewolf_kill/doc", api_json = "./generative_agent_with_werewolf_kill/doc/secret/chatgpt_api_key.key")
     s.get_summary()

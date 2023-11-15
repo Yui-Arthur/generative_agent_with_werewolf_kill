@@ -78,4 +78,3 @@ class summary_agent(agent):
         except Exception as e:
             self.logger.warning(f"__check_game_state__ Server Error , {e}")
             self.__del__()
-    
