@@ -19,9 +19,9 @@ class intelligent_agent(agent):
                 color = "f9a8d4" , prompt_dir = Path("prompt/memory_stream/")):
         
         
-        super().__init__(openai_token = openai_token, api_base = api_base , engine = engine, api_json = api_json,
-                                       server_url = server_url , agent_name = agent_name , room_name = room_name , 
-                                       color = color) 
+        super().__init__(api_json = api_json, server_url = server_url , 
+                        agent_name = agent_name , room_name = room_name , 
+                        color = color) 
         # used for start game for test
         self.master_token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX25hbWUiOiJ5dWkiLCJyb29tX25hbWUiOiJURVNUUk9PTSIsImxlYWRlciI6dHJ1ZSwiaWF0IjoxNjkwMzc5NTM0LCJleHAiOjE2OTkwMTk1MzR9.BEmD52DuK657YQezsqNgJAwbPfl54o8Pb--Dh7VQMMA"
         
@@ -265,8 +265,7 @@ class intelligent_agent_test(agent):
         self.logger.debug(f'User data: {data}')
 
 
-        self.prompts : prompts = prompts(data['player_id'], data['game_info'], self.room_setting, self.logger)
-
+        self.prompts : prompts = prompts(data['player_id'], data['game_info'], self.room_setting, self.logger, self.client, self.api_kwargs)
 
         self.__check_game_state__(0)
 
