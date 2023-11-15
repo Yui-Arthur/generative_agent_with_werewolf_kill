@@ -17,6 +17,7 @@ class generate_script_agent(agent):
                         agent_name = agent_name , room_name = room_name , 
                         color = color) 
         
+        self.agent_name = agent_name
         self.master_token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX25hbWUiOiJ5dWkiLCJyb29tX25hbWUiOiJURVNUUk9PTSIsImxlYWRlciI6dHJ1ZSwiaWF0IjoxNjkwMzc5NTM0LCJleHAiOjE2OTkwMTk1MzR9.BEmD52DuK657YQezsqNgJAwbPfl54o8Pb--Dh7VQMMA"
         
         with open(f"{script_game_path}/{agent_name}.jsonl", encoding="utf-8") as json_file: self.script_info = [json.loads(line) for line in json_file.readlines()]
@@ -42,14 +43,18 @@ class generate_script_agent(agent):
             self.current_script_idx += 1
             return
         
-        op_data = {
-            "stage_name" : data['stage'],
-            "operation" : data['information'][0]["operation"],
-            "target" : self.script_info[self.current_script_idx]["target"],
-            "chat" : self.script_info[self.current_script_idx]["chat"]
-        }
-        self.current_script_idx += 1
-        self.__send_operation__(op_data)
+        try:
+
+            op_data = {
+                "stage_name" : data['stage'],
+                "operation" : data['information'][0]["operation"],
+                "target" : self.script_info[self.current_script_idx]["target"],
+                "chat" : self.script_info[self.current_script_idx]["chat"]
+            }
+            self.current_script_idx += 1
+            self.__send_operation__(op_data)
+        except:
+            self.logger.warning(f"player:{self.agent_name} script end.")
 
     def __reset_server__(self , server_url):
         """for convenient test"""
@@ -77,19 +82,6 @@ class generate_script_agent(agent):
         except Exception as e :
             self.logger.warning(f"__start_server__ Server Error , {e}")
 
-    def __start_server__(self):
-        """for convenient test"""
-        try :
-            r = requests.get(f'{self.server_url}/api/start_game/{self.room}' , headers= {
-                "Authorization" : f"Bearer {self.master_token}"
-            })
-            if r.status_code == 200:
-                self.logger.debug("Start Game")
-            else:
-                self.logger.warning(f"Start Game : {r.json()}")
-        
-        except Exception as e :
-            self.logger.warning(f"__start_server__ Server Error , {e}")
     
     def __setting_game(self):
         """for convenient test"""
@@ -105,7 +97,6 @@ class generate_script_agent(agent):
         except Exception as e :
             self.logger.warning(f"__setting_game Server Error , {e}")
     
-        self.__check_game_state__(0)
         
     def __start_game_init__(self, room_data):
         """the game started setting , update player name"""
