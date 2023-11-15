@@ -201,7 +201,7 @@ class long_memeory_stream():
         question = info['question'].split('\n')
         memory = self.__retrieval__(day , turn , question[0])
         info = self.__reflection_opinion__(memory)
-        print(info)
+        # print(info)
 
         self.push(day , turn , info['opinion'])
     
@@ -377,6 +377,7 @@ class long_memeory_stream():
 
         self.logger.debug(f"LLM keyword : {keyword_list}")
         info = {}
+        print(f"prompt = {prompt}")
 
         while not success_get_keyword and fail_idx < max_fail_cnt:
 
@@ -427,28 +428,29 @@ class long_memeory_stream():
 
     def __openai_send__(self , prompt):
         """openai api send prompt , can override this."""
-        response = openai.ChatCompletion.create(
-            **self.openai_kwargs,
-            messages = [
-                {"role":"system","content":"You are an AI assistant that helps people find information."},
-                {"role":"user","content":prompt}
-            ],
-            temperature=0.7,
-            max_tokens=800,
-            top_p=0.95,
-            frequency_penalty=0,
-            presence_penalty=0,
-            stop=None)
+        # response = openai.ChatCompletion.create(
+        #     **self.openai_kwargs,
+        #     messages = [
+        #         {"role":"system","content":"You are an AI assistant that helps people find information."},
+        #         {"role":"user","content":prompt}
+        #     ],
+        #     temperature=0.7,
+        #     max_tokens=800,
+        #     top_p=0.95,
+        #     frequency_penalty=0,
+        #     presence_penalty=0,
+        #     stop=None)
         
-        self.token_used += response["usage"]["total_tokens"]
+        # self.token_used += response["usage"]["total_tokens"]
         
-        if response['choices'][0]["finish_reason"] == "content_filter":
-            self.logger.debug("Block By Openai")
-            return None
+        # if response['choices'][0]["finish_reason"] == "content_filter":
+        #     self.logger.debug("Block By Openai")
+        #     return None
 
         
         
-        return response['choices'][0]['message']['content']
+        # return response['choices'][0]['message']['content']
+        return "tt"
     
     def __len__(self):
         return len(self.memory_stream)
