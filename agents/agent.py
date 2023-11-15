@@ -247,14 +247,14 @@ class agent():
                     self.logger.debug(data)
                     self.__record_agent_game_info__(data)
 
+                    self.__process_data__(self.current_info) 
+
                     # check game over
                     for anno in self.current_info['announcement']: 
                         if anno['operation'] == "game_over" : 
                             self.checker = False
                             self.__game_over_process__(anno , data['timer'])
                             break
-
-                    self.__process_data__(self.current_info) 
             else:
                 self.logger.warning(r.json())
                 failure_cnt+=1
@@ -328,7 +328,7 @@ class agent():
         """skip the stage"""
         try:
             print(self.current_info["stage"])
-            r = requests.get(f'{self.server_url}/api/game/{self.room}/skip/{self.current_info["stage"]}/{self.player_name}' , headers ={
+            r = requests.get(f'{self.server_url}/api/game/{self.room}/skip/{self.current_info["stage"]}/{self.name}' , headers ={
                 "Authorization" : f"Bearer {self.user_token}"
             } , timeout=5)
 

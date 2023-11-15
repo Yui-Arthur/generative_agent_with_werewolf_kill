@@ -15,7 +15,8 @@ class agent_service(agent_pb2_grpc.agentServicer):
     def __init__(self , server_ip , agent_dict):
         self.agent_type_dict = {
             "memory_stream_agent" : memory_stream_agent , 
-            "intelligent_agent" : intelligent_agent
+            "intelligent_agent" : intelligent_agent,
+            "simple_agent" : agent
         }
         self.agent_dict : dict[int , agent] = agent_dict
         self.agent_idx = 1
