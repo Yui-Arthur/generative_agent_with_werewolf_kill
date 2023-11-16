@@ -1,6 +1,6 @@
-from .agent import agent
-from .intelligent_agent.prompts import prompts
-from .summary import summary
+from agent import agent
+from intelligent_agent.prompts import prompts
+from summary import summary
 import requests
 import threading
 from pathlib import Path   
@@ -9,9 +9,9 @@ import json
 class generate_script_agent(agent):
     
     def __init__(self ,script_game_path = "doc/game_script/game1", api_json = "doc/secret/yui.key", 
-                server_url = "140.127.208.185" , agent_name = "1" , room_name = "TESTROOM" , 
+                server_url = "140.127.208.185" , agent_name = "7" , room_name = "TESTROOM" , 
                 color = "f9a8d4" , prompt_dir = Path("prompt/memory_stream/")):
-        self.__reset_server__(server_url)
+        # self.__reset_server__(server_url)
         
         super().__init__(api_json = api_json, server_url = server_url , 
                         agent_name = agent_name , room_name = room_name , 
@@ -21,7 +21,7 @@ class generate_script_agent(agent):
         
         with open(f"{script_game_path}/{agent_name}.jsonl", encoding="utf-8") as json_file: self.script_info = [json.loads(line) for line in json_file.readlines()]
         self.current_script_idx = 0
-
+        self.agent_name = agent_name
         # set the game for test
         self.room_setting = {
             "player_num": 7,    
@@ -33,23 +33,46 @@ class generate_script_agent(agent):
             "werewolf" : 2,
             "hunter" : 1 
         }
+        print("agent_name", agent_name)
         self.__setting_game()
-        self.__start_server__()
+        if agent_name == "7":
+            self.__start_server__()
 
     def __process_data__(self , data):
         
+        print("agent_name", self.agent_name)
+        print(data)
+        print(self.script_info[self.current_script_idx])
+        print("///////////////////")
         if(len(data['information']) == 0):
             self.current_script_idx += 1
             return
         
-        op_data = {
-            "stage_name" : data['stage'],
-            "operation" : data['information'][0]["operation"],
-            "target" : self.script_info[self.current_script_idx]["target"],
-            "chat" : self.script_info[self.current_script_idx]["chat"]
-        }
-        self.current_script_idx += 1
-        self.__send_operation__(op_data)
+        try:
+            
+            info_st_idx = 0
+            info_en_idx = 1
+
+            if data['stage'].split("-")[2] == "witch":
+                if self.script_info[self.current_script_idx]["chat"] == "poison": 
+                    info_st_idx = 1
+                    info_en_idx = 2
+            elif data['stage'].split("-")[2] == "hunter":
+                info_en_idx = 2
+
+            for info_idx in range(info_st_idx, info_en_idx):
+
+                op_data = {
+                    "stage_name" : data['stage'],
+                    "operation" : data['information'][info_idx]["operation"],
+                    "target" : self.script_info[self.current_script_idx]["target"],
+                    "chat" : self.script_info[self.current_script_idx]["chat"]
+                }
+                self.current_script_idx += 1
+                self.__send_operation__(op_data)
+
+        except:
+            self.logger.warning(f"player:{self.agent_name} script end.")
 
     def __reset_server__(self , server_url):
         """for convenient test"""
@@ -105,7 +128,6 @@ class generate_script_agent(agent):
         except Exception as e :
             self.logger.warning(f"__setting_game Server Error , {e}")
     
-        self.__check_game_state__(0)
         
     def __start_game_init__(self, room_data):
         """the game started setting , update player name"""
