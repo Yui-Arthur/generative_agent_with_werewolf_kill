@@ -1,5 +1,6 @@
 /doc/secret/*.key
 /doc/secret/*.json
+/doc/game_info/*.jsonl
 __pycache__
 logs/*.log
 .DS_Store
