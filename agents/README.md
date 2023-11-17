@@ -10,5 +10,6 @@ if __name__ == '__main__':
     # 產生summary，需要放入你要產生summary的檔案
     s.get_summary(file_name= "example.jsonl")
 ```
+* step3: 執行即可
 
 * 目前只要生成的不符合預期就不會產生summary內容
