@@ -2,7 +2,7 @@
 
 * step1: 打開 ./agents/summary.py
 * step2: 你會看到以下程式碼:
-    * prompt_dir 是放prompt與summary的外層檔案
+    * prompt_dir 是放prompt與summary的外層檔案夾
     * file_name 只需要放入game_info檔案的名稱。實際會抓 prompt_dir/game_info/example.jsonl。
 ```
 if __name__ == '__main__':
