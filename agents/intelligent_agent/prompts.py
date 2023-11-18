@@ -18,9 +18,13 @@ class prompts:
         self.choices = [-1] # player choices in prompts
         self.day = 0
 
+
+        # agent info
         self.token_used = 0
         self.api_guess_roles= []
         self.api_guess_confidence= []
+        self.agent_info = {}
+        # self.guessing_finished = 0
 
         # dictionary en -> ch
         self.en_dict={
@@ -117,12 +121,24 @@ class prompts:
 
     
     def __get_agent_info__(self):
+
         ret = {
             "memory" : [self.__memory_to_string__()],
             "guess_roles" : self.api_guess_roles,
             "confidence" : self.api_guess_confidence,
             "token_used" : [str(self.token_used)]
         }
+
+        # agent info change
+        if(self.agent_info != ret):
+            self.agent_info = ret.copy()
+            ret['updated'] = ["1"]
+            self.logger.debug("UPDATE!!!")
+
+        else:
+            ret['updated'] = ["0"]
+
+        
 
         return ret
 
