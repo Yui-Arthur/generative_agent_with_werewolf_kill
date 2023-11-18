@@ -14,7 +14,7 @@ from ..summary_agent import summary_agent
 
 class intelligent_agent(agent):
     
-    def __init__(self , api_json = "doc/secret/yui.key", 
+    def __init__(self , api_json = "doc/secret/azure.key", 
                 server_url = "140.127.208.185" , agent_name = "Agent1" , room_name = "TESTROOM" , 
                 color = "f9a8d4" , prompt_dir = Path("prompt/memory_stream/")):
         

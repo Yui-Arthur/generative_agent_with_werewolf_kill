@@ -8,7 +8,7 @@ import os
 from sentence_transformers import SentenceTransformer, util
 
 class summary():
-    def __init__(self , logger , prompt_dir="./doc", api_json = None):
+    def __init__(self, prompt_dir="./generative_agent_with_werewolf_kill/doc", api_json = None):
         self.max_fail_cnt = 3
         self.token_used = 0
         self.prompt_template : dict[str , str] = None
@@ -48,7 +48,6 @@ class summary():
         }
 
         
-        self.logger : logging.Logger = logger
         self.prompt_dir = Path(prompt_dir)
         self.__load_prompt_and_example__(self.prompt_dir)
         
@@ -69,7 +68,7 @@ class summary():
 
     def __load_prompt_and_example__(self , prompt_dir):
         """load prompt json to dict"""
-        self.logger.debug("load common json")
+
         with open(prompt_dir / "./prompt/summary/common_prompt.json" , encoding="utf-8") as json_file: self.prompt_template = json.load(json_file)
         with open(prompt_dir / "./prompt/summary/common_example.json" , encoding="utf-8") as json_file: self.example = json.load(json_file)
 
@@ -133,15 +132,14 @@ class summary():
         success_get_keyword = False
         fail_idx = 0
 
-        self.logger.debug(f"LLM keyword : {keyword_list}")
         info = {}
 
         while not success_get_keyword and fail_idx < self.max_fail_cnt:
 
-            self.logger.debug(f"start {fail_idx} prompt")
             info = {}
+            print(prompt)
             result = self.__openai_send__(prompt)
-
+            print(result)
             # result block by openai
             if result == None:
                 fail_idx+=1
@@ -162,9 +160,7 @@ class summary():
             if all(_ in info.keys() for _ in keyword_list): success_get_keyword = True
             else : fail_idx+=1
         
-        self.logger.debug(f"LLM output : {info}")
-        # print(f"LLM output : {info}")
-
+        
         if fail_idx >= self.max_fail_cnt: info = None
         
         return info
@@ -313,10 +309,10 @@ class summary():
 
     def get_summary(self, file_name = "11_06_18_31_mAgent112.jsonl"):
 
-        self.logger.debug("load game info")
         self.__load_game_info(file_path = f"./game_info/{file_name}")
     
         for day in self.memory_stream: 
+            
             all_summary = self.__get_day_summary__(day, self.memory_stream[day], self.operation_info[day], self.all_game_info["result"])
             guess_role_summary = self.__get_guess_role_summary(day, self.memory_stream[day], self.guess_role[day])
             """summary + score"""
@@ -365,15 +361,11 @@ class summary():
         trans_summary = self.transform_player2identity(summary= summary)
         
         final_prompt = self.prompt_template["score"].replace("%s", trans_summary)
-        self.logger.debug("Prompt: "+str(final_prompt))
-        
         response = self.__openai_send__(final_prompt)
-        self.logger.debug("Response: "+str(response))
         
         try:
             score = int(response.split(":")[1])
         except:
-            self.logger.debug("Error: Don't match key")
             self.get_score_fail_times -= 1
             if self.get_score_fail_times >= 0:
                 self.set_score(role= role, stage= stage, summary= summary)
@@ -398,6 +390,7 @@ class summary():
     def __write_summary(self, file_path, data):
 
         try:
+            
             with open(self.prompt_dir / file_path, "w", encoding='utf-8') as json_file: 
                 new_data = json.dumps(data, indent= 1, ensure_ascii=False)
                 json_file.write(new_data)
@@ -469,9 +462,11 @@ class summary():
     
 if __name__ == '__main__':
 
-    # s = summary(logger = logging.getLogger(__name__), api_json="./doc/secret/azure.key")
-    # s = summary(logger = logging.getLogger(__name__), prompt_dir="./generative_agent_with_werewolf_kill/doc", api_json = "./generative_agent_with_werewolf_kill/doc/secret/openai.key")
-    s = summary(logger = logging.getLogger(__name__), prompt_dir="./generative_agent_with_werewolf_kill/doc", api_json = "./generative_agent_with_werewolf_kill/doc/secret/chatgpt_api_key.key")
+    # s = summary(api_json="./doc/secret/azure.key")
+    # s = summary(prompt_dir="./generative_agent_with_werewolf_kill/doc", api_json = "./generative_agent_with_werewolf_kill/doc/secret/openai.key")
+    s = summary(prompt_dir="./generative_agent_with_werewolf_kill/doc", api_json = "./generative_agent_with_werewolf_kill/doc/secret/chatgpt_api_key.key")
     s.get_summary()
 
     # s.set_score( "village", "vote", "這回合中，我沒有進行任何投票，下次需要更主動參與投票，並且評估場上的情況，將票投給懷疑的對象。")
+    # s = summary(api_json="./doc/secret/openai.key", prompt_dir="./doc")
+    # s.get_summary(file_name= "example.jsonl")

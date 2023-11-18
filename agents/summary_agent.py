@@ -56,6 +56,12 @@ class summary_agent(agent):
                     self.logger.debug(data)
                     self.__record_agent_game_info__(data)
 
+                    copy_current_info = self.current_info.copy()
+                    copy_current_info["guess_summary"] = self.__get_summary(cur_stage= "guess_role")
+                    copy_current_info["stage_summary"] = self.__get_summary(cur_stage= data['stage'].split('-')[-1])
+                    
+                    self.__process_data__(copy_current_info) 
+                    
                     # check game over
                     for anno in self.current_info['announcement']: 
                         if anno['operation'] == "game_over" : 
@@ -63,11 +69,6 @@ class summary_agent(agent):
                             self.__game_over_process__(anno , data['timer'])
                             break
 
-                    copy_current_info = self.current_info.copy()
-                    copy_current_info["guess_summary"] = self.__get_summary(cur_stage= "guess_role")
-                    copy_current_info["stage_summary"] = self.__get_summary(cur_stage= data['stage'].split('-')[-1])
-                    
-                    self.__process_data__(copy_current_info) 
             else:
                 self.logger.warning(r.json())
                 failure_cnt+=1
