@@ -163,7 +163,9 @@ class memory_stream_agent_script(script_agent):
         if skip:
             self.__skip_stage__()
 
-
+    def get_info(self) -> dict[str,str]:
+        return self.long_memory.get_long_memory_info()
+    
     def __start_game_init__(self , room_data):
         """the game started setting , update player name"""
         self.logger.debug(f"game is started , this final room info : {room_data}")
