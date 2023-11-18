@@ -51,8 +51,9 @@ class intelligent_agent(agent):
                 "target" : i["target"],
                 "chat" : i["chat"]
             }
+            
             self.__send_operation__(op_data)
-
+            self.__skip_stage__()
 
     def __start_game_init__(self, room_data):
         """the game started setting , update player name"""
@@ -68,7 +69,12 @@ class intelligent_agent(agent):
         self.__get_all_role__()
 
         self.__check_game_state__(0)
-
+    
+    
+    def __get_guess_role__(self):
+        r = self.prompts.__get_guess_role__()
+        self.logger.debug(f'User data: {r}')
+        return r 
 
 class summary_intelligent_agent(summary_agent):
     
@@ -127,6 +133,8 @@ class summary_intelligent_agent(summary_agent):
         self.__get_all_role__()
 
         self.__check_game_state__(0)
+
+    
     
     
 class intelligent_agent_test(agent):
@@ -269,4 +277,8 @@ class intelligent_agent_test(agent):
 
         self.__check_game_state__(0)
 
+    
+    # def __get_guess_role__(self):
+        
+    #     return self.prompts.__get_guess_role__()
     

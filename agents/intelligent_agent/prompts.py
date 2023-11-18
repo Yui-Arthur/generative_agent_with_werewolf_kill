@@ -14,6 +14,7 @@ class prompts:
         self.api_kwargs = api_kwargs
         self.memory = []
         self.guess_roles = []
+        self.guess_role = {"guess_role" : []}
         self.alive = [] # alive players
         self.choices = [-1] # player choices in prompts
         self.day = 0
@@ -137,8 +138,6 @@ class prompts:
 
         else:
             ret['updated'] = ["0"]
-
-        
 
         return ret
 
@@ -563,7 +562,7 @@ class prompts:
         return res
     
     def __get_guess_role__(self):
-        """must override this , format = dict[str , list[str]]"""
+
         return self.guess_role
 
 
