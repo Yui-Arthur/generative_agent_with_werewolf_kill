@@ -136,7 +136,7 @@ class generate_script_agent(agent):
 if __name__ == "__main__":
     
     player_number = 7
-    game_script_path = "doc/game_script/game3"
+    game_script_path = "doc/game_script/game2"
     api_key = "doc/secret/openai.key"
     url = "http://localhost:8001"
     room_name = "EMPTY"
