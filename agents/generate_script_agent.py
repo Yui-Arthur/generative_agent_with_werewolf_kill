@@ -8,10 +8,9 @@ import json
 
 class generate_script_agent(agent):
     
-    def __init__(self ,script_game_path = "doc/game_script/game1", api_json = "doc/secret/yui.key", 
+    def __init__(self ,player_number, script_game_path = "doc/game_script/game1", api_json = "doc/secret/yui.key", 
                 server_url = "140.127.208.185" , agent_name = "7" , room_name = "TESTROOM" , 
                 color = "f9a8d4" , prompt_dir = Path("prompt/memory_stream/")):
-        # self.__reset_server__(server_url)
         
         super().__init__(api_json = api_json, server_url = server_url , 
                         agent_name = agent_name , room_name = room_name , 
@@ -25,8 +24,8 @@ class generate_script_agent(agent):
         # set the game for test
         self.room_setting = {
             "player_num": 7,    
-            "operation_time" : 5,
-            "dialogue_time" : 10,
+            "operation_time" : 3,
+            "dialogue_time" : 3,
             "seer" : 1,
             "witch" : 1,
             "village" : 2,
@@ -34,57 +33,50 @@ class generate_script_agent(agent):
             "hunter" : 1 
         }
         print("agent_name", agent_name)
+        if agent_name  == "5":
+            self.witch_save = 1
+            self.witch_poison = 1
+
         self.__setting_game()
-        if agent_name == "7":
+        if agent_name == str(player_number - 1):
             self.__start_server__()
 
+
+
     def __process_data__(self , data):
+        
+        if(len(data['information']) == 0):
+            # self.current_script_idx += 1
+            return
         
         print("agent_name", self.agent_name)
         print(data)
         print(self.script_info[self.current_script_idx])
         print("///////////////////")
-        if(len(data['information']) == 0):
-            self.current_script_idx += 1
-            return
-        
         try:
             
-            info_st_idx = 0
-            info_en_idx = 1
 
-            if data['stage'].split("-")[2] == "witch":
-                if self.script_info[self.current_script_idx]["chat"] == "poison": 
-                    info_st_idx = 1
-                    info_en_idx = 2
-            elif data['stage'].split("-")[2] == "hunter":
-                info_en_idx = 2
-
-            for info_idx in range(info_st_idx, info_en_idx):
-
+            for info in data["information"]:
+                
+                if self.script_info[self.current_script_idx]["chat"] == "poison" and info["description"] == "女巫救人":
+                    continue
+                    
                 op_data = {
                     "stage_name" : data['stage'],
-                    "operation" : data['information'][info_idx]["operation"],
+                    "operation" : info["operation"],
                     "target" : self.script_info[self.current_script_idx]["target"],
                     "chat" : self.script_info[self.current_script_idx]["chat"]
                 }
-                self.current_script_idx += 1
                 self.__send_operation__(op_data)
+
+                # 女巫有用解藥的情況
+                if self.script_info[self.current_script_idx]["chat"] == "save" and info["description"] == "女巫救人" and self.script_info[self.current_script_idx]["target"] != -1:
+                    self.current_script_idx += 1
+                    break
+                self.current_script_idx += 1
 
         except:
             self.logger.warning(f"player:{self.agent_name} script end.")
-
-    def __reset_server__(self , server_url):
-        """for convenient test"""
-        try :
-            r = requests.get(f'{server_url}/api/reset' , timeout=5)
-            # if r.status_code == 200:
-            #     self.logger.debug("Reset Room Success")
-            # else:
-            #     self.logger.warning(f"Reset Room Error : {r.json()}")
-        
-        except Exception as e :
-            self.logger.warning(f"__reset_server__ Server Error , {e}")
             
     def __start_server__(self):
         """for convenient test"""
@@ -138,3 +130,21 @@ class generate_script_agent(agent):
         self.__get_role__()
         self.__get_all_role__()
         self.__check_game_state__(0)
+
+
+
+if __name__ == "__main__":
+    
+    player_number = 7
+    game_script_path = "doc/game_script/game3"
+    api_key = "doc/secret/openai.key"
+    url = "http://localhost:8001"
+    room_name = "EMPTY"
+    for num in range(0, player_number): 
+        
+        script_thread = threading.Thread(target= generate_script_agent, 
+            # game_script path, api_key path, url, agent_name, romm_name, color, prompt path
+            args=((player_number, game_script_path, api_key, url, str(num), 
+                room_name, "f9a8d4", Path("prompt/memory_stream/"))))
+        script_thread.start()
+        script_thread.join()
