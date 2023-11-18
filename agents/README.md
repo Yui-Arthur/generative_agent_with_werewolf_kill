@@ -1,4 +1,9 @@
 # Game_script 產生 game_info
+
+* 前置作業:
+    * 打開 postman(https://grey-escape-89309.postman.co/workspace/My-Workspace~1cf6541f-c153-4597-8eb0-60165d1daae5/overview)
+    * 前往 https://github.com/yeeecheng/werewolf_kill 更改固定角色位置和發言順序，說明在其中README.md
+
 * step1 : 打開 ./agents/generate_script_agent.py
 * step2 : 你會看到以下程式碼，以及需要改的參數:
     * player_number : 你設定的遊戲人數
@@ -49,7 +54,7 @@ if __name__ == "__main__":
     * 狼人投票殺人
     ```{"target": 要投的玩家號碼(不能放-1), "chat": "狼人投票殺人"}```
 * 投票類型vote_or_not(女巫技能、白天投票)
-    * 女巫解藥
+    * 女巫解藥(棄票要放)
     ```{"target": 要投的玩家號碼(放-1為棄票), "chat": "save"}```
     * 女巫毒藥
     ```{"target": 要投的玩家號碼(放-1為棄票), "chat": "poison"}```
