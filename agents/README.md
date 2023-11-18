@@ -13,36 +13,32 @@
 if __name__ == "__main__":
     
     player_number = 7
-    game_script_path = "doc/game_script/game1"
+    game_script_path = "doc/game_script/game3"
     api_key = "doc/secret/openai.key"
     url = "http://localhost:8001"
     room_name = "EMPTY"
-    for num in range(1, player_number + 1): 
-        
-        script_thread = threading.Thread(target= generate_script_agent, 
-            # game_script path, api_key path, url, agent_name, romm_name, color, prompt path
-            args=((game_script_path, api_key, url, str(num), 
-                room_name, "f9a8d4", Path("prompt/memory_stream/"))))
-        script_thread.start()
-        script_thread.join()
+    for num in range(0, player_number): 
+        generate_script_agent(
+            player_number= player_number, script_game_path = game_script_path, 
+            api_json= api_key, server_url= url, agent_name= str(num), room_name= room_name)
 ```
 * step3: 執行
 
 ## game_script 格式說明(以 [./doc/game_script/game1](https://github.com/Sunny1928/generative-agent-in-werewolf-kill/blob/master/doc/game_script/game1/1.jsonl) 說明)
-在game1中，會有1.jsonl、2.jsonl....7.jsonl 檔名的數字對應到玩家的號碼。
+在game1中，會有0.jsonl、1.jsonl、2.jsonl....7.jsonl 檔名的數字對應到玩家的號碼。
 每個.jsonl中只需要填入角色需要執行的操作即可，舉例來說:
 在1.jsonl中是狼人視角:
 ```=jsonl
 # 狼人夜晚發言
-{"target": -1, "chat": "我想要殺玩家5號，我覺得他應該是神"}
+{"target": -1, "chat": "我想要殺玩家4號，我覺得他應該是神"}
 # 狼人投票
-{"target": 5, "chat": "狼人投票殺人"}
+{"target": 4, "chat": "狼人投票殺人"}
 # 白天發言
-{"target": -1, "chat": "大家好，我是預言家，我昨晚查驗玩家5號是好人，我會查驗他的理由是我覺得她很可疑，但現在可以證明他的清白了。這個夜晚我會查驗玩家4號或玩家7號。"}
+{"target": -1, "chat": "大家好，我是預言家，我昨晚查驗玩家4號是好人，我會查驗他的理由是我覺得她很可疑，但現在可以證明他的清白了。這個夜晚我會查驗玩家3號或玩家6號。"}
 # 白天投票
 {"target": 3, "chat": "投票階段"}
 # 白天遺言
-{"target": -1, "chat": "大家請我說，我真的是預言家，雖然只有玩家5號相信我，我也清楚我前置位發言有點不利，但我很清楚我在做甚麼事，女巫我認為你可以直接用毒藥毒殺玩家3來打平衡，明天我認為可以著重聽玩家2、4、7的發言。"}
+{"target": -1, "chat": "大家請我說，我真的是預言家，雖然只有玩家4號相信我，我也清楚我前置位發言有點不利，但我很清楚我在做甚麼事，女巫我認為你可以直接用毒藥毒殺玩家2來打平衡，明天我認為可以著重聽玩家1、3、6的發言。"}
 ```
 放入的格式為
 ```{"target: , "chat": }```

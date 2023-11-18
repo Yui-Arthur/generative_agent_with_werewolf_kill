@@ -33,9 +33,6 @@ class generate_script_agent(agent):
             "hunter" : 1 
         }
         print("agent_name", agent_name)
-        if agent_name  == "5":
-            self.witch_save = 1
-            self.witch_poison = 1
 
         self.__setting_game()
         if agent_name == str(player_number - 1):
@@ -49,10 +46,10 @@ class generate_script_agent(agent):
             # self.current_script_idx += 1
             return
         
-        print("agent_name", self.agent_name)
-        print(data)
-        print(self.script_info[self.current_script_idx])
-        print("///////////////////")
+        # print("agent_name", self.agent_name)
+        # print(data)
+        # print(self.script_info[self.current_script_idx])
+        # print("///////////////////")
         try:
             
 
@@ -78,20 +75,6 @@ class generate_script_agent(agent):
         except:
             self.logger.warning(f"player:{self.agent_name} script end.")
             
-    def __start_server__(self):
-        """for convenient test"""
-        try :
-            r = requests.get(f'{self.server_url}/api/start_game/{self.room}' , headers= {
-                "Authorization" : f"Bearer {self.master_token}"
-            })
-            if r.status_code == 200:
-                self.logger.debug("Start Game")
-            else:
-                self.logger.warning(f"Start Game : {r.json()}")
-        
-        except Exception as e :
-            self.logger.warning(f"__start_server__ Server Error , {e}")
-
     def __start_server__(self):
         """for convenient test"""
         try :
@@ -136,15 +119,11 @@ class generate_script_agent(agent):
 if __name__ == "__main__":
     
     player_number = 7
-    game_script_path = "doc/game_script/game2"
+    game_script_path = "doc/game_script/game3"
     api_key = "doc/secret/openai.key"
     url = "http://localhost:8001"
     room_name = "EMPTY"
     for num in range(0, player_number): 
-        
-        script_thread = threading.Thread(target= generate_script_agent, 
-            # game_script path, api_key path, url, agent_name, romm_name, color, prompt path
-            args=((player_number, game_script_path, api_key, url, str(num), 
-                room_name, "f9a8d4", Path("prompt/memory_stream/"))))
-        script_thread.start()
-        script_thread.join()
+        generate_script_agent(
+            player_number= player_number, script_game_path = game_script_path, 
+            api_json= api_key, server_url= url, agent_name= str(num), room_name= room_name)
