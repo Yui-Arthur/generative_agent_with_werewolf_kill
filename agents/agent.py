@@ -13,7 +13,7 @@ import datetime
 class agent():
     def __init__(self , api_json = None, 
                  server_url = "140.127.208.185" , agent_name = "Agent1" , room_name = "TESTROOM" , 
-                 color = "f9a8d4"):
+                 color = "f9a8d4" , **kwargs):
         
         # basic setting
         self.server_url = server_url
@@ -49,18 +49,21 @@ class agent():
         #           = False => game is running
         self.game_over = True
 
+        # for test get info
+        self.update = 0
         self.__logging_setting__()
         self.__join_room__()
 
     def get_info(self) -> dict[str,list[str]]:
+        
         return_sample = {
-            "guess_roles": ["狼人" , "好人" , "壞人"],
-            "confidence" : ["0.25" ,"0.25" ,"0.25"],
-            "memeory" : ["123456"],
+            "guess_roles": ["狼人" , "好人" , "壞人" , "壞人" , "壞人" , "壞人" , "壞人"],
+            "confidence" : ["0.25" ,"0.25" ,"0.25" , "0.25" ,"0.25" ,"0.25","0.25"],
+            "memory" : ["123456"],
             "token_used" : ["123456"],
-            "other..." : ["..."],
-            "other2..." : ["..."]
+            "updated" : [str(self.update)]
         }
+        self.update = self.update^1
 
         return return_sample
 

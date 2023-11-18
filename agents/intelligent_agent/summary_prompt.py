@@ -2,7 +2,7 @@ import logging
 import openai
 import json
 
-class prompts:
+class summary_prompts:
     def __init__(self, player_id, game_info, room_setting, logger, client, api_kwargs):
         self.logger : logging.Logger = logger
 
@@ -18,13 +18,9 @@ class prompts:
         self.choices = [-1] # player choices in prompts
         self.day = 0
 
-
-        # agent info
         self.token_used = 0
         self.api_guess_roles= []
         self.api_guess_confidence= []
-        self.agent_info = {}
-        # self.guessing_finished = 0
 
         # dictionary en -> ch
         self.en_dict={
@@ -121,7 +117,6 @@ class prompts:
 
     
     def __get_agent_info__(self):
-
         ret = {
             "memory" : [self.__memory_to_string__()],
             "guess_roles" : self.api_guess_roles,
@@ -129,23 +124,14 @@ class prompts:
             "token_used" : [str(self.token_used)]
         }
 
-        # agent info change
-        if(self.agent_info != ret):
-            self.agent_info = ret.copy()
-            ret['updated'] = ["1"]
-            self.logger.debug("UPDATE!!!")
-
-        else:
-            ret['updated'] = ["0"]
-
-        
-
         return ret
 
     
     def agent_process(self, data):
         ''' Agent process all the data including announcements and information '''
 
+        stage_summary = data["stage_summary"]
+        guess_summary = data["guess_summary"]
         if(data['stage'] == 'check_role'):
             return []
 
@@ -161,7 +147,7 @@ class prompts:
         self.process_announcement(data['stage'], data['announcement'])
 
         # process information and return all the operations
-        operations = self.process_information(data['stage'], data['information'])
+        operations = self.process_information(data['stage'], data['information'], stage_summary, guess_summary)
 
         return operations
 
@@ -205,7 +191,7 @@ class prompts:
 
 
     
-    def process_information(self, stage, informations):
+    def process_information(self, stage, informations, stage_summary, guess_summary):
         '''
         Process all the infomations 
         1. Guess roles
@@ -225,7 +211,7 @@ class prompts:
         
 
         self.logger.debug("Guess Roles")
-        self.predict_player_roles()
+        self.predict_player_roles(stage_summary, guess_summary)
 
         # self.logger.debug("Informations:")
 
@@ -235,7 +221,7 @@ class prompts:
             if informations[0]['description'] == '女巫救人':
                 self.choices = informations[0]['target']
 
-                response = self.prompts_response(prompt_type+'_save')
+                response = self.prompts_response(prompt_type+'_save', stage_summary, guess_summary)
                 
                 try:
                     res = response.split("，", 1)
@@ -250,7 +236,7 @@ class prompts:
                     
                         self.choices = informations[1]['target']
 
-                        response = self.prompts_response(prompt_type+'_poison')
+                        response = self.prompts_response(prompt_type+'_poison', stage_summary, guess_summary)
                         res = response.split("，", 1)
                         who = int(res[0].split('號')[0])
 
@@ -286,8 +272,7 @@ class prompts:
             elif informations[0]['description'] == '女巫毒人':
                 self.choices = informations[0]['target']
 
-                response = self.prompts_response(prompt_type+'_poison')
-                
+                response = self.prompts_response(prompt_type+'_poison', stage_summary, guess_summary)
                 try:
                     res = response.split("，", 1)
                     who = int(res[0].split('號')[0])
@@ -322,7 +307,7 @@ class prompts:
                 if i['operation'] == 'dialogue':
                     prompt_type = 'dialogue'
                     
-                response = self.prompts_response(prompt_type)
+                response = self.prompts_response(prompt_type, stage_summary, guess_summary)
                 
                 try:
                     # combine save text with response
@@ -389,11 +374,14 @@ class prompts:
         return operations 
 
         
+            
+            
 
-    def predict_player_roles(self):
+
+    def predict_player_roles(self, stage_summary, guess_summary):
         ''' Predict and update player roles '''
 
-        response = self.prompts_response('guess_role')
+        response = self.prompts_response('guess_role', stage_summary, guess_summary)
         
         self.guess_roles= []
         self.api_guess_roles= []
@@ -429,10 +417,10 @@ class prompts:
         self.logger.debug(self.__get_agent_info__())
 
 
-    def prompts_response(self, prompt_type):
+    def prompts_response(self, prompt_type, stage_summary, guess_summary):
         '''Generate response by prompts'''
         
-        prompt = self.generate_prompts(prompt_type)
+        prompt = self.generate_prompts(prompt_type, stage_summary, guess_summary)
         self.logger.debug("Prompt: "+str(prompt))
 
         response = self.__openai_send__(prompt)
@@ -446,7 +434,7 @@ class prompts:
         return "、".join(f"{player_number}號" for player_number in array)
     
 
-    def generate_prompts(self, prompt_type):
+    def generate_prompts(self, prompt_type, stage_summary, guess_summary):
         ''' Generate all stages ptompts '''
 
         self.prompt = self.init_prompt
@@ -463,7 +451,12 @@ class prompts:
 
                 for idx, i in enumerate(mem):
                     self.prompt += f'{idx+1}. {i}\n'
-            
+        self.prompt += "你以往的經驗:\n"
+        use_summary = stage_summary
+        if prompt_type == "guess_role":
+            use_summary = guess_summary
+        for idx, summary in enumerate(use_summary):
+            self.prompt += f'{idx+1}. {summary}\n'
 
         # guess roles
         self.prompt += "\n你推測玩家的角色：\n"
@@ -556,10 +549,10 @@ class prompts:
             self.logger.debug("Block By Openai")
             res = self.__openai_send__(prompt)
             
+
         # if res == '' (no words), resend to get the data
         if not (res and res.strip()):
             res = self.__openai_send__(prompt)
-
         return res
     
     def __get_guess_role__(self):

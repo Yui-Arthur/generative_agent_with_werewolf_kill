@@ -1,13 +1,13 @@
 /doc/secret/*.key
 /doc/secret/*.json
+/doc/game_info/*.jsonl
+!/doc/game_info/example.jsonl
 __pycache__
 logs/*.log
 .DS_Store
 .vscode/
-grpc_client
 grpc_client.py
 test.py
 /test/tes.py
 /test/test1.py
-doc/game_info/*.jsonl
 agent.json
