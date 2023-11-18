@@ -1,7 +1,7 @@
 # Game_script 產生 game_info
 
 * 前置作業:
-    * 打開 postman(https://grey-escape-89309.postman.co/workspace/My-Workspace~1cf6541f-c153-4597-8eb0-60165d1daae5/overview)
+    * 打開 [postman](https://grey-escape-89309.postman.co/workspace/My-Workspace~1cf6541f-c153-4597-8eb0-60165d1daae5/overview)
     * 前往 https://github.com/yeeecheng/werewolf_kill 更改固定角色位置和發言順序，說明在其中README.md
 
 * step1 : 打開 ./agents/generate_script_agent.py
@@ -28,11 +28,11 @@ if __name__ == "__main__":
 ```
 * step3: 執行
 
-## game_script 格式說明(以 ./doc/game_script/game1 說明)
+## game_script 格式說明(以 [./doc/game_script/game1](https://github.com/Sunny1928/generative-agent-in-werewolf-kill/blob/master/doc/game_script/game1/1.jsonl) 說明)
 在game1中，會有1.jsonl、2.jsonl....7.jsonl 檔名的數字對應到玩家的號碼。
 每個.jsonl中只需要填入角色需要執行的操作即可，舉例來說:
 在1.jsonl中是狼人視角:
-```
+```=jsonl
 # 狼人夜晚發言
 {"target": -1, "chat": "我想要殺玩家5號，我覺得他應該是神"}
 # 狼人投票
@@ -66,6 +66,19 @@ if __name__ == "__main__":
     ```{"target": 4, "chat": "我是獵人，這樣大家知道3號玩家是狼了，等等就帶走3號玩家", }```
     ```{"chat": "NA", "target": 3}```
 
+* Note1 : 目前[角色設置](https://github.com/Sunny1928/generative-agent-in-werewolf-kill/blob/master/doc/game_script/setting.json)為以下
+```=json
+{
+    "玩家0": "狼人",
+    "玩家1": "平民",
+    "玩家2": "預言家",
+    "玩家3": "狼人",
+    "玩家4": "女巫",
+    "玩家5": "平民",
+    "玩家6": "獵人"
+}
+```
+* Note2 : 其他範例都在 https://github.com/Sunny1928/generative-agent-in-werewolf-kill/tree/master/doc/game_script
 
 
 
