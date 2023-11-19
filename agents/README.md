@@ -25,7 +25,7 @@ if __name__ == "__main__":
 * step3: 執行
 
 ## game_script 格式說明(以 [./doc/game_script/game1](https://github.com/Sunny1928/generative-agent-in-werewolf-kill/blob/master/doc/game_script/game1/1.jsonl) 說明)
-在game1中，會有0.jsonl、1.jsonl、2.jsonl....7.jsonl 檔名的數字對應到玩家的號碼(需要從0開始)。
+在game1中，會有agent0.jsonl、agent1.jsonl、agent2.jsonl....agent6.jsonl 檔名的數字對應到玩家的號碼(需要從0開始)。
 每個.jsonl中只需要填入角色需要執行的操作即可，舉例來說:
 在1.jsonl中是狼人視角:
 ```=jsonl
