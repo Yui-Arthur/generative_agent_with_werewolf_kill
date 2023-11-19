@@ -38,6 +38,8 @@ class prompts:
 
         for i in range(self.room_setting['player_num']):
             self.alive.append(i)
+        self.__init_guess_role__()
+        self.guess_role["guess_role"] = self.api_guess_roles
 
         
         # stage description and save text responding to the stage
@@ -129,7 +131,7 @@ class prompts:
             "confidence" : self.api_guess_confidence,
             "token_used" : [str(self.token_used)]
         }
-
+        self.logger.debug(ret)
         # agent info change
         if(self.agent_info != ret):
             self.agent_info = ret.copy()
@@ -387,7 +389,15 @@ class prompts:
 
         return operations 
 
+    def __init_guess_role__(self):
         
+        self.api_guess_roles= []
+        self.api_guess_confidence = []
+        for i in range(self.room_setting["player_num"]):
+            guess = "未知" if i != self.player_id else self.user_role 
+            percentage = "0" if i != self.player_id else  "1"
+            self.api_guess_roles.append(guess)
+            self.api_guess_confidence.append(percentage)
 
     def predict_player_roles(self):
         ''' Predict and update player roles '''
@@ -396,31 +406,31 @@ class prompts:
         
         self.guess_roles= []
         self.api_guess_roles= []
-        self.api_guess_confidence= []
+        # self.api_guess_confidence= []
 
         try:
             lines = response.splitlines()
 
-            self.guess_role = {"guess_role" : []}
+            self.__init_guess_role__()
+            
             for i in range(self.room_setting["player_num"]):
             
                 [player, role, degree, reason] = lines[i].split('，', 3)
-                
-                self.guess_role["guess_role"].append(role)
                 
                 # save to guess roles array
                 roles_prompt = player+self.stage_detail['guess_role']['save'][0]+degree+self.stage_detail['guess_role']['save'][1]+role+self.stage_detail['guess_role']['save'][2]+reason
                 self.guess_roles.append(roles_prompt)
 
                 # send to server (if it didn't print the percentage, how much we should get?)
-                self.api_guess_roles.append(role)
+                self.api_guess_roles[i] = role
                 try:
                     d = str(int(degree.split('%')[0])/100)
                 except ValueError:
                     d = 0
 
-                self.api_guess_confidence.append(d)
-
+                self.api_guess_confidence[i] = d
+            
+            self.guess_role["guess_role"] = self.api_guess_roles
         except Exception as e:
             self.logger.warning(f"Predict player error , {e}")
         
@@ -462,10 +472,12 @@ class prompts:
 
                 for idx, i in enumerate(mem):
                     self.prompt += f'{idx+1}. {i}\n'
-            
-
+        
+        guess_role_prompt = "\n你推測玩家的角色：\n"
+        if prompt_type == "guess_role":
+            guess_role_prompt = "\n你上一次推測玩家的角色：\n"
         # guess roles
-        self.prompt += "\n你推測玩家的角色：\n"
+        self.prompt += guess_role_prompt
 
         if len(self.guess_roles) == 0:
             self.prompt += "無資訊\n"
@@ -478,7 +490,7 @@ class prompts:
         # question
         # [你必須知道的資訊] = 上述提供資訊內容
         stage_question={
-            "guess_role": f'根據以上你知道的資訊中，判斷{all_choices}玩家的角色及你認為正確的機率百分比(直接回答"[玩家]號玩家，[角色]，[正確的機率百分比]，[原因]"，不需要其他廢話，回答完直接結束回答，每個[]都一定要回答)',
+            "guess_role": f'根據以上你目前知道的資訊中，猜測包含{all_choices}所有玩家的角色及你認為猜測正確的機率百分比(直接回答"[玩家]號玩家，[角色]，[正確的機率百分比]，[原因]"，不需要其他廢話，回答完直接結束回答)',
             "werewolf_dialogue":f'''根據以上綜合資訊，你有三個選項，請選擇其中一個選項當作發言？
 1. 我同意隊友的發言。請在{self.player_array_to_string(self.teammate)}號玩家中，選擇一位隊友(若選擇此選項，請直接回答"選項1，[玩家]號玩家，[原因]"，不需要其他廢話，回答完直接結束回答)
 2. 想殺某位玩家，並猜測玩家的角色。從{self.player_array_to_string(self.alive)}中，只能選擇一位想殺的玩家，且從預言家和女巫{"和獵人" if self.room_setting["hunter"] else ""}中選一位你認為是此玩家的角色(若選擇此選項，請直接回答"選項2，[玩家]號玩家，[角色]，[原因]"，不需要其他廢話，回答完直接結束回答)
@@ -487,7 +499,7 @@ class prompts:
             "werewolf":f'根據以上綜合資訊，請從{choices}號玩家中，選擇一位要殺的玩家並簡述原因？(直接回答"[玩家]號玩家，[原因]"，不需要其他廢話，回答完直接結束回答)',
             "seer":f'根據以上綜合資訊，請問你要從{choices}號玩家中，查驗哪一位玩家並簡述原因？(直接回答"[玩家]號玩家，[原因]"，不需要其他廢話，回答完直接結束回答)',
             "witch_save":f'根據以上綜合資訊，{choices}號玩家死了，請問你要使用解藥並簡述原因？(直接回答"[救或不救]，[原因]"，不需要其他廢話，回答完直接結束回答)',
-            "witch_poison":f'根據以上綜合資訊，請你從{choices}號玩家中使用毒藥，或選擇-1表示不使用毒藥，並簡述原因？(直接回答"[玩家]號玩家，[原因]"，不需要其他廢話，回答完直接結束回答)',
+            "witch_poison":f'根據以上綜合資訊，請你從{choices}號玩家中選擇一位玩家號碼使用毒藥，或選擇-1表示不使用毒藥，並簡述原因？(直接回答"[玩家]號玩家，[原因]"，不需要其他廢話，回答完直接結束回答)',
             "dialogue-test":f'根據以上綜合資訊，簡述你的推測（20字以下）?',
             "check":f'根據以上綜合資訊，簡述你的推測（20字以下）?',
             "dialogue":'''使用JSON的形式來回答，如下所述:

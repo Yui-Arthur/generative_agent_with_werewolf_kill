@@ -436,9 +436,11 @@ class summary():
         self.prompt_template['current_summary'] += f"[目前總結]\n"
 
     def transform_player2identity(self, summary):
-        
+        print(self.player2identity.keys())
         for key_word in self.player2identity.keys():
             if key_word in summary:
+                
+
                 key_number = self.player2identity[key_word]
                 identity = self.role_to_chinese[self.player_name[key_number]["user_role"]]
                 summary = summary.replace(key_word, f"{identity}")
@@ -468,5 +470,6 @@ class summary():
     
 if __name__ == '__main__':
 
+    file_name = "./game2/11_19_23_13_agent4.jsonl"
     s = summary(api_json="./doc/secret/openai.key", prompt_dir="./doc")
-    s.get_summary(file_name= "example.jsonl")
+    s.get_summary(file_name= file_name)
