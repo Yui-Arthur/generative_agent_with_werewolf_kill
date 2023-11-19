@@ -11,3 +11,5 @@ test.py
 /test/tes.py
 /test/test1.py
 agent.json
+test_generate_script_agent.py
+test_summary.py
