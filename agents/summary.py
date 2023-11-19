@@ -448,9 +448,11 @@ class summary():
         self.prompt_template['current_summary'] += f"[目前總結]\n"
 
     def transform_player2identity(self, summary):
-        
+        print(self.player2identity.keys())
         for key_word in self.player2identity.keys():
             if key_word in summary:
+                
+
                 key_number = self.player2identity[key_word]
                 identity = self.role_to_chinese[self.player_name[key_number]["user_role"]]
                 summary = summary.replace(key_word, f"{identity}")
@@ -480,11 +482,11 @@ class summary():
     
 if __name__ == '__main__':
 
-    # s = summary(api_json="./doc/secret/azure.key")
+    file_name = "./game2_werewolf2.jsonl"
     # s = summary(prompt_dir="./generative_agent_with_werewolf_kill/doc", api_json = "./generative_agent_with_werewolf_kill/doc/secret/chatgpt_api_key.key")
     s = summary(prompt_dir="./generative_agent_with_werewolf_kill/doc", api_json = "./generative_agent_with_werewolf_kill/doc/secret/openai.key")
-    # s.get_summary(file_name="./game2_werewolf2.jsonl")
-
-    # s.set_score( "village", "vote", "這回合中，我沒有進行任何投票，下次需要更主動參與投票，並且評估場上的情況，將票投給懷疑的對象。")
     # s = summary(api_json="./doc/secret/openai.key", prompt_dir="./doc")
-    # s.get_summary(file_name= "example.jsonl")
+    s.get_summary(file_name= file_name)
+
+    
+    

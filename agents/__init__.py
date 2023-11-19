@@ -3,3 +3,4 @@ from .intelligent_agent.intelligent_agent import intelligent_agent , intelligent
 from .agent import agent
 from .script_agent import script_agent
 from .generate_script_agent import generate_script_agent
+from .summary import summary

@@ -1,7 +1,7 @@
 # Game_script 產生 game_info
 
 * 前置作業:
-    * 打開 [postman](https://grey-escape-89309.postman.co/workspace/My-Workspace~1cf6541f-c153-4597-8eb0-60165d1daae5/overview)
+    * 打開 [postman](https://grey-escape-89309.postman.co/workspace/My-Workspace~1cf6541f-c153-4597-8eb0-60165d1daae5/overview) 使用reset_room
     * 前往 https://github.com/yeeecheng/werewolf_kill 更改固定角色位置和發言順序，說明在其中README.md
 
 * step1 : 打開 ./agents/generate_script_agent.py
@@ -25,7 +25,7 @@ if __name__ == "__main__":
 * step3: 執行
 
 ## game_script 格式說明(以 [./doc/game_script/game1](https://github.com/Sunny1928/generative-agent-in-werewolf-kill/blob/master/doc/game_script/game1/1.jsonl) 說明)
-在game1中，會有0.jsonl、1.jsonl、2.jsonl....7.jsonl 檔名的數字對應到玩家的號碼。
+在game1中，會有agent0.jsonl、agent1.jsonl、agent2.jsonl....agent6.jsonl 檔名的數字對應到玩家的號碼(需要從0開始)。
 每個.jsonl中只需要填入角色需要執行的操作即可，舉例來說:
 在1.jsonl中是狼人視角:
 ```=jsonl
