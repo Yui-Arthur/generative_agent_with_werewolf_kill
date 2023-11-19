@@ -182,3 +182,12 @@ class memory_stream_agent_script(script_agent):
             self.long_memory.update_game_info(self.player_id , self.player_name , self.role)
         else:
             self.long_memory.update_game_info(self.player_id , self.player_name , self.role , self.teamate)
+
+    def __del__(self):
+        super().__del__()
+        self.logger.info(f"---------------Memory Stream---------------")
+        self.logger.info(f"memory")
+        for _ in self.long_memory.memory_stream: self.logger.info(f"  {_}")
+        self.logger.info(f"reflect")
+        for _ in self.long_memory.reflection_list: self.logger.info(f"  {_}")
+        self.logger.info(f"-------------------------------------------")

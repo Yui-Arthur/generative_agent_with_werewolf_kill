@@ -80,8 +80,9 @@ class long_memeory_stream():
         self.__load_prompt_and_example__(self.prompt_dir)
         self.push(0 , 0 , f"您本場為{self.player_id}號玩家({player_name[int(player_id)]})" , default_importantance=10)
         self.push(0 , 0 , f"您本場的身分為{self.role_to_chinese[role]}" , default_importantance=10)
+        self.push(0 , 0 , f"{self.player_id}號玩家({player_name[int(player_id)]}是{self.role_to_chinese[role]}" , default_importantance=10)
 
-        self.suspect_role_list = {i:"未知" for i in range(self.player_num)}
+        self.suspect_role_list = {i:"未知" for i in range(self.player_num) if i != player_id}
         self.know_role_list[int(player_id)] = role
         self.remain_player = [i for i in range(self.player_num)]
 
@@ -94,7 +95,7 @@ class long_memeory_stream():
 
         full_observation = {
             "day" : day,
-            "trun" : turn,
+            "turn" : turn,
             "last_used" : turn,
             "observation" : observation ,
             "importantance" : info["score"],
@@ -163,10 +164,10 @@ class long_memeory_stream():
                 # self.suspect_role_list.pop(int(anno['user'][0]))
 
         # if has chat , generation reflection & update guess roles
-        if chat_flag:
-            self.__reflection__(self.day , len(self.memory_stream))
-            self.__gen_suspect_role_list__(self.day , len(self.memory_stream))
-            # pass
+        # if chat_flag:
+        #     self.__reflection__(self.day , len(self.memory_stream))
+        #     self.__gen_suspect_role_list__(self.day , len(self.memory_stream))
+            
 
     def __process_information__(self , data) -> list[dict]:
         
@@ -177,14 +178,18 @@ class long_memeory_stream():
         for info in informations:
             # generate dialouge operation
             if info['operation'] == "dialogue":
+                self.__reflection__(self.day , len(self.memory_stream))
+                self.__gen_suspect_role_list__(self.day , len(self.memory_stream))
                 operation.append(self.__gen_dialogue__(self.day , len(self.memory_stream)))
             # generate vote operation
             elif info['operation'] == "vote_or_not" and "vote" in data["stage"]:
+                self.__reflection__(self.day , len(self.memory_stream))
+                self.__gen_suspect_role_list__(self.day , len(self.memory_stream))
                 operation.append(self.__gen_vote__(self.day , len(self.memory_stream)))
 
         return operation
     
-    def __retrieval__(self , day , turn , query , pick_num = 5):
+    def __retrieval__(self , day , turn , query , pick_num = 5 , threshold = 0.5):
         """
         the retrieval process , will call importantance,recency,relevance func
         and return the top {pick_num} memory sored by score.
@@ -192,46 +197,50 @@ class long_memeory_stream():
         self.logger.debug(f"start retrieval")
         self.logger.debug(f"  query : {query}")
         importantance_score = [ob['importantance'] for ob in self.memory_stream] 
+        recency_score = self.__cal_recency__(day , turn) 
+        ori_relevance_score = self.__cal_relevance__(query) 
         
+        # normalize
+        recency_score /= np.linalg.norm(recency_score)
         importantance_score /= np.linalg.norm(importantance_score)
-        recency_score = self.__cal_recency__(day , turn)
-        relevance_score = self.__cal_relevance__(query)
+        relevance_score = ori_relevance_score / np.linalg.norm(ori_relevance_score)
 
         importantance_factor = 1
         relevance_factor = 1
         recency_factor = 1
 
+        # calulate score
         score = recency_score * recency_factor + importantance_score * importantance_factor + relevance_score * relevance_factor
         sorted_memory_streams = self.memory_stream.copy()
+        delete_idx = []
 
+        # save the origin idx in sorted_memory_streams
         for idx in range(len(sorted_memory_streams)):
             sorted_memory_streams[idx]["score"] = score[idx]
-            # for debug
-            sorted_memory_streams[idx]["detail_score"] = {
-                "importantance" : importantance_score[idx],
-                "recency" : recency_score[idx],
-                "relevance" : relevance_score[idx],
-            }
+            if ori_relevance_score[idx] < threshold:
+                delete_idx.append(idx)
+
             sorted_memory_streams[idx]["ori_idx"] = idx
+
+        # delete score < threshold memory
+        for idx in reversed(delete_idx):
+            sorted_memory_streams.pop(idx)
 
         sorted_memory_streams.sort(key=lambda element: element['score'] , reverse=True)
         
         # logger with 1.5 * pick_num memory score
-        self.logger.debug(f"  sum   | importantance | recency | relevance |  Memory ")
+        self.logger.debug(f"  sum   | importantance | recency | relevance |  Memory | ori_rele")
         for order_mem in sorted_memory_streams[:int(1.5*pick_num)]:
             sum_score = order_mem["score"]
-            impo = order_mem["detail_score"]["importantance"]
-            rece = order_mem["detail_score"]["recency"]
-            rele = order_mem["detail_score"]["relevance"]
+            ori_idx = order_mem["ori_idx"]
             memory = order_mem['observation'].strip('\n')
-            self.logger.debug(f"  {sum_score:.3f} | {impo:.11f} | {rece:.5f} | {rele:.7f} |  {memory} ")
-            # self.logger.debug(f"  {idx}.  {memory}")
+            self.logger.debug(f"  {sum_score:.3f} | {importantance_score[ori_idx]:.11f} | {recency_score[ori_idx]:.5f} | {relevance_score[ori_idx]:.7f} |  {memory} | {ori_relevance_score[ori_idx]}")
+        
 
-        # self.logger.info(f"retrieval memory:")
+        # updated last uesd
         for idx in range(min(pick_num , len(sorted_memory_streams))):
-            # updated last uesd
             self.memory_stream[sorted_memory_streams[idx]['ori_idx']]['lasted_used'] = turn
-            # self.logger.info(f"  {sorted_memory_streams[idx]['observation']}")
+            
 
     
         return sorted_memory_streams[:pick_num]
@@ -244,13 +253,13 @@ class long_memeory_stream():
         """
             
         info = self.__reflection_question__(day , turn)
-        question = info['question'].split('\n')
-        memory = self.__retrieval__(day , turn , question[0])
+        question = info['question'].strip('\n')
+        memory = self.__retrieval__(day , turn , question)
         info = self.__reflection_opinion__(memory)
 
         self.push(day , turn , info['opinion'])
         self.logger.info(f"reflection : {info['opinion']}")
-        self.reflection_list.append(info['opinion'])
+        self.reflection_list.append(info)
     
     def __gen_suspect_role_list__(self , day , turn):
         """iterate the {suspect_role_list} and gen the new suspect role """
@@ -274,10 +283,10 @@ class long_memeory_stream():
     
     def __gen_vote__(self , day , turn):
         """gen the vote player num & get the reason"""
-        memory = self.__retrieval__(day , turn , "誰現在最可疑?")
+        memory = self.__retrieval__(day , turn , "幾號玩家是大家懷疑對象")
         memory_str = self.__memory_to_str__(memory)
         sus_role_str , know_role_str = self.__role_list_to_str__()
-        final_prompt = self.prompt_template['vote'].replace("%m" , memory_str).replace("%e" , self.example['vote']).replace("%l" , sus_role_str).replace("%kl" , know_role_str)
+        final_prompt = self.prompt_template['vote'].replace("%m" , memory_str).replace("%e" , self.example['vote']).replace("%l" , sus_role_str)
         
         info = {
             "vote" : "4",
@@ -294,10 +303,12 @@ class long_memeory_stream():
     
     def __gen_dialogue__(self , day ,turn):
         """gen the dialogue"""
-        memory = self.__retrieval__(day , turn , "現在有什麼重要訊息?")
+        query = self.__reflection_question__(day , turn)['question']
+        memory = self.__retrieval__(day , turn , query)
+        # memory_str = self.__memory_to_str__(self.memory_stream[-5:])
         memory_str = self.__memory_to_str__(memory)
         sus_role_str , know_role_str = self.__role_list_to_str__()
-        final_prompt = self.prompt_template['dialogue'].replace("%m" , memory_str).replace("%e" , self.example['dialogue']).replace("%l" , sus_role_str).replace("%kl" , know_role_str)
+        final_prompt = self.prompt_template['dialogue'].replace("%m" , memory_str).replace("%e" , self.example['dialogue']).replace("%l" , sus_role_str)
         
         info = {
             "dialogue" : "test",
@@ -349,7 +360,7 @@ class long_memeory_stream():
             score[idx] = initial_value * math.pow(decay_factor, time)
         
         score = np.array(score)
-        return score / np.linalg.norm(score)
+        return score
     
     def __cal_relevance__(self , query : str):
         """cal the relevance score"""
@@ -363,14 +374,14 @@ class long_memeory_stream():
             score[idx] = util.pytorch_cos_sim(query_embedding, embeddings[idx]).to("cpu").item()
         
         score = np.array(score)
-        return score / np.linalg.norm(score)
+        return score
     
     def __reflection_question__(self , day , turn , pick_num = 5):
         """one of reflection process , get the question used for reflection."""
         self.logger.debug('reflection_question')
         memory_str = self.__memory_to_str__(self.memory_stream[-pick_num:])
-
-        final_prompt = self.prompt_template['reflection_question'].replace('%m' , memory_str).replace("%e" , self.example['reflection_question'])
+        sus_role_str , know_role_str = self.__role_list_to_str__()
+        final_prompt = self.prompt_template['reflection_question'].replace('%m' , memory_str).replace("%e" , self.example['reflection_question']).replace("%l" , sus_role_str)
 
         info = {
             "question" : "test",
@@ -385,13 +396,21 @@ class long_memeory_stream():
         """one of reflection process , get the opinion as new observation."""
         self.logger.debug('reflection_opinion')
         memory_str = self.__memory_to_str__(memory)
-        final_prompt = self.prompt_template['reflection'].replace('%m' , memory_str).replace("%e" , self.example['reflection'])
+        sus_role_str , know_role_str = self.__role_list_to_str__()
+        final_prompt = self.prompt_template['reflection'].replace('%m' , memory_str).replace("%e" , self.example['reflection']).replace("%l" , sus_role_str)
         info = {
             "opinion" : "test",
             "reference" : "test",
         }
         info = self.__process_LLM_output__(final_prompt, {"opinion" : str , "reference" : str , "reason" : str} , info , "reflection opinion")
-        
+        # process reference to real memory idx
+        try:
+            reference_memory = info["reference"].strip('\n').split('、')
+            real_reference_idx = [memory[int(idx)]["turn"] for idx in reference_memory]
+            info["reference"] = real_reference_idx
+        except Exception as e:
+            self.logger.warning(f"__reflection_opinion__ fail with reference , {e}")
+            
         return info
         
     def __push_vote_info__(self , vote_info : dict , stage):
