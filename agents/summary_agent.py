@@ -1,4 +1,5 @@
 from .agent import agent
+from .intelligent_agent.prompts import prompts
 from .summary import summary
 import requests
 import threading
@@ -7,11 +8,11 @@ from pathlib import Path
 
 class summary_agent(agent):
     
-    def __init__(self , api_json = "doc/secret/openai.key", 
+    def __init__(self , api_json = "doc/secret/yui.key", 
                 server_url = "140.127.208.185" , agent_name = "Agent1" , room_name = "TESTROOM" , 
                 color = "f9a8d4" , prompt_dir = Path("prompt/memory_stream/")):
         
-         
+        
         super().__init__(api_json = api_json, server_url = server_url , 
                         agent_name = agent_name , room_name = room_name , 
                         color = color) 
@@ -79,3 +80,4 @@ class summary_agent(agent):
         except Exception as e:
             self.logger.warning(f"__check_game_state__ Server Error , {e}")
             self.__del__()
+    
