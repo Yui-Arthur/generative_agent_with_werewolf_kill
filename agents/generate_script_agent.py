@@ -1,6 +1,6 @@
-from agent import agent
-from intelligent_agent.prompts import prompts
-from summary import summary
+from .agent import agent
+from .intelligent_agent.prompts import prompts
+from .summary import summary
 import requests
 import threading
 from pathlib import Path   
@@ -35,7 +35,7 @@ class generate_script_agent(agent):
         print("agent_name", agent_name)
 
         self.__setting_game()
-        if agent_name == str(player_number - 1):
+        if agent_name == f"agent{player_number - 1}":
             self.__start_server__()
 
 
@@ -119,11 +119,11 @@ class generate_script_agent(agent):
 if __name__ == "__main__":
     
     player_number = 7
-    game_script_path = "doc/game_script/game3"
+    game_script_path = "doc/game_script/game1"
     api_key = "doc/secret/openai.key"
     url = "http://localhost:8001"
     room_name = "EMPTY"
     for num in range(0, player_number): 
         generate_script_agent(
             player_number= player_number, script_game_path = game_script_path, 
-            api_json= api_key, server_url= url, agent_name= str(num), room_name= room_name)
+            api_json= api_key, server_url= url, agent_name= f"agent{num}", room_name= room_name)

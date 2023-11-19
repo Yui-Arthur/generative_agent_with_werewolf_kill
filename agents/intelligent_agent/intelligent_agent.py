@@ -14,14 +14,15 @@ from ..summary_agent import summary_agent
 
 class intelligent_agent(agent):
     
-    def __init__(self , api_json = "doc/secret/azure.key", 
+    def __init__(self , api_json = "doc/secret/chatgpt.key", 
                 server_url = "140.127.208.185" , agent_name = "Agent1" , room_name = "TESTROOM" , 
                 color = "f9a8d4" , prompt_dir = Path("prompt/memory_stream/")):
-        
+        api_json = "doc/secret/chatgpt.key"
         
         super().__init__(api_json = api_json, server_url = server_url , 
                         agent_name = agent_name , room_name = room_name , 
                         color = color) 
+        print(api_json)
         # used for start game for test
         self.master_token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX25hbWUiOiJ5dWkiLCJyb29tX25hbWUiOiJURVNUUk9PTSIsImxlYWRlciI6dHJ1ZSwiaWF0IjoxNjkwMzc5NTM0LCJleHAiOjE2OTkwMTk1MzR9.BEmD52DuK657YQezsqNgJAwbPfl54o8Pb--Dh7VQMMA"
         
@@ -51,8 +52,10 @@ class intelligent_agent(agent):
                 "target" : i["target"],
                 "chat" : i["chat"]
             }
+            
             self.__send_operation__(op_data)
-
+            if data['stage'].split("-")[2] not in ["vote1", "vote2"]:
+                self.__skip_stage__()
 
     def __start_game_init__(self, room_data):
         """the game started setting , update player name"""
@@ -68,7 +71,12 @@ class intelligent_agent(agent):
         self.__get_all_role__()
 
         self.__check_game_state__(0)
-
+    
+    
+    def __get_guess_role__(self):
+        r = self.prompts.__get_guess_role__()
+        self.logger.debug(f'User data: {r}')
+        return r 
 
 class summary_intelligent_agent(summary_agent):
     
@@ -127,6 +135,8 @@ class summary_intelligent_agent(summary_agent):
         self.__get_all_role__()
 
         self.__check_game_state__(0)
+
+    
     
     
 class intelligent_agent_test(agent):
@@ -269,4 +279,8 @@ class intelligent_agent_test(agent):
 
         self.__check_game_state__(0)
 
+    
+    # def __get_guess_role__(self):
+        
+    #     return self.prompts.__get_guess_role__()
     
