@@ -180,9 +180,13 @@ class prompts:
         for i in announcements:
             # self.logger.debug(i)
             # 跳過自己的資料
-            if i['user'][0] == self.player_id:
-                continue
-            
+            try:
+                if i['user'][0] == self.player_id:
+                    continue
+            except:
+                # 判別最後的遊戲結束
+                pass
+
             if i['operation'] == 'chat':
                 if i['description'] == '':
                     if i['user'][0] in self.alive:
