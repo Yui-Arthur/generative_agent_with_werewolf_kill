@@ -18,7 +18,7 @@ class intelligent_agent(agent):
     def __init__(self , api_json = "doc/secret/chatgpt.key", 
                 server_url = "140.127.208.185" , agent_name = "Agent1" , room_name = "TESTROOM" , 
                 color = "f9a8d4" , prompt_dir = Path("prompt/memory_stream/")):
-        # api_json = "doc/secret/chatgpt.key"
+        api_json = "doc/secret/chatgpt.key"
         
         super().__init__(api_json = api_json, server_url = server_url , 
                         agent_name = agent_name , room_name = room_name , 
@@ -57,7 +57,7 @@ class intelligent_agent(agent):
             
             self.__send_operation__(op_data)
 
-            if data['stage'].split("-")[2] not in ["vote1", "vote2"]:
+            if data['stage'].split("-")[2] not in ["werewolf", "vote1", "vote2"]:
                 self.__skip_stage__()
 
     def __start_game_init__(self, room_data):
