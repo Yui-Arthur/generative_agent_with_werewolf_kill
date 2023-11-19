@@ -201,6 +201,7 @@ class long_memeory_stream():
         question = info['question'].split('\n')
         memory = self.__retrieval__(day , turn , question[0])
         info = self.__reflection_opinion__(memory)
+        print(info)
 
         self.push(day , turn , info['opinion'])
     
@@ -235,15 +236,12 @@ class long_memeory_stream():
         }
         info = self.__process_LLM_output__(final_prompt , ["vote" , "reason"] , info)
 
-        try:
-            ret = self.ret_format.copy()
-            ret['operation'] = "vote_or_not"
-            ret['target'] = int(info["vote"].strip("\n"))
-            ret['chat'] = ""
+        ret = self.ret_format.copy()
+        ret['operation'] = "vote_or_not"
+        ret['target'] = int(info["vote"].strip("\n"))
+        ret['chat'] = ""
 
-            return ret
-        except:
-            return ret
+        return ret
     
     def __gen_dialgue__(self , day ,turn):
         """gen the dialgue"""
@@ -316,6 +314,7 @@ class long_memeory_stream():
         for idx in range(embeddings.shape[0]):
             score[idx] = util.pytorch_cos_sim(query_embedding, embeddings[idx]).to("cpu").item()
         self.logger.debug('end relevance')
+        # print(score)
         score = np.array(score)
         return score / np.linalg.norm(score)
     
@@ -425,30 +424,28 @@ class long_memeory_stream():
 
     def __openai_send__(self , prompt):
         """openai api send prompt , can override this."""
+        response = openai.ChatCompletion.create(
+            **self.openai_kwargs,
+            messages = [
+                {"role":"system","content":"You are an AI assistant that helps people find information."},
+                {"role":"user","content":prompt}
+            ],
+            temperature=0.7,
+            max_tokens=800,
+            top_p=0.95,
+            frequency_penalty=0,
+            presence_penalty=0,
+            stop=None)
+        
+        self.token_used += response["usage"]["total_tokens"]
+        
+        if response['choices'][0]["finish_reason"] == "content_filter":
+            self.logger.debug("Block By Openai")
+            return None
 
-        # response = openai.ChatCompletion.create(
-        #     **self.openai_kwargs,
-        #     messages = [
-        #         {"role":"system","content":"You are an AI assistant that helps people find information."},
-        #         {"role":"user","content":prompt}
-        #     ],
-        #     temperature=0.7,
-        #     max_tokens=800,
-        #     top_p=0.95,
-        #     frequency_penalty=0,
-        #     presence_penalty=0,
-        #     stop=None)
-        
-        # self.token_used += response["usage"]["total_tokens"]
-        
-        # if response['choices'][0]["finish_reason"] == "content_filter":
-        #     self.logger.debug("Block By Openai")
-        #     return None
-
         
         
-        # return response['choices'][0]['message']['content']
-        return "tt"
+        return response['choices'][0]['message']['content']
     
     def __len__(self):
         return len(self.memory_stream)
@@ -469,84 +466,3 @@ class long_memeory_stream():
         self.chinese_to_english.update(keywords)
 
 
-
-class long_memeory_stream_summary(long_memeory_stream):
-
-    sentence_model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
-        
-    def __init__(self , prompt_dir , logger , openai_kwargs):         
-        super().__init__(prompt_dir = prompt_dir, logger = logger, openai_kwargs = openai_kwargs) 
-        self.stage_summary = None
-        self.guess_summary = None
-
-    def update_stage(self , data):
-
-        self.stage_summary = data["stage_summary"]
-        self.guess_summary = data["guess_summary"]
-
-        if self.day != data['stage'].split('-')[0]:
-            self.day = data['stage'].split('-')[0]
-            self.__day_init__()
-
-
-        if any(data["vote_info"].values()) :
-            self.__push_vote_info__(data["vote_info"] , data["stage"])
-
-        self.__process_announcement__(data)
-        operations = self.__process_information__(data)
-        for op in operations:
-            op['stage_name'] = data['stage']
-
-        return operations
-
-    def summary_prompt(self, pre_prompt):
-
-        experience = ""
-        for idx, summary in enumerate(self.stage_summary):
-            experience += f'{idx+1}. {summary}\n'
-
-        final_prompt = self.prompt_template['experience'].replace("%e" , experience).replace("%g" , self.guess_summary)
-    
-        return f"{pre_prompt}\n{final_prompt}"
-
-    def __gen_vote__(self , day , turn):
-        """gen the vote player num & get the reason"""
-        memory = self.__retrieval__(day , turn , "誰現在最可疑?")
-        memory_str = self.__memory_to_str__(memory)
-        sus_role_str , know_role_str = self.__role_list_to_str__()
-        final_prompt = self.prompt_template['vote'].replace("%m" , memory_str).replace("%e" , self.example['vote']).replace("%l" , sus_role_str).replace("%kl" , self.summary_prompt(know_role_str))
-        
-        info = {
-            "vote" : "4",
-            "reason" : "test"
-        }
-        info = self.__process_LLM_output__(final_prompt , ["vote" , "reason"] , info)
-
-        try:
-            ret = self.ret_format.copy()
-            ret['operation'] = "vote_or_not"
-            ret['target'] = int(info["vote"].strip("\n"))
-            ret['chat'] = ""
-
-            return ret
-        except:
-            return ret
-    
-    def __gen_dialgue__(self , day ,turn):
-        """gen the dialgue"""
-        memory = self.__retrieval__(day , turn , "現在有什麼重要訊息?")
-        memory_str = self.__memory_to_str__(memory)
-        sus_role_str , know_role_str = self.__role_list_to_str__()
-        final_prompt = self.prompt_template['dialgue'].replace("%m" , memory_str).replace("%e" , self.example['dialgue']).replace("%l" , sus_role_str).replace("%kl" , self.summary_prompt(know_role_str))
-        
-        info = {
-            "dialgue" : "test",
-        }
-        info = self.__process_LLM_output__(final_prompt , ["dialgue"] , info)
-
-        ret = self.ret_format.copy()
-        ret['operation'] = "dialogue"
-        ret['target'] = -1
-        ret['chat'] = info['dialgue']
-
-        return ret

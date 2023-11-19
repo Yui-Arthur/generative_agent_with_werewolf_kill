@@ -159,6 +159,7 @@ class seer(role):
 
         for anno in announcement:
             if anno['operation'] == 'role_info':
+                print(anno)
                 role_type = anno['description'].split('是')[-1]
                 
                 self.know_role_list[int(anno['user'][0])] = role_type
@@ -177,7 +178,9 @@ class witch(role):
             "今晚要救人還是毒人" : "save_or_poison",
         })
 
-        self.max_fail_cnt = 3
+        # self.max_fail_cnt = 0
+        # self.save = True
+        # self.poison = True
 
     def __process_information__(self , data):
 
@@ -189,16 +192,14 @@ class witch(role):
         sus_role_str , know_role_str = self.__role_list_to_str__()
         memory = self.__retrieval__(self.day , len(self.memory_stream) , "該救或毒哪位玩家")
         memory_str = self.__memory_to_str__(memory)
-        # memory_str = self.__memory_to_str__(self.memory_stream)
 
         save_posion = "毒藥已用完，"
         save_list = self.__player_list_to_str__(data['information'][0]['target'])
-        posion_list = ""
         if len(data['information'])==2:
             posion_list = self.__player_list_to_str__(data['information'][1]['target'])
             save_posion = ""
         elif data['information'][0]['description'] == '女巫毒人':
-            save_list = ""
+            save_list = []
             posion_list = self.__player_list_to_str__(data['information'][0]['target'])
             save_posion = "解藥已用完，"
 
@@ -213,24 +214,18 @@ class witch(role):
 
         ret = self.ret_format.copy()
         ret['operation'] = "vote_or_not"
-        
-        try:
-            if info['target'].strip("\n").isdigit() == False:
-                return operation
-            elif info['save_or_poison'].strip("\n") == "救人":
-                ret['target'] = int(info['target'].strip("\n"))
-                self.push(self.day , len(self.memory_stream)+1 , f"你用解藥救了{ret['target']}號玩家({self.player_name[ret['target']]})")
-                ret['chat'] = 'save'
-            elif info['save_or_poison'].strip("\n") == "毒人":
-                ret['target'] = int(info['target'].strip("\n"))
-                self.push(self.day , len(self.memory_stream)+1 , f"你用毒藥毒了{ret['target']}號玩家({self.player_name[ret['target']]})")
-                ret['chat'] = 'poison'
+        ret['target'] = int(info['target'].strip("\n"))
 
+        if info['save_or_poison'].strip("\n") == "救人":
+            self.push(self.day , len(self.memory_stream)+1 , f"你用解藥救了{ret['target']}號玩家({self.player_name[ret['target']]})")
+            ret['chat'] = 'save'
+            operation.append(ret)
+        elif info['save_or_poison'].strip("\n") == "毒人":
+            self.push(self.day , len(self.memory_stream)+1 , f"你用毒藥毒了{ret['target']}號玩家({self.player_name[ret['target']]})")
+            ret['chat'] = 'poison'
             operation.append(ret)
 
-            return operation
-        except:
-            return operation
+        return operation
 
 
 class hunter(role):
@@ -252,8 +247,7 @@ class hunter(role):
         memory = self.__retrieval__(self.day , len(self.memory_stream) , "目前哪位玩家最可疑")
         memory_str = self.__memory_to_str__(memory)
         sus_role_str , know_role_str = self.__role_list_to_str__()
-        target_list = self.__player_list_to_str__(data['information'][0]['target'])
-        final_prompt = self.prompt_template['hunter'].replace("%e" , self.example['hunter']).replace("%l" , sus_role_str).replace("%kl" , know_role_str).replace("%tl" , target_list).replace("%m" , memory_str)
+        final_prompt = self.prompt_template['hunter'].replace("%e" , self.example['hunter']).replace("%l" , sus_role_str).replace("%kl" , know_role_str).replace("%m" , memory_str)
 
         info = {
             "target" : "1",
