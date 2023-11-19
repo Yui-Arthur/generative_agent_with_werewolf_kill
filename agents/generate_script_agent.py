@@ -126,8 +126,4 @@ if __name__ == "__main__":
     for num in range(0, player_number): 
         generate_script_agent(
             player_number= player_number, script_game_path = game_script_path, 
-<<<<<<< HEAD
-            api_json= api_key, server_url= url, agent_name= str(num), room_name= room_name)
-=======
             api_json= api_key, server_url= url, agent_name= f"agent{num}", room_name= room_name)
->>>>>>> a79ebb30497ab9057b5b4811d5afdb18feb9f6ad
