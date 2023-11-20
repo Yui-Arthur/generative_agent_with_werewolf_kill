@@ -34,11 +34,37 @@ class script_agent(agent):
         self.player_name = []
         self.game_data : list[dict]= None
         self.teamate = None
-
+        self.operation_record = []
+        # acc init
+        self.mapping_dict : dict = None
+        self.__init_mapping_dict__()
+        self.acc_record = []
         # from file load a game
         self.__load_game_info__(game_info_path)
+        # for test get info
+        self.update = 0
         # start the script game
         self.__start_script_game__()
+
+    def __init_mapping_dict__(self):
+        keyword_dict = {
+            "good" : ["好人"],
+            "god" : ["神","神職","神明"],
+            "seer" : ["預言家"],
+            "witch" :["女巫"],
+            "hunter" : ["獵人"],
+            "village" : ["平民" , "民" , "村民"],
+            "werewolf" : ["狼","狼人","壞人"],
+        }
+        self.mapping_dict = {}
+        for label , key_words in keyword_dict.items():
+            for keyword in key_words:
+                self.mapping_dict[keyword] = label
+
+        self.partially_correct_check = {
+            "good" : ["seer" , "witch" , "village" , "hunter"],
+            "god" : ["seer" , "witch" , "hunter"]
+        }
     
     def __load_game_info__(self , game_info_path , const_player_name = True):
         with open(game_info_path , "r" , encoding="utf-8") as f:
@@ -49,7 +75,9 @@ class script_agent(agent):
             # second line with player info 
             player_info :  dict[str: dict[str,str]] = json.loads(f.readline())
             self.teamate = []
+            self.player_role = []
             for id , info in player_info.items():
+                # const with player name or origin name
                 if const_player_name:
                     self.player_name.append(f"Player{id}")
                 else:
@@ -57,6 +85,9 @@ class script_agent(agent):
                 # get the teammate info
                 if id != self.player_id and info['user_role'] == "werewolf":
                     self.teamate.append(id)
+                # 
+                self.player_role.append(info['user_role'])
+            
 
             if self.role == "werewolf":
                 pass
@@ -67,13 +98,50 @@ class script_agent(agent):
     def __start_script_game__(self):
         self.__start_game_init__(None)
         for data in self.game_data:
+            
             self.logger.debug(data)
             self.__process_data__(data)
+            # logging agent info
+            agent_info = self.get_info()
+            del agent_info['memory']
+
+            self.logger.debug(agent_info)
+            if agent_info['updated'][0] == "1":
+                self.__cal_quess_role_acc__(agent_info['guess_roles'])
 
             for anno in data['announcement']: 
                 if anno['operation'] == "game_over" : 
                     self.__game_over_process__(anno , 0)
                     break
+        self.__del__()
+    def __cal_quess_role_acc__(self , guess_roles):
+        acc_cnt = 0
+        result = []
+        
+        for idx , guess in enumerate(guess_roles):
+            guess = self.mapping_dict[guess] if guess in self.mapping_dict.keys() else None
+            real = self.player_role[idx]
+            if idx == int(self.player_id):
+                result.append("自己")
+            elif guess == None:
+                result.append("全錯")
+            elif guess == real:
+                acc_cnt += 1
+                result.append("全對")
+            elif  guess in self.partially_correct_check.keys() and real in self.partially_correct_check[guess]:
+                acc_cnt += 0.5
+                result.append("半對")
+            else:
+                result.append("全錯")
+        
+        acc = acc_cnt / (len(self.player_role) -1)
+        self.acc_record.append(acc)
+        self.logger.debug(guess_roles)
+        self.logger.debug(self.player_role)
+        self.logger.info(f"guess roles with {acc}")
+        self.logger.info(result)
+
+        return acc
 
     def __start_game_init__(self , room_data):
         self.logger.debug(f"game is started , this final room info : {room_data}")
@@ -87,8 +155,19 @@ class script_agent(agent):
     def __game_over_process__(self, anno, wait_time):
         self.logger.info(f"Script game is over , {anno['description']}")
 
+    def __skip_stage__(self):
+        pass
+
     def __send_operation__(self, data):
-        self.logger.debug(f"Agent send operation : {data}")
+        self.operation_record.append(data)
+        self.logger.info(f"Agent send operation : {data}")
 
     def __del__(self):
-        pass
+        self.logger.info(f"---------------Script Result---------------")
+        if len(self.acc_record) != 0:
+            self.logger.info(f"Agent guess roles avg acc {(sum(self.acc_record) / len(self.acc_record)):.3f}")
+            self.logger.info(f"{(self.acc_record)}")
+        self.logger.info(f"operation record")
+        for _ in self.operation_record: self.logger.info(f"  {_}")
+        self.logger.info(f"-------------------------------------------")
+        
