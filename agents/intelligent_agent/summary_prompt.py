@@ -18,9 +18,12 @@ class summary_prompts:
         self.choices = [-1] # player choices in prompts
         self.day = 0
 
+        # agent info
         self.token_used = 0
         self.api_guess_roles= []
         self.api_guess_confidence= []
+        self.agent_info = {}
+        self.guessing_finished = 0
 
         # dictionary en -> ch
         self.en_dict={
@@ -117,12 +120,23 @@ class summary_prompts:
 
     
     def __get_agent_info__(self):
+
         ret = {
             "memory" : [self.__memory_to_string__()],
             "guess_roles" : self.api_guess_roles,
             "confidence" : self.api_guess_confidence,
             "token_used" : [str(self.token_used)]
         }
+        self.logger.debug(ret)
+        
+        # agent info change
+        if(self.agent_info != ret and self.guessing_finished == 1):
+            self.agent_info = ret.copy()
+            ret['updated'] = ["1"]
+            self.guessing_finished = 0
+
+        else:
+            ret['updated'] = ["0"]
 
         return ret
 
@@ -373,48 +387,59 @@ class summary_prompts:
 
         return operations 
 
-        
-            
             
 
 
-    def predict_player_roles(self, stage_summary, guess_summary):
+    def predict_player_roles(self):
         ''' Predict and update player roles '''
 
-        response = self.prompts_response('guess_role', stage_summary, guess_summary)
+        response = self.prompts_response('guess_role')
         
         self.guess_roles= []
         self.api_guess_roles= []
-        self.api_guess_confidence= []
+        # self.api_guess_confidence= []
 
         try:
             lines = response.splitlines()
 
-            self.guess_role = {"guess_role" : []}
-            for i in range(self.room_setting["player_num"]):
+            self.__init_guess_role__()
             
-                [player, role, degree, reason] = lines[i].split('，', 3)
+            for line in lines:
+            
+                [player, role, degree, reason] = line.split('，', 3)
                 
-                self.guess_role["guess_role"].append(role)
-                
-                # save to guess roles array
-                roles_prompt = player+self.stage_detail['guess_role']['save'][0]+degree+self.stage_detail['guess_role']['save'][1]+role+self.stage_detail['guess_role']['save'][2]+reason
-                self.guess_roles.append(roles_prompt)
+                try: 
+                    # find the player
+                    i = int(player.split('號玩家')[0])
 
-                # send to server (if it didn't print the percentage, how much we should get?)
-                self.api_guess_roles.append(role)
-                try:
-                    d = str(int(degree.split('%')[0])/100)
-                except ValueError:
-                    d = 0
+                    # save to guess roles array
+                    roles_prompt = player+self.stage_detail['guess_role']['save'][0]+degree+self.stage_detail['guess_role']['save'][1]+role+self.stage_detail['guess_role']['save'][2]+reason
+                    self.guess_roles.append(roles_prompt)
 
-                self.api_guess_confidence.append(d)
+                    # send to server (if it didn't print the percentage, how much we should get?)
+                    self.api_guess_roles[i] = role
+
+                    try:
+                        d = str(int(degree.split('%')[0])/100)
+                    except ValueError:
+                        d = 0
+
+                    self.api_guess_confidence[i] = d
+
+                except ValueError as e:
+                    self.logger.warning(f"Can't find the player, {e}")
+                        
 
         except Exception as e:
             self.logger.warning(f"Predict player error , {e}")
         
+        self.guessing_finished = 1
+
+        self.guess_role["guess_role"] = self.api_guess_roles
+
         self.logger.debug("Get Agent Info")
         self.logger.debug(self.__get_agent_info__())
+
 
 
     def prompts_response(self, prompt_type, stage_summary, guess_summary):
