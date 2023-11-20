@@ -409,7 +409,7 @@ class prompts:
         response = self.prompts_response('guess_role')
         
         self.guess_roles= []
-        self.api_guess_roles= []
+        # self.api_guess_roles= []
         # self.api_guess_confidence= []
 
         try:
