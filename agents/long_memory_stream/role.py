@@ -56,6 +56,7 @@ class werewolf(role):
     def __day_init__(self):
         super().__day_init__()
         self.werewolf_chat = ""
+        self.personal_chat = ""
 
     def __process_information__(self , data):
         operation = super().__process_information__(data)
@@ -66,30 +67,35 @@ class werewolf(role):
         # werewolf dialogue 
         if data['stage'].split('-')[-1] == "werewolf_dialogue":
             sus_role_str , know_role_str = self.__role_list_to_str__()
-            # teamate_str = self.__teamate_to_str__()
-            final_prompt = self.prompt_template['werewolf_dialogue'].replace("%e" , self.example['werewolf_dialogue']).replace("%wi" , self.werewolf_chat).replace("%l" , sus_role_str)
-            # print(final_prompt)
+            # if you are the first dialogue wolf
+            werewolf_chat = self.werewolf_chat if self.werewolf_chat != "" else "無\n"
+            final_prompt = self.prompt_template['werewolf_dialogue'].replace("%e" , self.example['werewolf_dialogue']).replace("%wi" , werewolf_chat).replace("%l" , sus_role_str)
+            
+            self.logger.debug(final_prompt)
             info = {
                 "answer" : "1. 順從隊友",
                 "reason" : "test",
             }
-            info = self.__process_LLM_output__(final_prompt , {'answer' : str , 'reason' : str} , info , 3)
+            info = self.__process_LLM_output__(final_prompt , {'answer' : str , 'reason' : str} , info , "werewolf dialogue")
+            self.personal_chat = f"您自己說「{info['answer']}。」"
             ret = self.ret_format.copy()
             ret['operation'] = "werewolf_dialogue"
-            ret['target'] = self.teamate
+            ret['target'] = self.teamate[0]
             ret['chat'] = info['answer']
             operation.append(ret)
 
         # werewolf kill
         elif data['stage'].split('-')[-1] == "werewolf":
+            target = data['information'][0]['target']
+            target_to_str = "、".join([str(_) for _ in target if _ != self.player_id])
             sus_role_str , know_role_str = self.__role_list_to_str__()
-            final_prompt = self.prompt_template['werewolf_kill'].replace("%e" , self.example['werewolf_kill']).replace("%wi" , self.werewolf_chat).replace("%l" , sus_role_str).replace("%si" , self.personal_chat)
-            # print(final_prompt)
+            final_prompt = self.prompt_template['werewolf_kill'].replace("%e" , self.example['werewolf_kill']).replace("%wi" , self.werewolf_chat).replace("%l" , sus_role_str).replace("%si" , self.personal_chat).replace("%t" , target_to_str)
+            self.logger.debug(final_prompt)
             info = {
                 "answer" : 4,
                 "reason" : "test",
             }
-            info = self.__process_LLM_output__(final_prompt , {'answer':int , 'reason' : str} , info , 3)
+            info = self.__process_LLM_output__(final_prompt , {'answer':int , 'reason' : str} , info , "werewolf kill")
             ret = self.ret_format.copy()
             ret['operation'] = "vote"
             ret['target'] = info["answer"]
@@ -104,8 +110,9 @@ class werewolf(role):
         announcement = data['announcement']
 
         for anno in announcement:
-            if "werewolf" in data['stage'].split('-')[-1] and anno['operation'] == 'chat':
-                self.werewolf_chat += anno['description']
+            # got other wolf's chat 
+            if "werewolf" in data['stage'].split('-')[-1] and anno['operation'] == 'chat' and anno['user'][0] != self.player_id:
+                self.werewolf_chat += f"{anno['user'][0]}號玩家({self.player_name[anno['user'][0]]})說「{anno['description']}」\n"
                 self.logger.debug(f"add werewolf chat : {anno['description']}")
 
         return
