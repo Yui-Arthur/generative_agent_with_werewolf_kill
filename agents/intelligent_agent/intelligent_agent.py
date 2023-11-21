@@ -58,7 +58,7 @@ class intelligent_agent(agent):
             
             self.__send_operation__(op_data)
 
-            if data['stage'].split("-")[2] not in ["werewolf", "vote1", "vote2"]:
+            if data['stage'].split("-")[2] == "dialogue":
                 self.__skip_stage__()
 
     def __start_game_init__(self, room_data):
@@ -104,9 +104,8 @@ class intelligent_agent_script(script_agent):
             }
             
             self.__send_operation__(op_data)
-            if data['stage'].split("-")[2] not in ["vote1", "vote2"]:
+            if data['stage'].split("-")[2] == "dialogue":
                 self.__skip_stage__()
-
 
     def __start_game_init__(self , room_data):
 
@@ -135,6 +134,9 @@ class intelligent_agent_script(script_agent):
         self.logger.debug(f'User data: {data}')
         self.prompts : prompts = prompts(data['player_id'], data['game_info'], room_data['game_setting'], self.logger, self.client, self.api_kwargs)
 
+    def get_info(self) -> dict[str,str]:
+        
+        return self.prompts.__get_agent_info__()
 
 
 class summary_intelligent_agent(summary_agent):

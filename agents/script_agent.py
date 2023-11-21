@@ -104,8 +104,6 @@ class script_agent(agent):
             # logging agent info
             agent_info = self.get_info()
             del agent_info['memory']
-
-            self.logger.debug(agent_info)
             if agent_info['updated'][0] == "1":
                 self.__cal_quess_role_acc__(agent_info['guess_roles'])
 

@@ -109,29 +109,30 @@ class prompts:
     def __memory_to_string__(self):
 
         memory_string = ''
+        try:
+            if len(self.memory[0]) == 0:
+                memory_string += '無資訊\n'
 
-        if len(self.memory[0]) == 0:
-            memory_string += '無資訊\n'
+            else: 
+                for day, mem in enumerate(self.memory):
+                    memory_string += f'第{day+1}天\n'
 
-        else: 
-            for day, mem in enumerate(self.memory):
-                memory_string += f'第{day+1}天\n'
-
-                for idx, i in enumerate(mem):
-                    memory_string += f'{idx+1}. {i}\n'
+                    for idx, i in enumerate(mem):
+                        memory_string += f'{idx+1}. {i}\n'
+        except:
+            pass
 
         return memory_string
 
     
     def __get_agent_info__(self):
-
+    
         ret = {
             "memory" : [self.__memory_to_string__()],
             "guess_roles" : self.api_guess_roles,
             "confidence" : self.api_guess_confidence,
             "token_used" : [str(self.token_used)]
         }
-        self.logger.debug(ret)
         
         # agent info change
         if(self.agent_info != ret and self.guessing_finished == 1):
@@ -450,8 +451,6 @@ class prompts:
 
         self.guess_role["guess_role"] = self.api_guess_roles
 
-        self.logger.debug("Get Agent Info")
-        self.logger.debug(self.__get_agent_info__())
 
 
     def prompts_response(self, prompt_type):
