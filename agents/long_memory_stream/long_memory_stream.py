@@ -78,9 +78,9 @@ class long_memeory_stream():
         
         # self.logger.debug(f"{self.player_name}")
         self.__load_prompt_and_example__(self.prompt_dir)
-        self.push(0 , 0 , f"您本場為{self.player_id}號玩家({player_name[int(player_id)]})" , default_importantance=10)
-        self.push(0 , 0 , f"您本場的身分為{self.role_to_chinese[role]}" , default_importantance=10)
-        self.push(0 , 0 , f"{self.player_id}號玩家({player_name[int(player_id)]}是{self.role_to_chinese[role]}" , default_importantance=10)
+        self.push('0' , len(self.memory_stream) , f"您本場為{self.player_id}號玩家({player_name[int(player_id)]})" , default_importantance=10)
+        self.push('0' , len(self.memory_stream) , f"您本場的身分為{self.role_to_chinese[role]}" , default_importantance=10)
+        self.push('0' , len(self.memory_stream) , f"{self.player_id}號玩家({player_name[int(player_id)]})是{self.role_to_chinese[role]}" , default_importantance=10)
 
         self.suspect_role_list = {i:"未知" for i in range(self.player_num) if i != player_id}
         self.know_role_list[int(player_id)] = role
@@ -112,9 +112,11 @@ class long_memeory_stream():
         self.logger.debug("")
 
         # a new day init
-        if self.day != data['stage'].split('-')[0]:
+        # skip check_role stage
+        if '-' in data['stage'] and self.day != data['stage'].split('-')[0]:
             self.day = data['stage'].split('-')[0]
-            self.__day_init__()
+            if self.day != "1":
+                self.__day_init__()
 
         # if have vote info 
         if any(data["vote_info"].values()) :
@@ -155,12 +157,12 @@ class long_memeory_stream():
             if anno["operation"] == "chat" and anno['user'][0] != self.player_id:
                 observation = f"{anno['user'][0]}號玩家({self.player_name[anno['user'][0]]})說「{anno['description']}」"    
                 chat_flag = True
-                self.push(self.day , len(self.memory_stream)+1 , observation)
+                self.push(self.day , len(self.memory_stream) , observation)
             # player died
             elif anno["operation"] == "died":
                 observation = f"{anno['user'][0]}號玩家({self.player_name[anno['user'][0]]})死了"    
                 self.remain_player.remove(int(anno['user'][0]))
-                self.push(self.day , len(self.memory_stream)+1 , observation , default_importantance=5)
+                self.push(self.day , len(self.memory_stream) , observation , default_importantance=5)
                 # self.suspect_role_list.pop(int(anno['user'][0]))
 
         # if has chat , generation reflection & update guess roles
@@ -185,7 +187,7 @@ class long_memeory_stream():
             elif info['operation'] == "vote_or_not" and "vote" in data["stage"]:
                 self.__reflection__(self.day , len(self.memory_stream))
                 self.__gen_suspect_role_list__(self.day , len(self.memory_stream))
-                operation.append(self.__gen_vote__(self.day , len(self.memory_stream)))
+                operation.append(self.__gen_vote__(self.day , len(self.memory_stream) , info['target']))
 
         return operation
     
@@ -214,13 +216,12 @@ class long_memeory_stream():
         sorted_memory_streams = self.memory_stream.copy()
         delete_idx = []
 
-        # save the origin idx in sorted_memory_streams
+        # delete the relevance_score < threshold
         for idx in range(len(sorted_memory_streams)):
             sorted_memory_streams[idx]["score"] = score[idx]
             if ori_relevance_score[idx] < threshold:
                 delete_idx.append(idx)
 
-            sorted_memory_streams[idx]["ori_idx"] = idx
 
         # delete score < threshold memory
         for idx in reversed(delete_idx):
@@ -232,14 +233,14 @@ class long_memeory_stream():
         self.logger.debug(f"  sum   | importantance | recency | relevance |  Memory | ori_rele")
         for order_mem in sorted_memory_streams[:int(1.5*pick_num)]:
             sum_score = order_mem["score"]
-            ori_idx = order_mem["ori_idx"]
+            ori_idx = order_mem["turn"]
             memory = order_mem['observation'].strip('\n')
             self.logger.debug(f"  {sum_score:.3f} | {importantance_score[ori_idx]:.11f} | {recency_score[ori_idx]:.5f} | {relevance_score[ori_idx]:.7f} |  {memory} | {ori_relevance_score[ori_idx]}")
         
 
         # updated last uesd
         for idx in range(min(pick_num , len(sorted_memory_streams))):
-            self.memory_stream[sorted_memory_streams[idx]['ori_idx']]['lasted_used'] = turn
+            self.memory_stream[sorted_memory_streams[idx]['turn']]['last_used'] = turn
             
 
     
@@ -270,7 +271,7 @@ class long_memeory_stream():
             memory = self.__retrieval__(day , turn , f"{player}號玩家({self.player_name[player]})是什麼身分?")
             
             memory_str = self.__memory_to_str__(memory)
-            final_prompt = self.prompt_template['suspect_role_list'].replace("%m" , memory_str).replace("%e" , self.example['suspect_role_list']).replace("%t" ,  f"{player}號玩家({self.player_name[player]}")
+            final_prompt = self.prompt_template['suspect_role_list'].replace("%m" , memory_str).replace("%e" , self.example['suspect_role_list']).replace("%t" ,  f"{player}號玩家({self.player_name[player]})")
             info = {
                 "role" : "村民",
                 "reason" : "test"
@@ -281,13 +282,14 @@ class long_memeory_stream():
         self.logger.info(f"update suspect role list : {self.suspect_role_list}")
         self.guess_roles_updated = 1
     
-    def __gen_vote__(self , day , turn):
+    def __gen_vote__(self , day , turn , target):
         """gen the vote player num & get the reason"""
-        memory = self.__retrieval__(day , turn , "幾號玩家是大家懷疑對象")
-        memory_str = self.__memory_to_str__(memory)
+        # memory = self.__retrieval__(day , turn , "幾號玩家是大家懷疑對象")
+        # memory_str = self.__memory_to_str__(memory)
+        memory_str = self.__memory_to_str__(self.memory_stream[-10:])
         sus_role_str , know_role_str = self.__role_list_to_str__()
-        final_prompt = self.prompt_template['vote'].replace("%m" , memory_str).replace("%e" , self.example['vote']).replace("%l" , sus_role_str)
-        
+        target_to_str = "、".join([str(_) for _ in target if _ != self.player_id])
+        final_prompt = self.prompt_template['vote'].replace("%m" , memory_str).replace("%e" , self.example['vote']).replace("%l" , sus_role_str).replace("%t" , target_to_str)
         info = {
             "vote" : "4",
             "reason" : "test"
@@ -329,8 +331,8 @@ class long_memeory_stream():
         or
         1號玩家(Yui1)是女巫 
         """
-        sus_role_str = '\n'.join([f"{player}號玩家({self.player_name[player]}可能是{role})" for player , role in self.suspect_role_list.items()])
-        know_role_str = '\n'.join([f"{player}號玩家({self.player_name[player]}是{role})" for player , role in self.know_role_list.items()])
+        sus_role_str = '\n'.join([f"{player}號玩家({self.player_name[player]})可能是{role}。" for player , role in self.suspect_role_list.items()])
+        know_role_str = '\n'.join([f"{player}號玩家({self.player_name[player]})是{role}。" for player , role in self.know_role_list.items()])
 
         return sus_role_str , know_role_str
 
@@ -350,7 +352,7 @@ class long_memeory_stream():
     def __cal_recency__(self , day, turn) :
         """cal the recency score"""
         initial_value = 1.0
-        decay_factor = 0.99
+        decay_factor = 0.90
 
         score = [0 for i in range(len(self.memory_stream))]
 
@@ -424,10 +426,12 @@ class long_memeory_stream():
             else:
                 ob = f"{player}號玩家({self.player_name[player]})棄票"
 
-            self.push(self.day , len(self.memory_stream)+1 , ob , default_importantance=5)
+            self.push(self.day , len(self.memory_stream) , ob , default_importantance=5)
 
     def __day_init__(self):
-        pass
+        self.__reflection__(self.day , len(self.memory_stream))
+        self.__gen_suspect_role_list__(self.day , len(self.memory_stream))
+        # pass
 
     def __process_LLM_output__(self , prompt , keyword_dict : dict, sample_output , task_name):
         """
@@ -439,6 +443,7 @@ class long_memeory_stream():
 
         self.logger.debug(f"Start Task : {task_name}")
         self.logger.debug(f"  LLM keyword : {keyword_dict}")
+        # self.logger.debug(f"{prompt}")
         info = {}
 
         while not success_get_keyword and fail_idx < self.max_fail_cnt:
@@ -495,7 +500,7 @@ class long_memeory_stream():
         {observation[2]}
         """
         if add_idx:
-            return '\n'.join([f"{idx}. {i['observation']}" for idx , i in enumerate(memory)])
+            return '\n'.join([f"{idx+1}. {i['observation']}" for idx , i in enumerate(memory)])
         else:
             return '\n'.join([f"{i['observation']}" for idx , i in enumerate(memory)])
 
