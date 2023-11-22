@@ -55,7 +55,6 @@ class intelligent_agent(agent):
                 "chat" : i["chat"]
             }
             
-            
             self.__send_operation__(op_data)
 
             if data['stage'].split("-")[2] == "dialogue":
