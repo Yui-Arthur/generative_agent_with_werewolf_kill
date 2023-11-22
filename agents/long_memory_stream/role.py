@@ -4,8 +4,8 @@ import json
 
 class role(long_memeory_stream):
 
-    def __init__(self , prompt_dir , logger , client , openai_kwargs):
-        super().__init__(prompt_dir, logger , client, openai_kwargs)
+    def __init__(self , prompt_dir , logger , client , openai_kwargs  , summary=False):
+        super().__init__(prompt_dir, logger , client, openai_kwargs  , summary)
         self.max_fail_cnt = 3
         
     def __processs_information__(self , data):
@@ -24,21 +24,10 @@ class role(long_memeory_stream):
         for key , prompt_li in example.items():
             self.example[key] = '\n'.join(prompt_li)
 
-    # def __player_list_to_str__(self, datas):
-    #     """
-    #     export the {save_list} and {posion_list} to string like
-    #     1號玩家(Yui1), 2號玩家(Yui2), 3號玩家(Yui3)
-    #     """
-    #     name_list = ""
-    #     for data in datas:
-    #         name_list += f"{data}號玩家({self.player_name[data]}), "
-    
-    #     return name_list
-
 class werewolf(role):
 
-    def __init__(self , prompt_dir , logger , client , openai_kwargs):
-        super().__init__(prompt_dir, logger , client, openai_kwargs)
+    def __init__(self , prompt_dir , logger , client , openai_kwargs , summary=False):
+        super().__init__(prompt_dir, logger , client, openai_kwargs  , summary)
         self.werewolf_chat = ""
         self.personal_chat = ""
         self.__register_keywords__({
@@ -126,8 +115,8 @@ class werewolf(role):
 
 
 class seer(role):
-    def __init__(self , prompt_dir , logger , client , openai_kwargs):
-        super().__init__(prompt_dir, logger , client, openai_kwargs)
+    def __init__(self , prompt_dir , logger , client , openai_kwargs  , summary=False):
+        super().__init__(prompt_dir, logger , client, openai_kwargs , summary)
         
         self.__register_keywords__({
             "今晚要驗誰" : "target"
@@ -177,8 +166,8 @@ class seer(role):
 
 class witch(role):
     
-    def __init__(self , prompt_dir , logger , client , openai_kwargs):
-        super().__init__(prompt_dir, logger , client, openai_kwargs)
+    def __init__(self , prompt_dir , logger , client , openai_kwargs , summary=False):
+        super().__init__(prompt_dir, logger , client, openai_kwargs , summary)
         
         self.__register_keywords__({
             "選擇一位玩家" : "target",
@@ -250,8 +239,8 @@ class witch(role):
 
 
 class hunter(role):
-    def __init__(self , prompt_dir , logger , client , openai_kwargs):
-        super().__init__(prompt_dir, logger , client, openai_kwargs)
+    def __init__(self , prompt_dir , logger , client , openai_kwargs , summary=False):
+        super().__init__(prompt_dir, logger , client, openai_kwargs , summary)
         
         self.__register_keywords__({
             "選擇要獵殺的對象" : "target"
