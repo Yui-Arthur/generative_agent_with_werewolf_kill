@@ -72,17 +72,18 @@ class long_memeory_stream():
     def update_game_info(self , player_id , player_name , role):
         """update the player name & init suspect_role_list"""
         self.player_num = len(player_name)
-        self.player_id = player_id
+        self.player_id = int(player_id)
         self.player_name = player_name
         self.role = role
         
         # self.logger.debug(f"{self.player_name}")
         self.__load_prompt_and_example__(self.prompt_dir)
-        self.push('0' , len(self.memory_stream) , f"您本場為{self.player_id}號玩家({player_name[int(player_id)]})" , default_importantance=10)
-        self.push('0' , len(self.memory_stream) , f"您本場的身分為{self.role_to_chinese[role]}" , default_importantance=10)
-        self.push('0' , len(self.memory_stream) , f"{self.player_id}號玩家({player_name[int(player_id)]})是{self.role_to_chinese[role]}" , default_importantance=10)
+        self.push('0' , len(self.memory_stream) , f"您為{self.player_id}號玩家({player_name[self.player_id]})" , default_importantance=10)
+        self.push('0' , len(self.memory_stream) , f"您的身分為{self.role_to_chinese[role]}" , default_importantance=10)
+        self.push('0' , len(self.memory_stream) , f"{self.player_id}號玩家({player_name[self.player_id]})是{self.role_to_chinese[role]}" , default_importantance=10)
 
-        self.suspect_role_list = {i:"未知" for i in range(self.player_num) if i != player_id}
+        self.suspect_role_list = {i:"未知" for i in range(self.player_num) if i != self.player_id}
+        self.logger.debug(self.suspect_role_list)
         self.know_role_list[int(player_id)] = role
         self.remain_player = [i for i in range(self.player_num)]
 
@@ -443,7 +444,7 @@ class long_memeory_stream():
 
         self.logger.debug(f"Start Task : {task_name}")
         self.logger.debug(f"  LLM keyword : {keyword_dict}")
-        # self.logger.debug(f"{prompt}")
+        self.logger.debug(f"{prompt}")
         info = {}
 
         while not success_get_keyword and fail_idx < self.max_fail_cnt:

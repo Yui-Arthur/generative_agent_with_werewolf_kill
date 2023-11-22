@@ -24,16 +24,16 @@ class role(long_memeory_stream):
         for key , prompt_li in example.items():
             self.example[key] = '\n'.join(prompt_li)
 
-    def __player_list_to_str__(self, datas):
-        """
-        export the {save_list} and {posion_list} to string like
-        1號玩家(Yui1), 2號玩家(Yui2), 3號玩家(Yui3)
-        """
-        name_list = ""
-        for data in datas:
-            name_list += f"{data}號玩家({self.player_name[data]}), "
+    # def __player_list_to_str__(self, datas):
+    #     """
+    #     export the {save_list} and {posion_list} to string like
+    #     1號玩家(Yui1), 2號玩家(Yui2), 3號玩家(Yui3)
+    #     """
+    #     name_list = ""
+    #     for data in datas:
+    #         name_list += f"{data}號玩家({self.player_name[data]}), "
     
-        return name_list
+    #     return name_list
 
 class werewolf(role):
 
@@ -138,24 +138,24 @@ class seer(role):
         operation = super().__process_information__(data)
         if len(data["information"]) == 0 or data['stage'].split('-')[-1] != "seer":
             return operation
-
-        memory = self.__retrieval__(self.day , len(self.memory_stream) , "目前哪位玩家最可疑")
+        memory = self.__retrieval__(self.day , len(self.memory_stream) , "幾號玩家")
         memory_str = self.__memory_to_str__(memory)
         sus_role_str , know_role_str = self.__role_list_to_str__()
 
-
-        final_prompt = self.prompt_template['check_role'].replace("%e" , self.example['check_role']).replace("%l" , sus_role_str).replace("%kl" , know_role_str).replace("%m" , memory_str)
+        target = data['information'][0]['target']
+        target_to_str = "、".join([str(_) for _ in target if _ != self.player_id])
+        final_prompt = self.prompt_template['check_role'].replace("%e" , self.example['check_role']).replace("%l" , sus_role_str).replace("%m" , memory_str).replace("%t" , target_to_str)
 
         info = {
-            "target" : "1",
+            "target" : 1,
             "reason" : "test"
         }
 
-        info = self.__process_LLM_output__(final_prompt , ['target' , 'reason'] , info , 3)
+        info = self.__process_LLM_output__(final_prompt , {'target' : int , 'reason' : str} , info , "seer")
 
         ret = self.ret_format.copy()
         ret['operation'] = "vote"
-        ret['target'] = int(info['target'].strip("\n"))
+        ret['target'] = info['target']
         ret['chat'] = ""
         operation.append(ret)
         return operation
@@ -166,11 +166,11 @@ class seer(role):
 
         for anno in announcement:
             if anno['operation'] == 'role_info':
-                print(anno)
+                
                 role_type = anno['description'].split('是')[-1]
                 
                 self.know_role_list[int(anno['user'][0])] = role_type
-                self.push(self.day , len(self.memory_stream) + 1 , f"{anno['user'][0]}號玩家({self.player_name[anno['user'][0]]})是{role_type}")
+                self.push(self.day , len(self.memory_stream) , f"{anno['user'][0]}號玩家({self.player_name[anno['user'][0]]})是{role_type}" , default_importantance=10)
                 self.logger.debug(f"add role info : {anno['user'][0]}號玩家({self.player_name[anno['user'][0]]})是{role_type} ")
 
         return
@@ -200,35 +200,49 @@ class witch(role):
         memory = self.__retrieval__(self.day , len(self.memory_stream) , "該救或毒哪位玩家")
         memory_str = self.__memory_to_str__(memory)
 
-        save_posion = "毒藥已用完，"
-        save_list = self.__player_list_to_str__(data['information'][0]['target'])
+        save_posion = ""
+        save_list = "無"
+        posion_list = "無"
+
+        # both save & posion not used 
         if len(data['information'])==2:
-            posion_list = self.__player_list_to_str__(data['information'][1]['target'])
+            target = data['information'][0]['target']
+            save_list = "、".join([str(_) for _ in target if _ != self.player_id])
+
+            target = data['information'][1]['target']
+            posion_list = "、".join([str(_) for _ in target if _ != self.player_id])
+
             save_posion = ""
+        # remain posion
         elif data['information'][0]['description'] == '女巫毒人':
-            save_list = []
-            posion_list = self.__player_list_to_str__(data['information'][0]['target'])
+            target = data['information'][0]['target']
+            posion_list = "、".join([str(_) for _ in target if _ != self.player_id])
+            save_posion = "解藥已用完，"
+        # remain save
+        else:
+            target = data['information'][0]['target']
+            save_list = "、".join([str(_) for _ in target if _ != self.player_id])
             save_posion = "解藥已用完，"
 
-        final_prompt = self.prompt_template['save_poison'].replace("%e" , self.example['save_poison']).replace("%l" , sus_role_str).replace("%kl" , know_role_str).replace("%m", memory_str).replace("%vl", save_list).replace("%pl", posion_list).replace("%s" , save_posion)
+        final_prompt = self.prompt_template['save_poison'].replace("%e" , self.example['save_poison']).replace("%l" , sus_role_str).replace("%m", memory_str).replace("%vl", save_list).replace("%pl", posion_list).replace("%s" , save_posion)
     
         info = {
             "save_or_poison" : "救人",
-            "target": "1",
+            "target": 1,
             "reason": "test"
         }
-        info = self.__process_LLM_output__(final_prompt , ['save_or_poison', 'target', 'reason'] , info , 3)
+        info = self.__process_LLM_output__(final_prompt , {'save_or_poison' : str, 'target' : int, 'reason' : str} , info , 3)
 
         ret = self.ret_format.copy()
         ret['operation'] = "vote_or_not"
-        ret['target'] = int(info['target'].strip("\n"))
+        ret['target'] = info['target']
 
         if info['save_or_poison'].strip("\n") == "救人":
-            self.push(self.day , len(self.memory_stream)+1 , f"你用解藥救了{ret['target']}號玩家({self.player_name[ret['target']]})")
+            self.push(self.day , len(self.memory_stream) , f"你用解藥救了{ret['target']}號玩家({self.player_name[ret['target']]})" , default_importantance=10)
             ret['chat'] = 'save'
             operation.append(ret)
         elif info['save_or_poison'].strip("\n") == "毒人":
-            self.push(self.day , len(self.memory_stream)+1 , f"你用毒藥毒了{ret['target']}號玩家({self.player_name[ret['target']]})")
+            self.push(self.day , len(self.memory_stream) , f"你用毒藥毒了{ret['target']}號玩家({self.player_name[ret['target']]})", default_importantance=10)
             ret['chat'] = 'poison'
             operation.append(ret)
 
@@ -254,18 +268,20 @@ class hunter(role):
         memory = self.__retrieval__(self.day , len(self.memory_stream) , "目前哪位玩家最可疑")
         memory_str = self.__memory_to_str__(memory)
         sus_role_str , know_role_str = self.__role_list_to_str__()
-        final_prompt = self.prompt_template['hunter'].replace("%e" , self.example['hunter']).replace("%l" , sus_role_str).replace("%kl" , know_role_str).replace("%m" , memory_str)
+        target = data['information'][0]['target']
+        target_str = "、".join([str(_) for _ in target if _ != self.player_id])
+        final_prompt = self.prompt_template['hunter'].replace("%e" , self.example['hunter']).replace("%l" , sus_role_str).replace("%m" , memory_str).replace("%t" , target_str)
 
         info = {
-            "target" : "1",
+            "target" : 1,
             "reason" : "test"
         }
         
-        info = self.__process_LLM_output__(final_prompt , ['target' , 'reason'] , info , 3)
+        info = self.__process_LLM_output__(final_prompt , {'target' : int , 'reason' :str} , info , "hunter")
 
         ret = self.ret_format.copy()
         ret['operation'] = "vote_or_not"
-        ret['target'] = int(info['target'].strip("\n"))
+        ret['target'] = info['target']
         ret['chat'] = ""
         operation.append(ret)
 
