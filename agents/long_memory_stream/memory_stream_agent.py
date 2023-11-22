@@ -64,11 +64,11 @@ class memory_stream_agent(agent):
             "village" : role,
         }
         
-        self.long_memory : role = role_to_class[self.role](self.prompt_dir , self.logger, self.api_kwargs)
+        self.long_memory : role = role_to_class[self.role](self.prompt_dir , self.logger, self.client , self.api_kwargs)
         if self.role != "werewolf":
-            self.long_memory.update_game_info(self.player_name , self.role)
+            self.long_memory.update_game_info(self.player_id , self.player_name , self.role)
         else:
-            self.long_memory.update_game_info(self.player_name , self.role , role_info['game_info']['teamate'])
+            self.long_memory.update_game_info(self.player_id , self.player_name , self.role , role_info['game_info']['teamate'])
 
         self.__check_game_state__(0)
 
@@ -163,7 +163,9 @@ class memory_stream_agent_script(script_agent):
         if skip:
             self.__skip_stage__()
 
-
+    def get_info(self) -> dict[str,str]:
+        return self.long_memory.get_long_memory_info()
+    
     def __start_game_init__(self , room_data):
         """the game started setting , update player name"""
         self.logger.debug(f"game is started , this final room info : {room_data}")
@@ -175,8 +177,17 @@ class memory_stream_agent_script(script_agent):
             "village" : role,
         }
         
-        self.long_memory : role = role_to_class[self.role](self.prompt_dir , self.logger, self.api_kwargs)
+        self.long_memory : role = role_to_class[self.role](self.prompt_dir , self.logger , self.client , self.api_kwargs)
         if self.role != "werewolf":
-            self.long_memory.update_game_info(self.player_name , self.role)
+            self.long_memory.update_game_info(self.player_id , self.player_name , self.role)
         else:
-            self.long_memory.update_game_info(self.player_name , self.role , self.teamate)
+            self.long_memory.update_game_info(self.player_id , self.player_name , self.role , self.teamate)
+
+    def __del__(self):
+        super().__del__()
+        self.logger.info(f"---------------Memory Stream---------------")
+        self.logger.info(f"memory")
+        for _ in self.long_memory.memory_stream: self.logger.info(f"  {_}")
+        self.logger.info(f"reflect")
+        for _ in self.long_memory.reflection_list: self.logger.info(f"  {_}")
+        self.logger.info(f"-------------------------------------------")
