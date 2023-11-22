@@ -16,14 +16,13 @@ class long_memeory_stream():
     
     sentence_model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
 
-    def __init__(self , prompt_dir , logger , client , openai_kwargs , summary=False):
+    def __init__(self , prompt_dir , logger , client , openai_kwargs):
         self.memory_stream = []
         self.openai_kwargs = openai_kwargs
         self.client : OpenAI | AzureOpenAI = client
         self.logger : logging.Logger = logger
         self.max_fail_cnt = 3
         self.token_used = 0
-        # used for the llm keyword translate
         self.chinese_to_english = {
             # importantance
             "分數" : "score",
@@ -59,7 +58,6 @@ class long_memeory_stream():
         self.example : dict[str , str] = None
         
         self.day = 0
-        # sample `update_stage` return type
         self.ret_format = {
             "stage_name" : None,
             "operation": None,
@@ -67,12 +65,8 @@ class long_memeory_stream():
             "chat" : None
         }
 
-        # gues roles updated flag for get info
         self.guess_roles_updated = 0
-        # record the reflection 
         self.reflection_list = []
-        # the use summary or not flag
-        self.summary = summary
 
 
     def update_game_info(self , player_id , player_name , role):
@@ -547,19 +541,10 @@ class long_memeory_stream():
         with open(prompt_dir / "common_prompt.json" , encoding="utf-8") as json_file: self.prompt_template = json.load(json_file)
         with open(prompt_dir / "common_example.json" , encoding="utf-8") as json_file: self.example = json.load(json_file)
 
-        
-        with open(prompt_dir / "summary_addition_prompt.json" , encoding="utf-8") as json_file: self.summary_template = json.load(json_file)
-
         for key , prompt_li in self.prompt_template.items():
             self.prompt_template[key] = '\n'.join(prompt_li)
         for key , prompt_li in self.example.items():
             self.example[key] = '\n'.join(prompt_li)
-        for key , prompt_li in self.summary_template.items():
-            # load the summary addtional prompt only the `summary` flag is true
-            if self.summary:
-                self.summary_template[key] = '\n'.join(prompt_li)
-            else:
-                self.summary_template[key] = ""
     
     def __register_keywords__(self , keywords:dict[str,str]):
         self.logger.debug(f"Register new keyword : {keywords}")
