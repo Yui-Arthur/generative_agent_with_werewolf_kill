@@ -12,7 +12,7 @@ import time
 import math
 from sentence_transformers import SentenceTransformer, util
 from ..agent import agent
-from ..script_agent import script_agent
+from ..script_agent import script_agent , summary_script_agent
 from .role import role , werewolf , seer , witch , hunter
 from .memory_stream_agent import memory_stream_agent
 
@@ -127,6 +127,54 @@ class memory_stream_agent_script(script_agent):
         }
         
         self.long_memory : role = role_to_class[self.role](self.prompt_dir , self.logger , self.client , self.api_kwargs)
+        if self.role != "werewolf":
+            self.long_memory.update_game_info(self.player_id , self.player_name , self.role)
+        else:
+            self.long_memory.update_game_info(self.player_id , self.player_name , self.role , self.teamate)
+
+    def __del__(self):
+        super().__del__()
+        self.logger.info(f"---------------Memory Stream---------------")
+        self.logger.info(f"memory")
+        for _ in self.long_memory.memory_stream: self.logger.info(f"  {_}")
+        self.logger.info(f"reflect")
+        for _ in self.long_memory.reflection_list: self.logger.info(f"  {_}")
+        self.logger.info(f"-------------------------------------------")
+
+class summary_memory_stream_agent_script(summary_script_agent):
+    def __init__(self , api_json = None, game_info_path = None,
+                agent_name = "ScriptGame" , game_room = "ScriptGame" , prompt_dir = "doc/prompt/memory_stream"):
+        self.prompt_dir = Path(prompt_dir)
+        super().__init__(api_json, game_info_path, agent_name , game_room)
+    
+    def __process_data__(self, data):
+        """the data process."""
+        operations = self.long_memory.update_stage(data)
+
+        skip = False
+        for operation in operations:
+            self.__send_operation__(operation)
+            if operation['operation'] == 'dialogue':
+                skip = True
+        
+        if skip:
+            self.__skip_stage__()
+
+    def get_info(self) -> dict[str,str]:
+        return self.long_memory.get_long_memory_info()
+    
+    def __start_game_init__(self , room_data):
+        """the game started setting , update player name"""
+        self.logger.debug(f"game is started , this final room info : {room_data}")
+        role_to_class = {
+            "werewolf" : werewolf,
+            "seer" : seer,
+            "witch" : witch,
+            "hunter" : hunter,
+            "village" : role,
+        }
+        
+        self.long_memory : role = role_to_class[self.role](self.prompt_dir , self.logger , self.client , self.api_kwargs , summary=True)
         if self.role != "werewolf":
             self.long_memory.update_game_info(self.player_id , self.player_name , self.role)
         else:

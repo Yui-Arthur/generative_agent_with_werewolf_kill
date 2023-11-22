@@ -73,6 +73,9 @@ class long_memeory_stream():
         self.reflection_list = []
         # the use summary or not flag
         self.summary = summary
+        # sumary data , if summary flag = false , set all to empty string
+        self.summary_operation_data : list = ["" for i in range(5)]
+        self.summary_guess_role_data : list = ["" for i in range(5)]
 
 
     def update_game_info(self , player_id , player_name , role):
@@ -117,6 +120,11 @@ class long_memeory_stream():
         for i in self.memory_stream[-7:]:
             self.logger.debug(f"  {i['observation']}")
         self.logger.debug("")
+
+        # if summary flag = true , save the summary
+        if self.summary:
+            self.summary_guess_role_data = data['guess_summary']
+            self.summary_operation_data = data['stage_summary']
 
         # a new day init
         # skip check_role stage
@@ -170,13 +178,6 @@ class long_memeory_stream():
                 observation = f"{anno['user'][0]}號玩家({self.player_name[anno['user'][0]]})死了"    
                 self.remain_player.remove(int(anno['user'][0]))
                 self.push(self.day , len(self.memory_stream) , observation , default_importantance=5)
-                # self.suspect_role_list.pop(int(anno['user'][0]))
-
-        # if has chat , generation reflection & update guess roles
-        # if chat_flag:
-        #     self.__reflection__(self.day , len(self.memory_stream))
-        #     self.__gen_suspect_role_list__(self.day , len(self.memory_stream))
-            
 
     def __process_information__(self , data) -> list[dict]:
         
@@ -296,7 +297,8 @@ class long_memeory_stream():
         memory_str = self.__memory_to_str__(self.memory_stream[-10:])
         sus_role_str , know_role_str = self.__role_list_to_str__()
         target_to_str = "、".join([str(_) for _ in target if _ != self.player_id])
-        final_prompt = self.prompt_template['vote'].replace("%m" , memory_str).replace("%e" , self.example['vote']).replace("%l" , sus_role_str).replace("%t" , target_to_str)
+        summary = self.__summary_to_str__()
+        final_prompt = self.prompt_template['vote'].replace("%m" , memory_str).replace("%e" , self.example['vote']).replace("%l" , sus_role_str).replace("%t" , target_to_str).replace("%s" , summary)
         info = {
             "vote" : "4",
             "reason" : "test"
@@ -317,7 +319,8 @@ class long_memeory_stream():
         # memory_str = self.__memory_to_str__(self.memory_stream[-5:])
         memory_str = self.__memory_to_str__(memory)
         sus_role_str , know_role_str = self.__role_list_to_str__()
-        final_prompt = self.prompt_template['dialogue'].replace("%m" , memory_str).replace("%e" , self.example['dialogue']).replace("%l" , sus_role_str)
+        summary = self.__summary_to_str__()
+        final_prompt = self.prompt_template['dialogue'].replace("%m" , memory_str).replace("%e" , self.example['dialogue']).replace("%l" , sus_role_str).replace("%s" , summary)
         
         info = {
             "dialogue" : "test",
@@ -342,6 +345,22 @@ class long_memeory_stream():
         know_role_str = '\n'.join([f"{player}號玩家({self.player_name[player]})是{role}。" for player , role in self.know_role_list.items()])
 
         return sus_role_str , know_role_str
+    
+    def __summary_to_str__(self , summary_type=0 , pick_num = 1):
+        # summary_type 0 => operation
+        # summary_type 1 => guess roles
+        if self.summary == False:
+            return ""
+        
+        self.prompt_template['summary']
+        summary_data_str = ""
+        if summary_type == 0:
+            summary_data_str = '\n'.join([f"{idx+1}. {_}" for idx , _ in enumerate(self.summary_operation_data)])
+        else:
+            summary_data_str = '\n'.join([f"{idx+1}. {_}" for idx , _ in enumerate(self.summary_guess_role_data)])
+
+        return f"{self.prompt_template['summary']}\n{summary_data_str}"
+
 
     def __cal_importantance__(self , observation):
         """cal the importantance score"""

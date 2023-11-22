@@ -88,7 +88,6 @@ class summary_memory_stream_agent(summary_agent):
         # start the game
         self.day = None
         self.turn = 0
-
         self.prompt_dir = Path(prompt_dir)
 
     def get_info(self) -> dict[str,str]:
@@ -123,7 +122,7 @@ class summary_memory_stream_agent(summary_agent):
             "village" : role,
         }
         
-        self.long_memory : role = role_to_class[self.role](self.prompt_dir , self.logger, self.client , self.api_kwargs)
+        self.long_memory : role = role_to_class[self.role](self.prompt_dir , self.logger, self.client , self.api_kwargs , summary = True)
         if self.role != "werewolf":
             self.long_memory.update_game_info(self.player_id , self.player_name , self.role)
         else:
