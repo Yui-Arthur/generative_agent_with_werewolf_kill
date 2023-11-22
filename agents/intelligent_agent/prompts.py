@@ -19,7 +19,6 @@ class prompts:
         self.choices = [-1] # player choices in prompts
         self.day = 0
 
-
         # agent info
         self.token_used = 0
         self.api_guess_roles= []
@@ -41,7 +40,6 @@ class prompts:
         self.__init_guess_role__()
         self.guess_role["guess_role"] = self.api_guess_roles
 
-        
         # stage description and save text responding to the stage
         self.stage_detail={
             "guess_role": {
@@ -293,7 +291,6 @@ class prompts:
                 self.choices = informations[0]['target']
 
                 response = self.prompts_response(prompt_type+'_poison')
-                
                 try:
                     res = response.split("，", 1)
                     who = int(res[0].split('號')[0])
@@ -590,7 +587,6 @@ class prompts:
         # if res == '' (no words), resend to get the data
         if not (res and res.strip()):
             res = self.__openai_send__(prompt)
-
         return res
     
     def __get_guess_role__(self):

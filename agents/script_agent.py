@@ -112,6 +112,7 @@ class script_agent(agent):
                     self.__game_over_process__(anno , 0)
                     break
         self.__del__()
+    
     def __cal_quess_role_acc__(self , guess_roles):
         acc_cnt = 0
         result = []

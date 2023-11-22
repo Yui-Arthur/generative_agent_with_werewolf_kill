@@ -14,6 +14,7 @@ class summary_prompts:
         self.api_kwargs = api_kwargs
         self.memory = []
         self.guess_roles = []
+        self.guess_role = {"guess_role" : []}
         self.alive = [] # alive players
         self.choices = [-1] # player choices in prompts
         self.day = 0
@@ -36,7 +37,8 @@ class summary_prompts:
 
         for i in range(self.room_setting['player_num']):
             self.alive.append(i)
-
+        self.__init_guess_role__()
+        self.guess_role["guess_role"] = self.api_guess_roles
         
         # stage description and save text responding to the stage
         self.stage_detail={
@@ -89,7 +91,7 @@ class summary_prompts:
         # initial prompts in the beginning
         self.init_prompt = f"""你現在是狼人殺遊戲中的一名玩家，遊戲中玩家會藉由說謊，以獲得勝利。因此，資訊為某玩家發言可能會是假的，而其他的資訊皆是真的。
 其遊戲設定為{self.room_setting["player_num"]}人局，角色包含{self.room_setting["werewolf"]}位狼人、{self.room_setting["village"]}位平民、{"3" if self.room_setting["hunter"] else "2"}位神職（預言家和女巫{"和獵人" if self.room_setting["hunter"] else ""}）
-你是{self.player_id}號玩家，你的角色是{self.en_dict[self.user_role]}，你的勝利條件為{"殺死所有神職或是所有平民或是狼的數量多於平民加神職的數量" if self.user_role == "werewolf" else "殺死所有狼人。"}\n"""
+你是{self.player_id}號玩家，你的角色是{self.en_dict[self.user_role]}，你的勝利條件為{"殺死所有神職或是所有平民或是狼的數量多於平民加神職的數量。" if self.user_role == "werewolf" else "殺死所有狼人。"}\n"""
         
         for x in self.teammate:
             self.init_prompt += f"{x}號玩家是狼，是你的隊友。\n"
@@ -105,29 +107,30 @@ class summary_prompts:
     def __memory_to_string__(self):
 
         memory_string = ''
+        try:
+            if len(self.memory[0]) == 0:
+                memory_string += '無資訊\n'
 
-        if len(self.memory[0]) == 0:
-            memory_string += '無資訊\n'
+            else: 
+                for day, mem in enumerate(self.memory):
+                    memory_string += f'第{day+1}天\n'
 
-        else: 
-            for day, mem in enumerate(self.memory):
-                memory_string += f'第{day+1}天\n'
-
-                for idx, i in enumerate(mem):
-                    memory_string += f'{idx+1}. {i}\n'
+                    for idx, i in enumerate(mem):
+                        memory_string += f'{idx+1}. {i}\n'
+        except:
+            pass
 
         return memory_string
 
     
     def __get_agent_info__(self):
-
+    
         ret = {
             "memory" : [self.__memory_to_string__()],
             "guess_roles" : self.api_guess_roles,
             "confidence" : self.api_guess_confidence,
             "token_used" : [str(self.token_used)]
         }
-        self.logger.debug(ret)
         
         # agent info change
         if(self.agent_info != ret and self.guessing_finished == 1):
@@ -166,8 +169,6 @@ class summary_prompts:
         return operations
 
 
-
-
     def process_announcement(self, stage, announcements):
         ''' Process all the announcements and save them to the memory '''
 
@@ -179,8 +180,12 @@ class summary_prompts:
         for i in announcements:
             # self.logger.debug(i)
             # 跳過自己的資料
-            if i['user'][0] == self.player_id:
-                continue
+            try:
+                if i['user'][0] == self.player_id:
+                    continue
+            except:
+                # 判別最後的遊戲結束
+                pass
             
             if i['operation'] == 'chat':
                 if i['description'] == '':
@@ -224,7 +229,6 @@ class summary_prompts:
         op_data = None
         
 
-        self.logger.debug("Guess Roles")
         self.predict_player_roles(stage_summary, guess_summary)
 
         # self.logger.debug("Informations:")
@@ -359,7 +363,6 @@ class summary_prompts:
                                 send_text = '我無遺言'
                             self.logger.warning(f"Dialogue prompts error , {e}")
 
-
                     if save_text == '':
                         save_text = '無操作'
 
@@ -387,58 +390,50 @@ class summary_prompts:
 
         return operations 
 
-            
+    def __init_guess_role__(self):
+        
+        self.api_guess_roles= []
+        self.api_guess_confidence = []
+        for i in range(self.room_setting["player_num"]):
+            guess = "未知" if i != self.player_id else self.en_dict[self.user_role]
+            percentage = "0" if i != self.player_id else  "1"
+            self.api_guess_roles.append(guess)
+            self.api_guess_confidence.append(percentage)        
 
-
-    def predict_player_roles(self):
+    def predict_player_roles(self, stage_summary, guess_summary):
         ''' Predict and update player roles '''
 
-        response = self.prompts_response('guess_role')
+        response = self.prompts_response('guess_role', stage_summary, guess_summary)
+        res_json = json.loads(response)
         
         self.guess_roles= []
-        self.api_guess_roles= []
-        # self.api_guess_confidence= []
-
         try:
-            lines = response.splitlines()
-
-            self.__init_guess_role__()
-            
-            for line in lines:
-            
-                [player, role, degree, reason] = line.split('，', 3)
+            for player_number in range(self.room_setting["player_num"]):
                 
-                try: 
-                    # find the player
-                    i = int(player.split('號玩家')[0])
+                player = res_json[str(player_number)]
+                confidence = player["信心百分比"]
+                # save to guess roles array
+                roles_prompt = f"{player_number}號玩家" + \
+                    self.stage_detail['guess_role']['save'][0] + f"{confidence}%" + \
+                    self.stage_detail['guess_role']['save'][1] + player["角色"] + \
+                    self.stage_detail['guess_role']['save'][2] + player["原因"]
+                self.guess_roles.append(roles_prompt)  
+                
+                # send to server (if it didn't print the percentage, how much we should get?)
+                self.api_guess_roles[player_number] = player["角色"]
 
-                    # save to guess roles array
-                    roles_prompt = player+self.stage_detail['guess_role']['save'][0]+degree+self.stage_detail['guess_role']['save'][1]+role+self.stage_detail['guess_role']['save'][2]+reason
-                    self.guess_roles.append(roles_prompt)
-
-                    # send to server (if it didn't print the percentage, how much we should get?)
-                    self.api_guess_roles[i] = role
-
-                    try:
-                        d = str(int(degree.split('%')[0])/100)
-                    except ValueError:
-                        d = 0
-
-                    self.api_guess_confidence[i] = d
-
-                except ValueError as e:
-                    self.logger.warning(f"Can't find the player, {e}")
-                        
-
+                try:
+                    d = str(confidence/100)
+                except ValueError:
+                    d = 0
+                self.api_guess_confidence[player_number] = d
         except Exception as e:
             self.logger.warning(f"Predict player error , {e}")
-        
+
+
         self.guessing_finished = 1
 
         self.guess_role["guess_role"] = self.api_guess_roles
-
-        self.logger.debug("Get Agent Info")
-        self.logger.debug(self.__get_agent_info__())
 
 
 
@@ -483,8 +478,11 @@ class summary_prompts:
         for idx, summary in enumerate(use_summary):
             self.prompt += f'{idx+1}. {summary}\n'
 
+        guess_role_prompt = "\n你推測玩家的角色：\n"
+        if prompt_type == "guess_role":
+            guess_role_prompt = "\n你上一次推測玩家的角色(只能作為參考，不能沿用)：\n"
         # guess roles
-        self.prompt += "\n你推測玩家的角色：\n"
+        self.prompt += guess_role_prompt
 
         if len(self.guess_roles) == 0:
             self.prompt += "無資訊\n"
@@ -497,7 +495,25 @@ class summary_prompts:
         # question
         # [你必須知道的資訊] = 上述提供資訊內容
         stage_question={
-            "guess_role": f'根據以上你知道的資訊中，判斷{all_choices}玩家的角色及你認為正確的機率百分比(直接回答"[玩家]號玩家，[角色]，[正確的機率百分比]，[原因]"，不需要其他廢話，回答完直接結束回答，每個[]都一定要回答)',
+            "guess_role": f"""請你根據以上我提供的所有文本資訊，整理與推測所有玩家的身分和對於此推測結果的信心百分比，且無論如何，每個玩家都一定要猜測一種身分(不能是未知身分或是無法判斷)。並將結果以下列的json格式回答。(你不需要其他廢話，回答完直接結束回答)。
+{{
+  "0": {{
+    "角色": "",
+    "信心百分比": ,
+    "原因": ""
+  }},
+  "1": {{
+    "角色": "",
+    "信心百分比": ,
+    "原因": ""
+  }},
+  ...
+  "{self.room_setting["player_num"]-1}": {{
+    "角色": "",
+    "信心百分比": ,
+    "原因": ""
+  }}
+}}""",
             "werewolf_dialogue":f'''根據以上綜合資訊，你有三個選項，請選擇其中一個選項當作發言？
 1. 我同意隊友的發言。請在{self.player_array_to_string(self.teammate)}號玩家中，選擇一位隊友(若選擇此選項，請直接回答"選項1，[玩家]號玩家，[原因]"，不需要其他廢話，回答完直接結束回答)
 2. 想殺某位玩家，並猜測玩家的角色。從{self.player_array_to_string(self.alive)}中，只能選擇一位想殺的玩家，且從預言家和女巫{"和獵人" if self.room_setting["hunter"] else ""}中選一位你認為是此玩家的角色(若選擇此選項，請直接回答"選項2，[玩家]號玩家，[角色]，[原因]"，不需要其他廢話，回答完直接結束回答)
