@@ -18,6 +18,7 @@ class summary_agent(agent):
                         color = color) 
         
         self.summary_generator = summary(api_json = api_json)
+        self.summary_operation_queue = []
 
     def __get_summary(self, cur_stage):
 
@@ -34,8 +35,9 @@ class summary_agent(agent):
             stage = "guess_role"
         else:
             return None
-        
+
         self.similarly_sentences = self.summary_generator.find_similarly_summary(stage, game_info = self.game_info)
+
         return self.similarly_sentences
 
     def __check_game_state__(self , failure_cnt):
@@ -58,11 +60,12 @@ class summary_agent(agent):
                     self.__record_agent_game_info__(data)
 
                     copy_current_info = self.current_info.copy()
-                    copy_current_info["guess_summary"] = self.__get_summary(cur_stage= "guess_role")
-                    copy_current_info["stage_summary"] = self.__get_summary(cur_stage= data['stage'].split('-')[-1])
-                    
+                    self.summary_operation_queue = data["information"]
+                    copy_current_info["guess_summary"] = self.__get_summary(cur_stage= "guess_role") if len(self.summary_operation_queue) != 0 else None
+                    copy_current_info["stage_summary"] = self.__get_summary(cur_stage= data['stage'].split('-')[-1]) if len(self.summary_operation_queue) != 0 else None
                     self.__process_data__(copy_current_info) 
-                    
+                
+
                     # check game over
                     for anno in self.current_info['announcement']: 
                         if anno['operation'] == "game_over" : 

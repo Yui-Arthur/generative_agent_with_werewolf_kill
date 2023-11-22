@@ -123,6 +123,7 @@ class summary():
             presence_penalty=0,
             stop=None)
         
+        self.token_used += response.usage.total_tokens
         return response.model_dump()['choices'][0]['message']['content']
     
     def __process_LLM_output__(self , prompt , keyword_list , sample_output):
@@ -447,8 +448,9 @@ class summary():
         self.prompt_template['current_summary'] = self.prompt_template['current_summary'].replace("%l", self.example['current_summary'])
         self.prompt_template['current_summary'] += f"* 回應\n"
         self.prompt_template['current_summary'] += f"[目前總結]\n"
-
-        return self.__openai_send__(self.prompt_template['current_summary'])
+        response = self.__openai_send__(self.prompt_template['current_summary'])
+        
+        return response
     
     def transform_player2identity(self, summary):
     
@@ -465,6 +467,7 @@ class summary():
     def find_similarly_summary(self, stage, game_info):
         
         cur_summary = self.__get_current_summary(game_info= game_info)
+        
         file_path = f"./summary/{self.my_player_role}/{stage}.json"
         if not os.path.exists(self.prompt_dir / file_path):
             return "無"
