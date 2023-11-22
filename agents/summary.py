@@ -9,7 +9,7 @@ from sentence_transformers import SentenceTransformer, util
 import random
 
 class summary():
-    def __init__(self, prompt_dir="./generative_agent_with_werewolf_kill/doc", api_json = None):
+    def __init__(self, prompt_dir="./doc", api_json = None):
         self.max_fail_cnt = 3
         self.token_used = 0
         self.prompt_template : dict[str , str] = None
@@ -327,7 +327,7 @@ class summary():
     def get_summary(self, file_name = "11_06_18_31_mAgent112.jsonl"):
         
         self.__load_game_info(file_path = f"./game_info/{file_name}")
-    
+        print(f"loading file_path: ./game_info/{file_name}")
         for day in self.memory_stream: 
             
             vote_summary = self.__get_day_summary__(day, self.memory_stream[day], self.operation_info[day], self.all_game_info["result"], "vote_summary")
@@ -340,6 +340,7 @@ class summary():
             self.set_score(self.my_player_role, "dialogue", dialogue_summary)
             self.set_score(self.my_player_role, "operation", operation_summary)
             self.set_score(self.my_player_role, "guess_role", guess_role_summary)
+        print("Finish")
 
     def __get_day_summary__(self, day, day_memory, day_operation, result, stage):
         """day summary to openai"""
@@ -364,7 +365,7 @@ class summary():
         info = {
             "guess" : "guess_role_summary",
         }        
-        # 
+    
         info = self.__process_LLM_output__(final_prompt , ["guess"] , info)
         if info == None:
             return None
@@ -447,12 +448,13 @@ class summary():
         self.prompt_template['current_summary'] += f"* 回應\n"
         self.prompt_template['current_summary'] += f"[目前總結]\n"
 
+        return self.__openai_send__(self.prompt_template['current_summary'])
+    
     def transform_player2identity(self, summary):
-        print(self.player2identity.keys())
+    
         for key_word in self.player2identity.keys():
             if key_word in summary:
                 
-
                 key_number = self.player2identity[key_word]
                 identity = self.role_to_chinese[self.player_name[key_number]["user_role"]]
                 summary = summary.replace(key_word, f"{identity}")
@@ -462,31 +464,36 @@ class summary():
 
     def find_similarly_summary(self, stage, game_info):
         
-        self.__get_current_summary(game_info= game_info)
-
-        file_path = os.path.join(self.my_player_role, f"{stage}.json")
-        if not os.path.exists(file_path):
+        cur_summary = self.__get_current_summary(game_info= game_info)
+        file_path = f"./summary/{self.my_player_role}/{stage}.json"
+        if not os.path.exists(self.prompt_dir / file_path):
             return "無"
+        
         summary_set = self.__load_summary(file_path= file_path)
-        similarly_scores = []
-        for idx, summary_each in enumerate(summary_set):
-            embeddings = self.embedding_model.encode([summary_each, game_info])
-            cos_sim = util.cos_sim(embeddings, embeddings)
-            similarly_scores.append([cos_sim[0][1], idx])
+        summary_set_summary = [_["summary"] for _ in summary_set]
 
-        similarly_scores = sorted(similarly_scores,key= lambda x: x[1], reverse= True)
+        query_embedding = self.embedding_model.encode(cur_summary , convert_to_tensor=True)
+        embeddings = self.embedding_model.encode(summary_set_summary , convert_to_tensor=True)
+        cos_sim = util.cos_sim(query_embedding, embeddings)[0]
+        similarly_scores= []
 
-        return similarly_scores[0: self.similarly_sentence_num]
+        for idx, score in enumerate(cos_sim):
+            similarly_scores.append([score.to("cpu").item(), idx])
+
+        similarly_scores = sorted(similarly_scores,key= lambda x: x[0], reverse= True)
+
+        window = min(len(similarly_scores), self.similarly_sentence_num)        
+        found_similarly_summary = [summary_set[idx]["summary"] for _, idx in similarly_scores[0: window]]
+
+
+
+        return found_similarly_summary
 
 
     
 if __name__ == '__main__':
 
-    file_name = "./game2_werewolf2.jsonl"
-    # s = summary(prompt_dir="./generative_agent_with_werewolf_kill/doc", api_json = "./generative_agent_with_werewolf_kill/doc/secret/chatgpt_api_key.key")
-    s = summary(prompt_dir="./generative_agent_with_werewolf_kill/doc", api_json = "./generative_agent_with_werewolf_kill/doc/secret/openai.key")
-    # s = summary(api_json="./doc/secret/openai.key", prompt_dir="./doc")
-    s.get_summary(file_name= file_name)
-
-    
-    
+    file_name = "./game2/11_19_23_13_agent4.jsonl"
+    s = summary(api_json="./doc/secret/openai.key", prompt_dir="./doc")
+    # s.get_summary(file_name= file_name)
+    s.find_similarly_summary(stage= "guess_role", game_info= "11_19_23_13_agent3.jsonl")
