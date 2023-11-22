@@ -448,9 +448,8 @@ class summary():
         self.prompt_template['current_summary'] = self.prompt_template['current_summary'].replace("%l", self.example['current_summary'])
         self.prompt_template['current_summary'] += f"* 回應\n"
         self.prompt_template['current_summary'] += f"[目前總結]\n"
-        response = self.__openai_send__(self.prompt_template['current_summary'])
-        
-        return response
+
+        return self.__openai_send__(self.prompt_template['current_summary'])
     
     def transform_player2identity(self, summary):
     
