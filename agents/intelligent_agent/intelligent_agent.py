@@ -10,19 +10,21 @@ from datetime import datetime
 import sys 
 import json
 from ..summary_agent import summary_agent
-
+from ..script_agent import script_agent
 
 class intelligent_agent(agent):
     
+
     def __init__(self , api_json = "doc/secret/chatgpt.key", 
                 server_url = "140.127.208.185" , agent_name = "Agent1" , room_name = "TESTROOM" , 
                 color = "f9a8d4" , prompt_dir = Path("prompt/memory_stream/")):
-        api_json = "doc/secret/chatgpt.key"
+        
+        # api_json = "doc/secret/chatgpt.key"
         
         super().__init__(api_json = api_json, server_url = server_url , 
                         agent_name = agent_name , room_name = room_name , 
                         color = color) 
-        print(api_json)
+
         # used for start game for test
         self.master_token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX25hbWUiOiJ5dWkiLCJyb29tX25hbWUiOiJURVNUUk9PTSIsImxlYWRlciI6dHJ1ZSwiaWF0IjoxNjkwMzc5NTM0LCJleHAiOjE2OTkwMTk1MzR9.BEmD52DuK657YQezsqNgJAwbPfl54o8Pb--Dh7VQMMA"
         
@@ -54,7 +56,8 @@ class intelligent_agent(agent):
             }
             
             self.__send_operation__(op_data)
-            if data['stage'].split("-")[2] not in ["vote1", "vote2"]:
+
+            if data['stage'].split("-")[2] == "dialogue":
                 self.__skip_stage__()
 
     def __start_game_init__(self, room_data):
@@ -77,6 +80,63 @@ class intelligent_agent(agent):
         r = self.prompts.__get_guess_role__()
         self.logger.debug(f'User data: {r}')
         return r 
+
+
+class intelligent_agent_script(script_agent):
+    def __init__(self , api_json = None, game_info_path = None,
+                agent_name = "ScriptGame" , game_room = "ScriptGame" , prompt_dir = "doc/prompt/memory_stream"):
+        self.prompt_dir = Path(prompt_dir)
+        super().__init__(api_json, game_info_path, agent_name , game_room)
+    
+    def __process_data__(self, data):
+        """Process the data got from server"""
+        
+        operations = self.prompts.agent_process(data)
+        # self.logger.debug("Operations "+str(operations))
+
+        for i in operations:
+            op_data = {
+                "stage_name" : data['stage'],
+                "operation" : i["operation"],
+                "target" : i["target"],
+                "chat" : i["chat"]
+            }
+            
+            self.__send_operation__(op_data)
+            if data['stage'].split("-")[2] == "dialogue":
+                self.__skip_stage__()
+
+    def __start_game_init__(self , room_data):
+
+        """the game started setting , update player name"""
+        room_data = {"game_setting": {
+            "player_num": 7,    
+            "operation_time" : 5,
+            "dialogue_time" : 10,
+            "seer" : 1,
+            "witch" : 1,
+            "village" : 2,
+            "werewolf" : 2,
+            "hunter" : 1 
+        }}
+
+        self.logger.debug(f"game is started , this final room info : {room_data}")
+        # self.room_setting = room_data['game_setting']
+        # self.player_name = [name for name in room_data["room_user"]]
+
+        data = {}
+        data["player_id"] = self.player_id
+        data["game_info"] = {"teamate": self.teamate, "user_role": self.role}
+        if self.role != "werewolf":
+            data["game_info"]["teamate"] = []
+    
+        self.logger.debug(f'User data: {data}')
+        self.prompts : prompts = prompts(data['player_id'], data['game_info'], room_data['game_setting'], self.logger, self.client, self.api_kwargs)
+
+    def get_info(self) -> dict[str,str]:
+        
+        return self.prompts.__get_agent_info__()
+
 
 class summary_intelligent_agent(summary_agent):
     
@@ -136,9 +196,6 @@ class summary_intelligent_agent(summary_agent):
 
         self.__check_game_state__(0)
 
-    
-    
-    
 class intelligent_agent_test(agent):
     
     def __init__(self , api_json = "doc/secret/yui.key", 
@@ -283,4 +340,3 @@ class intelligent_agent_test(agent):
     # def __get_guess_role__(self):
         
     #     return self.prompts.__get_guess_role__()
-    

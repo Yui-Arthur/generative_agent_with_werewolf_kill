@@ -13,3 +13,4 @@ test.py
 agent.json
 test_generate_script_agent.py
 test_summary.py
+test_intelligent_agent_script.py
