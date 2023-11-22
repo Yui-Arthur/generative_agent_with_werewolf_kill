@@ -468,17 +468,24 @@ class summary():
         file_path = f"./summary/{self.my_player_role}/{stage}.json"
         if not os.path.exists(self.prompt_dir / file_path):
             return "無"
+        
         summary_set = self.__load_summary(file_path= file_path)
-        similarly_scores = []
-        for idx, summary_item in enumerate(summary_set):
+        summary_set_summary = [_["summary"] for _ in summary_set]
 
-            embeddings = self.embedding_model.encode([summary_item["summary"], cur_summary])
-            cos_sim = util.cos_sim(embeddings, embeddings)
-            similarly_scores.append([cos_sim[0][1], idx])
+        query_embedding = self.embedding_model.encode(cur_summary , convert_to_tensor=True)
+        embeddings = self.embedding_model.encode(summary_set_summary , convert_to_tensor=True)
+        cos_sim = util.cos_sim(query_embedding, embeddings)[0]
+        similarly_scores= []
 
-        similarly_scores = sorted(similarly_scores,key= lambda x: x[1], reverse= True)
+        for idx, score in enumerate(cos_sim):
+            similarly_scores.append([score.to("cpu").item(), idx])
+
+        similarly_scores = sorted(similarly_scores,key= lambda x: x[0], reverse= True)
+
         window = min(len(similarly_scores), self.similarly_sentence_num)        
         found_similarly_summary = [summary_set[idx]["summary"] for _, idx in similarly_scores[0: window]]
+
+
 
         return found_similarly_summary
 
