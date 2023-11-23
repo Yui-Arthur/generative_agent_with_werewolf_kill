@@ -187,7 +187,6 @@ class summary_intelligent_agent(summary_agent):
     def __start_game_init__(self, room_data):
         """the game started setting , update player name"""
         self.logger.debug(f"game is started , this final room info : {room_data}")
-        # self.room_setting = room_data['game_setting']
         self.player_name = [name for name in room_data["room_user"]]
 
         data = self.__get_role__()
@@ -244,8 +243,6 @@ class summary_intelligent_agent_script(summary_script_agent):
         }}
 
         self.logger.debug(f"game is started , this final room info : {room_data}")
-        # self.room_setting = room_data['game_setting']
-        # self.player_name = [name for name in room_data["room_user"]]
 
         data = {}
         data["player_id"] = self.player_id
