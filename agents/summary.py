@@ -9,13 +9,17 @@ from sentence_transformers import SentenceTransformer, util
 import random
 
 class summary():
-    def __init__(self,logger = None, prompt_dir="./doc", api_json = None):
+
+    embedding_model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
+
+    def __init__(self,logger = None, prompt_dir="./doc", api_json = None, prompt_output = False):
         self.max_fail_cnt = 3
         self.token_used = 0
         self.logger = logger
         self.prompt_template : dict[str , str] = None
         self.example : dict[str , str] = None
         self.player_name = None
+        self.prompt_output = prompt_output
         self.all_game_info = {
             "self_role" : "",
             "all_role_info" : "",
@@ -64,7 +68,7 @@ class summary():
         self.summary_limit = 20
         self.similarly_sentence_num = 5
         self.get_score_fail_times = 3
-        self.embedding_model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
+        
 
         if not os.path.exists(os.path.join(prompt_dir, "summary")):
             os.mkdir(os.path.join(prompt_dir, "summary"))
@@ -276,7 +280,7 @@ class summary():
             self.player2identity[f"{user_name}({number})"] = number
             self.player2identity[user_name] = number
 
-    def __load_game_info(self, file_path = None, game_info = None):       
+    def __load_game_info(self, random_guess_role, file_path = None, game_info = None):       
 
         self.all_game_info = {
             "self_role" : "",
@@ -307,8 +311,8 @@ class summary():
                 self.__process_announcement__(info)
 
                 if "guess_role" in game_info[idx+1].keys():
-                    self.__process_random_guess_role(info["stage"] , game_info[idx+1])
-                    # self.__process_guess_role(info["stage"] , game_info[idx+1])
+                    if random_guess_role:   self.__process_random_guess_role(info["stage"] , game_info[idx+1])
+                    else:   self.__process_guess_role(info["stage"] , game_info[idx+1])
 
             # operation
             elif "stage_name" in info.keys() and (not info['stage_name'].split('-')[-1] in no_save_op):
@@ -337,8 +341,8 @@ class summary():
 
 
     def get_summary(self, file_name = "11_06_18_31_mAgent112.jsonl"):
-        
-        self.__load_game_info(file_path = f"./game_info/{file_name}")
+            
+        self.__load_game_info(random_guess_role = True ,file_path = f"./game_info/{file_name}")
         print(f"loading file_path: ./game_info/{file_name}")
         for day in self.memory_stream: 
             
@@ -442,7 +446,7 @@ class summary():
     
     def __get_current_summary(self, game_info):
 
-        self.__load_game_info(game_info= game_info)
+        self.__load_game_info(random_guess_role = False, game_info= game_info)
         final_prompt = ""
     
         try:
@@ -451,7 +455,9 @@ class summary():
         except:
             final_prompt = self.prompt_template['current_summary'].replace("%l" , self.example['current_summary']).replace("%z", "0").replace("%m" , "無").replace("%o" , "無").replace("%y" , "無")
 
-        self.logger.debug(f"final_prompt: {final_prompt}")
+        if self.prompt_output:
+            self.logger.debug(f"final_prompt: {final_prompt}")
+            
         info = {
             "current" : "current_summary",
         }        
