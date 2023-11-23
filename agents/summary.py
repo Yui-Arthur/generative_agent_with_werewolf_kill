@@ -9,6 +9,9 @@ from sentence_transformers import SentenceTransformer, util
 import random
 
 class summary():
+
+    embedding_model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
+
     def __init__(self,logger = None, prompt_dir="./doc", api_json = None, prompt_output = False):
         self.max_fail_cnt = 3
         self.token_used = 0
@@ -65,7 +68,7 @@ class summary():
         self.summary_limit = 20
         self.similarly_sentence_num = 5
         self.get_score_fail_times = 3
-        self.embedding_model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
+        
 
         if not os.path.exists(os.path.join(prompt_dir, "summary")):
             os.mkdir(os.path.join(prompt_dir, "summary"))
