@@ -10,12 +10,12 @@ class summary_agent(agent):
     
     def __init__(self , api_json = "doc/secret/yui.key", 
                 server_url = "140.127.208.185" , agent_name = "Agent1" , room_name = "TESTROOM" , 
-                color = "f9a8d4" , prompt_dir = Path("prompt/memory_stream/")):
+                color = "f9a8d4" , prompt_dir = Path("prompt/memory_stream/"), prompt_output = False):
         
         super().__init__(api_json = api_json, server_url = server_url , 
                         agent_name = agent_name , room_name = room_name , 
                         color = color) 
-        self.summary_generator = summary(logger = self.logger, api_json = api_json)
+        self.summary_generator = summary(logger = self.logger, api_json = api_json, prompt_output = prompt_output)
 
     def __get_summary(self, cur_stage):
 

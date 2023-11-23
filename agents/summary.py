@@ -9,13 +9,14 @@ from sentence_transformers import SentenceTransformer, util
 import random
 
 class summary():
-    def __init__(self,logger = None, prompt_dir="./doc", api_json = None):
+    def __init__(self,logger = None, prompt_dir="./doc", api_json = None, prompt_output = False):
         self.max_fail_cnt = 3
         self.token_used = 0
         self.logger = logger
         self.prompt_template : dict[str , str] = None
         self.example : dict[str , str] = None
         self.player_name = None
+        self.prompt_output = prompt_output
         self.all_game_info = {
             "self_role" : "",
             "all_role_info" : "",
@@ -451,7 +452,9 @@ class summary():
         except:
             final_prompt = self.prompt_template['current_summary'].replace("%l" , self.example['current_summary']).replace("%z", "0").replace("%m" , "無").replace("%o" , "無").replace("%y" , "無")
 
-        self.logger.debug(f"final_prompt: {final_prompt}")
+        if self.prompt_output:
+            self.logger.debug(f"final_prompt: {final_prompt}")
+            
         info = {
             "current" : "current_summary",
         }        
