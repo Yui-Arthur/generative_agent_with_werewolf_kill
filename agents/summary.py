@@ -277,7 +277,7 @@ class summary():
             self.player2identity[f"{user_name}({number})"] = number
             self.player2identity[user_name] = number
 
-    def __load_game_info(self, file_path = None, game_info = None):       
+    def __load_game_info(self, random_guess_role, file_path = None, game_info = None):       
 
         self.all_game_info = {
             "self_role" : "",
@@ -308,8 +308,8 @@ class summary():
                 self.__process_announcement__(info)
 
                 if "guess_role" in game_info[idx+1].keys():
-                    # self.__process_random_guess_role(info["stage"] , game_info[idx+1])
-                    self.__process_guess_role(info["stage"] , game_info[idx+1])
+                    if random_guess_role:   self.__process_random_guess_role(info["stage"] , game_info[idx+1])
+                    else:   self.__process_guess_role(info["stage"] , game_info[idx+1])
 
             # operation
             elif "stage_name" in info.keys() and (not info['stage_name'].split('-')[-1] in no_save_op):
@@ -338,8 +338,8 @@ class summary():
 
 
     def get_summary(self, file_name = "11_06_18_31_mAgent112.jsonl"):
-        
-        self.__load_game_info(file_path = f"./game_info/{file_name}")
+            
+        self.__load_game_info(random_guess_role = True ,file_path = f"./game_info/{file_name}")
         print(f"loading file_path: ./game_info/{file_name}")
         for day in self.memory_stream: 
             
@@ -443,7 +443,7 @@ class summary():
     
     def __get_current_summary(self, game_info):
 
-        self.__load_game_info(game_info= game_info)
+        self.__load_game_info(random_guess_role = False, game_info= game_info)
         final_prompt = ""
     
         try:
