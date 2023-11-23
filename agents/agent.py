@@ -45,9 +45,9 @@ class agent():
         self.checker = True
         self.timer = None
 
-        # game_over = True => game is not started or game is over
+        # game_over = True => game is over
         #           = False => game is running
-        self.game_over = True
+        self.game_over = False
 
         # for test get info
         self.update = 0
@@ -372,7 +372,7 @@ class agent():
         if self.user_token == None:
             pass
         # the game is over or the game not started yet
-        elif self.game_over:
+        elif self.game_over or self.role == None:
             self.__quit_room__()
             self.logger.debug("Quit Room")
         #  the game is not end but force to delete agent
