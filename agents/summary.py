@@ -124,7 +124,8 @@ class summary():
             frequency_penalty=0,
             presence_penalty=0,
             stop=None)
-        
+    
+        self.token_used += response.usage.total_tokens
         return response.model_dump()['choices'][0]['message']['content']
     
     def __process_LLM_output__(self , prompt , keyword_list , sample_output):
