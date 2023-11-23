@@ -5,7 +5,7 @@ import threading
 from concurrent import futures
 from pathlib import Path
 import argparse
-from agents import memory_stream_agent , intelligent_agent , agent, summary_intelligent_agent , summary_memory_stream_agent
+from agents import memory_stream_agent , intelligent_agent , agent, summary_intelligent_agent
 from sentence_transformers import SentenceTransformer, util
 import threading
 import time
@@ -17,7 +17,7 @@ class agent_service(agent_pb2_grpc.agentServicer):
         self.agent_type_dict = {
             "memory_stream_agent" : memory_stream_agent , 
             "intelligent_agent" : intelligent_agent,
-            "summary_memory_stream_agent" : summary_memory_stream_agent,
+            # "summary_memory_stream_agent" : summary_memory_stream_agent,
             "summary_intelligent_agent" : summary_intelligent_agent,
             "simple_agent" : agent
         }
@@ -76,7 +76,7 @@ class agent_service(agent_pb2_grpc.agentServicer):
             del self.agent_dict[agent_id]
             context.abort(grpc.StatusCode.NOT_FOUND, "The game of the agent is end")
 
-        return agent_info(agentInfo = {key: info_list(info = value)for key , value in self.agent_dict[agent_id].get_info().items()})
+        return agent_info(agentInfo = {key: info_list(info = value)for key , value in self.agent_dict[agent_id]['agent_instance'].get_info().items()})
     
 def print_agent_dict(agent_dict : dict[str , agent]):
     print("agent name | room name")
