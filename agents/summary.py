@@ -9,9 +9,10 @@ from sentence_transformers import SentenceTransformer, util
 import random
 
 class summary():
-    def __init__(self, prompt_dir="./doc", api_json = None):
+    def __init__(self,logger = None, prompt_dir="./doc", api_json = None):
         self.max_fail_cnt = 3
         self.token_used = 0
+        self.logger = logger
         self.prompt_template : dict[str , str] = None
         self.example : dict[str , str] = None
         self.player_name = None
@@ -449,6 +450,7 @@ class summary():
         except:
             final_prompt = self.prompt_template['current_summary'].replace("%l" , self.example['current_summary']).replace("%z", "0").replace("%m" , "無").replace("%o" , "無").replace("%y" , "無")
 
+        self.logger.debug(f"final_prompt: {final_prompt}")
         info = {
             "current" : "current_summary",
         }        
@@ -470,6 +472,7 @@ class summary():
     def find_similarly_summary(self, stage, game_info):
         
         cur_summary = self.__get_current_summary(game_info= game_info)
+        self.logger.debug(f"cur_summary: {cur_summary}")
         file_path = f"./summary/{self.my_player_role}/{stage}.json"
         if not os.path.exists(self.prompt_dir / file_path):
             return "無"
@@ -490,7 +493,7 @@ class summary():
         window = min(len(similarly_scores), self.similarly_sentence_num)        
         found_similarly_summary = [summary_set[idx]["summary"] for _, idx in similarly_scores[0: window]]
 
-
+        self.logger.debug(f"found_similarly_summary: {found_similarly_summary}")
 
         return found_similarly_summary
 
