@@ -47,7 +47,7 @@ class prompts:
                 "save": ["有", "的程度是", "，"]
             },
             "werewolf_dialogue":{
-                "stage_description":"狼人發言階段，狼人和其他狼人發言",
+                "stage_description":"狼人發言階段，你可以與你的狼人溝通",
                 "save": "我在狼人階段發言"
             },
             "werewolf":{
@@ -93,8 +93,6 @@ class prompts:
 其遊戲設定為{self.room_setting["player_num"]}人局，角色包含{self.room_setting["werewolf"]}位狼人、{self.room_setting["village"]}位平民、{"3" if self.room_setting["hunter"] else "2"}位神職（預言家和女巫{"和獵人" if self.room_setting["hunter"] else ""}）
 你是{self.player_id}號玩家，你的角色是{self.en_dict[self.user_role]}，你的勝利條件為{"殺死所有神職或是所有平民或是狼的數量多於平民加神職的數量。" if self.user_role == "werewolf" else "殺死所有狼人。"}\n"""
         
-        for x in self.teammate:
-            self.init_prompt += f"{x}號玩家是狼，是你的隊友。\n"
 
     
     def __print_memory__(self):
@@ -463,6 +461,8 @@ class prompts:
         self.prompt += f"\n現在是第{self.day}天{self.stage_detail[prompt_type]['stage_description']}\n"
         self.prompt += f"你目前知道的資訊為:\n"
         
+        for x in self.teammate:
+            self.init_prompt += f"{x}號玩家是你的狼人隊友。\n"
         if len(self.memory[0]) == 0:
             self.prompt += "無資訊\n"
         else: 
@@ -474,7 +474,7 @@ class prompts:
         
         guess_role_prompt = "\n你推測玩家的角色：\n"
         if prompt_type == "guess_role":
-            guess_role_prompt = "\n你上一次推測玩家的角色(只能作為參考，不能沿用)：\n"
+            guess_role_prompt = "\n你上一次推測玩家的角色(請注意此只能作為參考，不能完全沿用)：\n"
         # guess roles
         self.prompt += guess_role_prompt
 

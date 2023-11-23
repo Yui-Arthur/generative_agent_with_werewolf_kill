@@ -161,8 +161,9 @@ class summary_intelligent_agent(summary_agent):
 
 
     def get_info(self) -> dict[str,str]:
-        
-        return self.prompts.__get_agent_info__()
+        agent_info = self.prompts.__get_agent_info__()
+        agent_info["token_used"] = [str(int(agent_info["token_used"][0]) + self.summary_generator.token_used)]
+        return agent_info
     
 
     def __process_data__(self, data):
@@ -254,8 +255,13 @@ class summary_intelligent_agent_script(summary_script_agent):
         self.prompts : summary_prompts = summary_prompts(data['player_id'], data['game_info'], room_data['game_setting'], self.logger, self.client, self.api_kwargs)
 
     def get_info(self) -> dict[str,str]:
-        
-        return self.prompts.__get_agent_info__()
+        agent_info = self.prompts.__get_agent_info__()
+        print("//////")
+        print(agent_info)
+        agent_info["token_used"] = [str(int(agent_info["token_used"][0]) + self.summary_generator.token_used)]
+        print(agent_info)
+        print("//////")
+        return agent_info
 
 
 
