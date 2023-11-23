@@ -123,8 +123,9 @@ class long_memeory_stream():
 
         # if summary flag = true , save the summary
         if self.summary:
-            self.summary_guess_role_data = data['guess_summary']
-            self.summary_operation_data = data['stage_summary']
+            self.summary_guess_role_data = [_.strip('\n') for _ in data['guess_summary']]
+            if data['stage_summary'] != None:
+                self.summary_operation_data = [_.strip('\n') for _ in data['stage_summary']]
 
         # a new day init
         # skip check_role stage
@@ -277,9 +278,9 @@ class long_memeory_stream():
             if player == self.player_id : continue
 
             memory = self.__retrieval__(day , turn , f"{player}號玩家({self.player_name[player]})是什麼身分?")
-            
+            summary = self.__summary_to_str__(1)
             memory_str = self.__memory_to_str__(memory)
-            final_prompt = self.prompt_template['suspect_role_list'].replace("%m" , memory_str).replace("%e" , self.example['suspect_role_list']).replace("%t" ,  f"{player}號玩家({self.player_name[player]})")
+            final_prompt = self.prompt_template['suspect_role_list'].replace("%m" , memory_str).replace("%e" , self.example['suspect_role_list']).replace("%t" ,  f"{player}號玩家({self.player_name[player]})").replace("%s" , summary)
             info = {
                 "role" : "村民",
                 "reason" : "test"
@@ -355,9 +356,9 @@ class long_memeory_stream():
         self.prompt_template['summary']
         summary_data_str = ""
         if summary_type == 0:
-            summary_data_str = '\n'.join([f"{idx+1}. {_}" for idx , _ in enumerate(self.summary_operation_data)])
+            summary_data_str = '\n'.join([f"{idx+1}. {_}" for idx , _ in enumerate(self.summary_operation_data[:pick_num])])
         else:
-            summary_data_str = '\n'.join([f"{idx+1}. {_}" for idx , _ in enumerate(self.summary_guess_role_data)])
+            summary_data_str = '\n'.join([f"{idx+1}. {_}" for idx , _ in enumerate(self.summary_guess_role_data[:pick_num])])
 
         return f"{self.prompt_template['summary']}\n{summary_data_str}"
 
@@ -576,9 +577,9 @@ class long_memeory_stream():
         for key , prompt_li in self.summary_template.items():
             # load the summary addtional prompt only the `summary` flag is true
             if self.summary:
-                self.summary_template[key] = '\n'.join(prompt_li)
+                self.prompt_template[key] = '\n'.join(prompt_li)
             else:
-                self.summary_template[key] = ""
+                self.prompt_template[key] = ""
     
     def __register_keywords__(self , keywords:dict[str,str]):
         self.logger.debug(f"Register new keyword : {keywords}")

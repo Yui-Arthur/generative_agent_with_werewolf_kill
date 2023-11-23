@@ -58,7 +58,8 @@ class werewolf(role):
             sus_role_str , know_role_str = self.__role_list_to_str__()
             # if you are the first dialogue wolf
             werewolf_chat = self.werewolf_chat if self.werewolf_chat != "" else "無\n"
-            final_prompt = self.prompt_template['werewolf_dialogue'].replace("%e" , self.example['werewolf_dialogue']).replace("%wi" , werewolf_chat).replace("%l" , sus_role_str)
+            summary = self.__summary_to_str__()
+            final_prompt = self.prompt_template['werewolf_dialogue'].replace("%e" , self.example['werewolf_dialogue']).replace("%wi" , werewolf_chat).replace("%l" , sus_role_str).replace("%s" , summary)
             
             self.logger.debug(final_prompt)
             info = {
@@ -78,8 +79,8 @@ class werewolf(role):
             target = data['information'][0]['target']
             target_to_str = "、".join([str(_) for _ in target if _ != self.player_id])
             sus_role_str , know_role_str = self.__role_list_to_str__()
-            final_prompt = self.prompt_template['werewolf_kill'].replace("%e" , self.example['werewolf_kill']).replace("%wi" , self.werewolf_chat).replace("%l" , sus_role_str).replace("%si" , self.personal_chat).replace("%t" , target_to_str)
-            self.logger.debug(final_prompt)
+            summary = self.__summary_to_str__()
+            final_prompt = self.prompt_template['werewolf_kill'].replace("%e" , self.example['werewolf_kill']).replace("%wi" , self.werewolf_chat).replace("%l" , sus_role_str).replace("%si" , self.personal_chat).replace("%t" , target_to_str).replace("%s" , summary)
             info = {
                 "answer" : 4,
                 "reason" : "test",
@@ -133,7 +134,8 @@ class seer(role):
 
         target = data['information'][0]['target']
         target_to_str = "、".join([str(_) for _ in target if _ != self.player_id])
-        final_prompt = self.prompt_template['check_role'].replace("%e" , self.example['check_role']).replace("%l" , sus_role_str).replace("%m" , memory_str).replace("%t" , target_to_str)
+        summary = self.__summary_to_str__()
+        final_prompt = self.prompt_template['check_role'].replace("%e" , self.example['check_role']).replace("%l" , sus_role_str).replace("%m" , memory_str).replace("%t" , target_to_str).replace("%s" , summary)
 
         info = {
             "target" : 1,
@@ -188,6 +190,7 @@ class witch(role):
         sus_role_str , know_role_str = self.__role_list_to_str__()
         memory = self.__retrieval__(self.day , len(self.memory_stream) , "該救或毒哪位玩家")
         memory_str = self.__memory_to_str__(memory)
+        summary = self.__summary_to_str__()
 
         save_posion = ""
         save_list = "無"
@@ -213,7 +216,7 @@ class witch(role):
             save_list = "、".join([str(_) for _ in target if _ != self.player_id])
             save_posion = "解藥已用完，"
 
-        final_prompt = self.prompt_template['save_poison'].replace("%e" , self.example['save_poison']).replace("%l" , sus_role_str).replace("%m", memory_str).replace("%vl", save_list).replace("%pl", posion_list).replace("%s" , save_posion)
+        final_prompt = self.prompt_template['save_poison'].replace("%e" , self.example['save_poison']).replace("%l" , sus_role_str).replace("%m", memory_str).replace("%vl", save_list).replace("%pl", posion_list).replace("%sl" , save_posion).replace("%s" , summary)
     
         info = {
             "save_or_poison" : "救人",
