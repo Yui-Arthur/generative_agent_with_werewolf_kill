@@ -329,7 +329,7 @@ class summary_script_agent(summary_agent):
         elif cur_stage == "guess_role":
             stage = "guess_role"
         else:
-            return None
+            return [None]
         
         self.similarly_sentences = self.summary_generator.find_similarly_summary(stage, game_info = self.game_info)
         return self.similarly_sentences
