@@ -1,6 +1,9 @@
-{"chat": "save", "target": 6}
-{"chat": "我是村民，沒有資訊", "target": -1}
-{"chat": "NA", "target": 6}
-{"chat": "我認為0號玩家分析的比較全面，我歸票投2號玩家。", "target": -1 }
-{"chat": "NA", "target": 2}
-{"chat": "poison", "target": 0}
+{"chat": "我同意4號玩家(agent4)", "target":  -1}
+{"chat": "狼人投票", "target": 6 }
+{"chat": "我是預言家，昨晚我驗3號玩家是狼人，大家今天投他。", "target": -1}
+{"chat": "投票", "target": 3}
+{"chat": "我同意4號玩家(agent4)", "target":  -1}
+{"chat": "狼人投票", "target": 0 }
+{"chat": "我才是真的預言家，剛剛驗到2號玩家是好人，可能是狼故意要陷害我，大家要相信我。", "target": -1 }
+{"chat": "投票", "target": 5}
+{"chat": "狼人投票", "target": 2 }

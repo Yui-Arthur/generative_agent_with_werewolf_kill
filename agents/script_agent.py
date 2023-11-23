@@ -205,7 +205,7 @@ class summary_script_agent(summary_agent):
         # for test get info
         self.update = 0
         # summary
-        self.summary_generator = summary(api_json = api_json)
+        self.summary_generator = summary(logger= self.logger, api_json = api_json)
         self.operation_info = {}
         self.game_info = []
         # from file load a game
@@ -269,7 +269,7 @@ class summary_script_agent(summary_agent):
         for data in self.game_data:
             self.__record_agent_game_info__(data)
             data["guess_summary"] = self.__get_summary(cur_stage= "guess_role")
-            data["stage_summary"] = self.__get_summary(cur_stage= data['stage'].split('-')[-1])
+            data["stage_summary"] = self.__get_summary(cur_stage= data['stage'].split('-')[-1]) if len(data['information']) != 0 else [None]
 
             self.logger.debug(data)
             self.__process_data__(data)
@@ -329,7 +329,7 @@ class summary_script_agent(summary_agent):
         elif cur_stage == "guess_role":
             stage = "guess_role"
         else:
-            return None
+            return [None]
         
         self.similarly_sentences = self.summary_generator.find_similarly_summary(stage, game_info = self.game_info)
         return self.similarly_sentences
