@@ -16,13 +16,15 @@ class long_memeory_stream():
     
     sentence_model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
 
-    def __init__(self , prompt_dir , logger , client , openai_kwargs):
+    def __init__(self , prompt_dir , logger , client , openai_kwargs , summary=False , log_prompt = False):
         self.memory_stream = []
         self.openai_kwargs = openai_kwargs
         self.client : OpenAI | AzureOpenAI = client
         self.logger : logging.Logger = logger
+        self.log_prompt = log_prompt
         self.max_fail_cnt = 3
         self.token_used = 0
+        # used for the llm keyword translate
         self.chinese_to_english = {
             # importantance
             "分數" : "score",
@@ -58,6 +60,7 @@ class long_memeory_stream():
         self.example : dict[str , str] = None
         
         self.day = 0
+        # sample `update_stage` return type
         self.ret_format = {
             "stage_name" : None,
             "operation": None,
@@ -65,8 +68,15 @@ class long_memeory_stream():
             "chat" : None
         }
 
+        # gues roles updated flag for get info
         self.guess_roles_updated = 0
+        # record the reflection 
         self.reflection_list = []
+        # the use summary or not flag
+        self.summary = summary
+        # sumary data , if summary flag = false , set all to empty string
+        self.summary_operation_data : list = ["" for i in range(5)]
+        self.summary_guess_role_data : list = ["" for i in range(5)]
 
 
     def update_game_info(self , player_id , player_name , role):
@@ -85,7 +95,7 @@ class long_memeory_stream():
         self.suspect_role_list = {i:"未知" for i in range(self.player_num) if i != self.player_id}
         self.logger.debug(self.suspect_role_list)
         self.know_role_list[int(player_id)] = role
-        self.remain_player = [i for i in range(self.player_num)]
+        # self.remain_player = [i for i in range(self.player_num)]
 
     def push(self , day , turn , observation , default_importantance = None):
         """push the observation in memeory stream"""
@@ -111,6 +121,12 @@ class long_memeory_stream():
         for i in self.memory_stream[-7:]:
             self.logger.debug(f"  {i['observation']}")
         self.logger.debug("")
+
+        # if summary flag = true , save the summary
+        if self.summary:
+            self.summary_guess_role_data = [_.strip('\n') for _ in data['guess_summary']]
+            if data['stage_summary'] != [None]:
+                self.summary_operation_data = [_.strip('\n') for _ in data['stage_summary']]
 
         # a new day init
         # skip check_role stage
@@ -162,15 +178,8 @@ class long_memeory_stream():
             # player died
             elif anno["operation"] == "died":
                 observation = f"{anno['user'][0]}號玩家({self.player_name[anno['user'][0]]})死了"    
-                self.remain_player.remove(int(anno['user'][0]))
+                # self.remain_player.remove(int(anno['user'][0]))
                 self.push(self.day , len(self.memory_stream) , observation , default_importantance=5)
-                # self.suspect_role_list.pop(int(anno['user'][0]))
-
-        # if has chat , generation reflection & update guess roles
-        # if chat_flag:
-        #     self.__reflection__(self.day , len(self.memory_stream))
-        #     self.__gen_suspect_role_list__(self.day , len(self.memory_stream))
-            
 
     def __process_information__(self , data) -> list[dict]:
         
@@ -270,9 +279,9 @@ class long_memeory_stream():
             if player == self.player_id : continue
 
             memory = self.__retrieval__(day , turn , f"{player}號玩家({self.player_name[player]})是什麼身分?")
-            
+            summary = self.__summary_to_str__(1)
             memory_str = self.__memory_to_str__(memory)
-            final_prompt = self.prompt_template['suspect_role_list'].replace("%m" , memory_str).replace("%e" , self.example['suspect_role_list']).replace("%t" ,  f"{player}號玩家({self.player_name[player]})")
+            final_prompt = self.prompt_template['suspect_role_list'].replace("%m" , memory_str).replace("%e" , self.example['suspect_role_list']).replace("%t" ,  f"{player}號玩家({self.player_name[player]})").replace("%s" , summary)
             info = {
                 "role" : "村民",
                 "reason" : "test"
@@ -290,7 +299,8 @@ class long_memeory_stream():
         memory_str = self.__memory_to_str__(self.memory_stream[-10:])
         sus_role_str , know_role_str = self.__role_list_to_str__()
         target_to_str = "、".join([str(_) for _ in target if _ != self.player_id])
-        final_prompt = self.prompt_template['vote'].replace("%m" , memory_str).replace("%e" , self.example['vote']).replace("%l" , sus_role_str).replace("%t" , target_to_str)
+        summary = self.__summary_to_str__()
+        final_prompt = self.prompt_template['vote'].replace("%m" , memory_str).replace("%e" , self.example['vote']).replace("%l" , sus_role_str).replace("%t" , target_to_str).replace("%s" , summary)
         info = {
             "vote" : "4",
             "reason" : "test"
@@ -311,7 +321,8 @@ class long_memeory_stream():
         # memory_str = self.__memory_to_str__(self.memory_stream[-5:])
         memory_str = self.__memory_to_str__(memory)
         sus_role_str , know_role_str = self.__role_list_to_str__()
-        final_prompt = self.prompt_template['dialogue'].replace("%m" , memory_str).replace("%e" , self.example['dialogue']).replace("%l" , sus_role_str)
+        summary = self.__summary_to_str__()
+        final_prompt = self.prompt_template['dialogue'].replace("%m" , memory_str).replace("%e" , self.example['dialogue']).replace("%l" , sus_role_str).replace("%s" , summary)
         
         info = {
             "dialogue" : "test",
@@ -336,6 +347,22 @@ class long_memeory_stream():
         know_role_str = '\n'.join([f"{player}號玩家({self.player_name[player]})是{role}。" for player , role in self.know_role_list.items()])
 
         return sus_role_str , know_role_str
+    
+    def __summary_to_str__(self , summary_type=0 , pick_num = 1):
+        # summary_type 0 => operation
+        # summary_type 1 => guess roles
+        if self.summary == False:
+            return ""
+        
+        self.prompt_template['summary']
+        summary_data_str = ""
+        if summary_type == 0:
+            summary_data_str = '\n'.join([f"{idx+1}. {_}" for idx , _ in enumerate(self.summary_operation_data[:pick_num])])
+        else:
+            summary_data_str = '\n'.join([f"{idx+1}. {_}" for idx , _ in enumerate(self.summary_guess_role_data[:pick_num])])
+
+        return f"{self.prompt_template['summary']}\n{summary_data_str}"
+
 
     def __cal_importantance__(self , observation):
         """cal the importantance score"""
@@ -444,7 +471,8 @@ class long_memeory_stream():
 
         self.logger.debug(f"Start Task : {task_name}")
         self.logger.debug(f"  LLM keyword : {keyword_dict}")
-        self.logger.debug(f"{prompt}")
+        if self.log_prompt:
+            self.logger.debug(f"{prompt}")
         info = {}
 
         while not success_get_keyword and fail_idx < self.max_fail_cnt:
@@ -541,10 +569,19 @@ class long_memeory_stream():
         with open(prompt_dir / "common_prompt.json" , encoding="utf-8") as json_file: self.prompt_template = json.load(json_file)
         with open(prompt_dir / "common_example.json" , encoding="utf-8") as json_file: self.example = json.load(json_file)
 
+        
+        with open(prompt_dir / "summary_addition_prompt.json" , encoding="utf-8") as json_file: self.summary_template = json.load(json_file)
+
         for key , prompt_li in self.prompt_template.items():
             self.prompt_template[key] = '\n'.join(prompt_li)
         for key , prompt_li in self.example.items():
             self.example[key] = '\n'.join(prompt_li)
+        for key , prompt_li in self.summary_template.items():
+            # load the summary addtional prompt only the `summary` flag is true
+            if self.summary:
+                self.prompt_template[key] = '\n'.join(prompt_li)
+            else:
+                self.prompt_template[key] = ""
     
     def __register_keywords__(self , keywords:dict[str,str]):
         self.logger.debug(f"Register new keyword : {keywords}")
