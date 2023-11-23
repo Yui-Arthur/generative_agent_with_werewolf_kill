@@ -16,11 +16,12 @@ class long_memeory_stream():
     
     sentence_model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
 
-    def __init__(self , prompt_dir , logger , client , openai_kwargs , summary=False):
+    def __init__(self , prompt_dir , logger , client , openai_kwargs , summary=False , log_prompt = False):
         self.memory_stream = []
         self.openai_kwargs = openai_kwargs
         self.client : OpenAI | AzureOpenAI = client
         self.logger : logging.Logger = logger
+        self.log_prompt = log_prompt
         self.max_fail_cnt = 3
         self.token_used = 0
         # used for the llm keyword translate
@@ -94,7 +95,7 @@ class long_memeory_stream():
         self.suspect_role_list = {i:"未知" for i in range(self.player_num) if i != self.player_id}
         self.logger.debug(self.suspect_role_list)
         self.know_role_list[int(player_id)] = role
-        self.remain_player = [i for i in range(self.player_num)]
+        # self.remain_player = [i for i in range(self.player_num)]
 
     def push(self , day , turn , observation , default_importantance = None):
         """push the observation in memeory stream"""
@@ -124,7 +125,7 @@ class long_memeory_stream():
         # if summary flag = true , save the summary
         if self.summary:
             self.summary_guess_role_data = [_.strip('\n') for _ in data['guess_summary']]
-            if data['stage_summary'] != None:
+            if data['stage_summary'] != [None]:
                 self.summary_operation_data = [_.strip('\n') for _ in data['stage_summary']]
 
         # a new day init
@@ -177,7 +178,7 @@ class long_memeory_stream():
             # player died
             elif anno["operation"] == "died":
                 observation = f"{anno['user'][0]}號玩家({self.player_name[anno['user'][0]]})死了"    
-                self.remain_player.remove(int(anno['user'][0]))
+                # self.remain_player.remove(int(anno['user'][0]))
                 self.push(self.day , len(self.memory_stream) , observation , default_importantance=5)
 
     def __process_information__(self , data) -> list[dict]:
@@ -470,7 +471,8 @@ class long_memeory_stream():
 
         self.logger.debug(f"Start Task : {task_name}")
         self.logger.debug(f"  LLM keyword : {keyword_dict}")
-        self.logger.debug(f"{prompt}")
+        if self.log_prompt:
+            self.logger.debug(f"{prompt}")
         info = {}
 
         while not success_get_keyword and fail_idx < self.max_fail_cnt:

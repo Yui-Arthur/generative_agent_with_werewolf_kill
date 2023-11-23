@@ -161,7 +161,11 @@ class summary_memory_stream_agent_script(summary_script_agent):
             self.__skip_stage__()
 
     def get_info(self) -> dict[str,str]:
-        return self.long_memory.get_long_memory_info()
+        ret = self.long_memory.get_long_memory_info()
+        self.logger.debug(f"Token used agent : {int(ret['token_used'][0])} summary : {self.summary_generator.token_used}")
+        ret['token_used'][0] = str( int(ret['token_used'][0]) + self.summary_generator.token_used )
+        return ret
+        
     
     def __start_game_init__(self , room_data):
         """the game started setting , update player name"""
