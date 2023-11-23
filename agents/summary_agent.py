@@ -56,13 +56,14 @@ class summary_agent(agent):
 
                 if self.current_info != data:
                     self.current_info = data
-                    self.logger.debug(data)
                     self.__record_agent_game_info__(data)
 
                     copy_current_info = self.current_info.copy()
                     self.summary_operation_queue = data["information"]
                     copy_current_info["guess_summary"] = self.__get_summary(cur_stage= "guess_role")
-                    copy_current_info["stage_summary"] = self.__get_summary(cur_stage= data['stage'].split('-')[-1]) if len(self.summary_operation_queue) != 0 else None
+                    copy_current_info["stage_summary"] = self.__get_summary(cur_stage= data['stage'].split('-')[-1])
+                    self.logger.debug(copy_current_info)
+                    
                     self.__process_data__(copy_current_info) 
                 
 
