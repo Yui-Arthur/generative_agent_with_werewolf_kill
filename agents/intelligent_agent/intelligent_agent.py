@@ -10,7 +10,7 @@ from datetime import datetime
 import sys 
 import json
 from ..summary_agent import summary_agent
-from ..script_agent import script_agent
+from ..script_agent import script_agent, summary_script_agent
 
 class intelligent_agent(agent):
     
@@ -179,12 +179,14 @@ class summary_intelligent_agent(summary_agent):
                 "chat" : i["chat"]
             }
             self.__send_operation__(op_data)
+            
+            if data['stage'].split("-")[2] == "dialogue":
+                self.__skip_stage__()
 
 
     def __start_game_init__(self, room_data):
         """the game started setting , update player name"""
         self.logger.debug(f"game is started , this final room info : {room_data}")
-        # self.room_setting = room_data['game_setting']
         self.player_name = [name for name in room_data["room_user"]]
 
         data = self.__get_role__()
@@ -195,6 +197,67 @@ class summary_intelligent_agent(summary_agent):
         self.__get_all_role__()
 
         self.__check_game_state__(0)
+    
+    def __get_guess_role__(self):
+        r = self.prompts.__get_guess_role__()
+        self.logger.debug(f'User data: {r}')
+        return r 
+
+class summary_intelligent_agent_script(summary_script_agent):
+
+    def __init__(self , api_json = None, game_info_path = None,
+                agent_name = "ScriptGame" , game_room = "ScriptGame" , prompt_dir = "doc/prompt/memory_stream"):
+        self.prompt_dir = Path(prompt_dir)
+        super().__init__(api_json, game_info_path, agent_name , game_room)
+    
+    def __process_data__(self, data):
+        """Process the data got from server"""
+        
+        operations = self.prompts.agent_process(data)
+        # self.logger.debug("Operations "+str(operations))
+
+        for i in operations:
+            op_data = {
+                "stage_name" : data['stage'],
+                "operation" : i["operation"],
+                "target" : i["target"],
+                "chat" : i["chat"]
+            }
+            
+            self.__send_operation__(op_data)
+            if data['stage'].split("-")[2] == "dialogue":
+                self.__skip_stage__()
+
+    def __start_game_init__(self , room_data):
+
+        """the game started setting , update player name"""
+        room_data = {"game_setting": {
+            "player_num": 7,    
+            "operation_time" : 5,
+            "dialogue_time" : 10,
+            "seer" : 1,
+            "witch" : 1,
+            "village" : 2,
+            "werewolf" : 2,
+            "hunter" : 1 
+        }}
+
+        self.logger.debug(f"game is started , this final room info : {room_data}")
+
+        data = {}
+        data["player_id"] = self.player_id
+        data["game_info"] = {"teamate": self.teamate, "user_role": self.role}
+        if self.role != "werewolf":
+            data["game_info"]["teamate"] = []
+    
+        self.logger.debug(f'User data: {data}')
+        self.prompts : summary_prompts = summary_prompts(data['player_id'], data['game_info'], room_data['game_setting'], self.logger, self.client, self.api_kwargs)
+
+    def get_info(self) -> dict[str,str]:
+        
+        return self.prompts.__get_agent_info__()
+
+
 
 class intelligent_agent_test(agent):
     
