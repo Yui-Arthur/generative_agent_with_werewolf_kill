@@ -15,7 +15,7 @@ class summary_agent(agent):
         super().__init__(api_json = api_json, server_url = server_url , 
                         agent_name = agent_name , room_name = room_name , 
                         color = color) 
-        self.summary_generator = summary(logger = self.logger, api_json = api_json, prompt_output= True)
+        self.summary_generator = summary(logger = self.logger, api_json = api_json)
 
     def __get_summary(self, cur_stage):
 
