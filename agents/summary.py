@@ -307,8 +307,8 @@ class summary():
                 self.__process_announcement__(info)
 
                 if "guess_role" in game_info[idx+1].keys():
-                    self.__process_random_guess_role(info["stage"] , game_info[idx+1])
-                    # self.__process_guess_role(info["stage"] , game_info[idx+1])
+                    # self.__process_random_guess_role(info["stage"] , game_info[idx+1])
+                    self.__process_guess_role(info["stage"] , game_info[idx+1])
 
             # operation
             elif "stage_name" in info.keys() and (not info['stage_name'].split('-')[-1] in no_save_op):
