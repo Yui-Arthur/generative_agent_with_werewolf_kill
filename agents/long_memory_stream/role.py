@@ -35,8 +35,8 @@ class werewolf(role):
         })
         # self.max_fail_cnt = 0
 
-    def update_game_info(self , player_id , player_name , role ,teamate):
-        super().update_game_info(player_id , player_name , role)
+    def update_game_info(self , player_id , player_name , role , roles_setting ,teamate):
+        super().update_game_info(player_id , player_name , role , roles_setting)
         
         self.teamate = teamate
         self.push('0' , len(self.memory_stream) , self.__teamate_to_str__() , default_importantance=10)
@@ -55,15 +55,18 @@ class werewolf(role):
         self.logger.debug("werewolf process")
         # werewolf dialogue 
         if data['stage'].split('-')[-1] == "werewolf_dialogue":
-            sus_role_str , know_role_str = self.__role_list_to_str__()
             # if you are the first dialogue wolf
-            werewolf_chat = self.werewolf_chat if self.werewolf_chat != "" else "無\n"
-            summary = self.__summary_to_str__()
-            final_prompt = self.prompt_template['werewolf_dialogue'].replace("%e" , self.example['werewolf_dialogue']).replace("%wi" , werewolf_chat).replace("%l" , sus_role_str).replace("%s" , summary)
+            replace_order = {
+                "%wi" : self.werewolf_chat if self.werewolf_chat != "" else "無\n",
+                "%l" : self.__role_list_to_str__()[0],
+                "%e" : self.example['werewolf_dialogue'],
+                "%s" : self.__summary_to_str__()
+            }
+            final_prompt = self.prompt_template['werewolf_dialogue']
+            for key , item in replace_order.items() : final_prompt = final_prompt.replace(key , item)
             
-            self.logger.debug(final_prompt)
             info = {
-                "answer" : "1. 順從隊友",
+                "answer" : "順從隊友",
                 "reason" : "test",
             }
             info = self.__process_LLM_output__(final_prompt , {'answer' : str , 'reason' : str} , info , "werewolf dialogue")
@@ -77,10 +80,18 @@ class werewolf(role):
         # werewolf kill
         elif data['stage'].split('-')[-1] == "werewolf":
             target = data['information'][0]['target']
-            target_to_str = "、".join([str(_) for _ in target if _ != self.player_id])
-            sus_role_str , know_role_str = self.__role_list_to_str__()
-            summary = self.__summary_to_str__()
-            final_prompt = self.prompt_template['werewolf_kill'].replace("%e" , self.example['werewolf_kill']).replace("%wi" , self.werewolf_chat).replace("%l" , sus_role_str).replace("%si" , self.personal_chat).replace("%t" , target_to_str).replace("%s" , summary)
+   
+            replace_order = {
+                "%wi" : self.werewolf_chat if self.werewolf_chat != "" else "無\n",
+                "%l" : self.__role_list_to_str__()[0],
+                "%si" : self.personal_chat,
+                "%t" : "、".join([str(_) for _ in target if _ != self.player_id]),
+                "%e" : self.example['werewolf_kill'],
+                "%s" : self.__summary_to_str__()
+            }
+            final_prompt = self.prompt_template['werewolf_kill']
+            for key , item in replace_order.items() : final_prompt = final_prompt.replace(key , item)
+
             info = {
                 "answer" : 4,
                 "reason" : "test",
@@ -120,7 +131,7 @@ class seer(role):
         super().__init__(prompt_dir, logger , client, openai_kwargs , summary , log_prompt)
         
         self.__register_keywords__({
-            "今晚要驗誰" : "target"
+            "目標" : "target"
         })
         # self.max_fail_cnt = 3
     
@@ -128,14 +139,21 @@ class seer(role):
         operation = super().__process_information__(data)
         if len(data["information"]) == 0 or data['stage'].split('-')[-1] != "seer":
             return operation
-        memory = self.__retrieval__(self.day , len(self.memory_stream) , "幾號玩家")
-        memory_str = self.__memory_to_str__(memory)
-        sus_role_str , know_role_str = self.__role_list_to_str__()
-
+        
+        question = self.__reflection_question__(self.day , len(self.memory_stream))
+        memory = self.__retrieval__(self.day , len(self.memory_stream) , question)
         target = data['information'][0]['target']
-        target_to_str = "、".join([str(_) for _ in target if _ != self.player_id])
-        summary = self.__summary_to_str__()
-        final_prompt = self.prompt_template['check_role'].replace("%e" , self.example['check_role']).replace("%l" , sus_role_str).replace("%m" , memory_str).replace("%t" , target_to_str).replace("%s" , summary)
+        
+        replace_order = {
+            "%l" : self.__role_list_to_str__()[0],
+            "%m" : self.__memory_to_str__(memory),
+            "%t" : "、".join([str(_) for _ in target if _ != self.player_id]),
+            "%e" : self.example['check_role'],
+            "%s" : self.__summary_to_str__(),
+            "%rs" : self.__roles_setting_to_str__(),
+        }
+        final_prompt = self.prompt_template['check_role']
+        for key , item in replace_order.items() : final_prompt = final_prompt.replace(key , item)
 
         info = {
             "target" : 1,
@@ -161,7 +179,7 @@ class seer(role):
                 role_type = anno['description'].split('是')[-1]
                 
                 self.know_role_list[int(anno['user'][0])] = role_type
-                self.push(self.day , len(self.memory_stream) , f"{anno['user'][0]}號玩家({self.player_name[anno['user'][0]]})是{role_type}" , default_importantance=10)
+                self.push(self.day , len(self.memory_stream) , f"您的查驗結果:「{anno['user'][0]}號玩家({self.player_name[anno['user'][0]]})是{role_type}」" , default_importantance=10)
                 self.logger.debug(f"add role info : {anno['user'][0]}號玩家({self.player_name[anno['user'][0]]})是{role_type} ")
 
         return
@@ -187,10 +205,7 @@ class witch(role):
             return operation
 
         self.logger.debug(f"witch process")
-        sus_role_str , know_role_str = self.__role_list_to_str__()
         memory = self.__retrieval__(self.day , len(self.memory_stream) , "該救或毒哪位玩家")
-        memory_str = self.__memory_to_str__(memory)
-        summary = self.__summary_to_str__()
 
         save_posion = ""
         save_list = "無"
@@ -215,9 +230,21 @@ class witch(role):
             target = data['information'][0]['target']
             save_list = "、".join([str(_) for _ in target if _ != self.player_id])
             save_posion = "解藥已用完，"
+        
+        replace_order = {
+            "%l" : self.__role_list_to_str__()[0],
+            "%m" : self.__memory_to_str__(memory),
+            "%vl" : save_list,
+            "%pl" : posion_list,
+            "%sl" : save_posion,
+            "%t" : "、".join([str(_) for _ in target if _ != self.player_id]),
+            "%e" : self.example['save_poison'],
+            "%s" : self.__summary_to_str__(),
+            "%rs" : self.__roles_setting_to_str__(),
+        }
+        final_prompt = self.prompt_template['save_poison']
+        for key , item in replace_order.items() : final_prompt = final_prompt.replace(key , item)
 
-        final_prompt = self.prompt_template['save_poison'].replace("%e" , self.example['save_poison']).replace("%l" , sus_role_str).replace("%m", memory_str).replace("%vl", save_list).replace("%pl", posion_list).replace("%sl" , save_posion).replace("%s" , summary)
-    
         info = {
             "save_or_poison" : "救人",
             "target": 1,
@@ -230,11 +257,11 @@ class witch(role):
         ret['target'] = info['target']
 
         if info['save_or_poison'].strip("\n") == "救人":
-            self.push(self.day , len(self.memory_stream) , f"你用解藥救了{ret['target']}號玩家({self.player_name[ret['target']]})" , default_importantance=10)
+            self.push(self.day , len(self.memory_stream) , f"您({self.player_name[self.player_id]})用解藥救了{ret['target']}號玩家({self.player_name[ret['target']]})" , default_importantance=10)
             ret['chat'] = 'save'
             operation.append(ret)
         elif info['save_or_poison'].strip("\n") == "毒人":
-            self.push(self.day , len(self.memory_stream) , f"你用毒藥毒了{ret['target']}號玩家({self.player_name[ret['target']]})", default_importantance=10)
+            self.push(self.day , len(self.memory_stream) , f"您({self.player_name[self.player_id]})用毒藥毒了{ret['target']}號玩家({self.player_name[ret['target']]})", default_importantance=10)
             ret['chat'] = 'poison'
             operation.append(ret)
 
@@ -258,11 +285,21 @@ class hunter(role):
         
         self.logger.debug("hunter process")
         memory = self.__retrieval__(self.day , len(self.memory_stream) , "目前哪位玩家最可疑")
+        target = data['information'][0]['target']
+
         memory_str = self.__memory_to_str__(memory)
         sus_role_str , know_role_str = self.__role_list_to_str__()
-        target = data['information'][0]['target']
         target_str = "、".join([str(_) for _ in target if _ != self.player_id])
-        final_prompt = self.prompt_template['hunter'].replace("%e" , self.example['hunter']).replace("%l" , sus_role_str).replace("%m" , memory_str).replace("%t" , target_str)
+
+        replace_order = {
+            "%l" : self.__role_list_to_str__()[0],
+            "%m" : self.__memory_to_str__(memory),
+            "%t" : "、".join([str(_) for _ in target if _ != self.player_id]),
+            "%e" : self.example['hunter'],
+            "%rs" : self.__roles_setting_to_str__(),
+        }
+        final_prompt = self.prompt_template['hunter']
+        for key , item in replace_order.items() : final_prompt = final_prompt.replace(key , item)
 
         info = {
             "target" : 1,

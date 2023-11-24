@@ -64,12 +64,12 @@ class memory_stream_agent(agent):
             "hunter" : hunter,
             "village" : role,
         }
-        
+        roles_setting = {role_name : room_data['game_setting'][role_name] for role_name in role_to_class.keys()}
         self.long_memory : role = role_to_class[self.role](self.prompt_dir , self.logger, self.client , self.api_kwargs)
         if self.role != "werewolf":
-            self.long_memory.update_game_info(self.player_id , self.player_name , self.role)
+            self.long_memory.update_game_info(self.player_id , self.player_name , self.role , roles_setting)
         else:
-            self.long_memory.update_game_info(self.player_id , self.player_name , self.role , role_info['game_info']['teamate'])
+            self.long_memory.update_game_info(self.player_id , self.player_name , self.role , roles_setting , role_info['game_info']['teamate'])
 
         self.__check_game_state__(0)
 
@@ -124,11 +124,11 @@ class summary_memory_stream_agent(summary_agent):
             "hunter" : hunter,
             "village" : role,
         }
-        
+        roles_setting = {role_name : room_data['game_setting'][role_name] for role_name in role_to_class.keys()}
         self.long_memory : role = role_to_class[self.role](self.prompt_dir , self.logger, self.client , self.api_kwargs , summary = True)
         if self.role != "werewolf":
-            self.long_memory.update_game_info(self.player_id , self.player_name , self.role)
+            self.long_memory.update_game_info(self.player_id , self.player_name , self.role , roles_setting)
         else:
-            self.long_memory.update_game_info(self.player_id , self.player_name , self.role , role_info['game_info']['teamate'])
+            self.long_memory.update_game_info(self.player_id , self.player_name , self.role , roles_setting , role_info['game_info']['teamate'])
 
         self.__check_game_state__(0)
