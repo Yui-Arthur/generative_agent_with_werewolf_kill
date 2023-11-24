@@ -79,14 +79,14 @@ class long_memeory_stream():
         self.summary_guess_role_data : list = ["" for i in range(5)]
 
 
-    def update_game_info(self , player_id , player_name , role):
+    def update_game_info(self , player_id , player_name , role , roles_setting):
         """update the player name & init suspect_role_list"""
         self.player_num = len(player_name)
         self.player_id = int(player_id)
         self.player_name = player_name
         self.role = role
+        self.roles_setting = roles_setting
         
-        # self.logger.debug(f"{self.player_name}")
         self.__load_prompt_and_example__(self.prompt_dir)
         self.push('0' , len(self.memory_stream) , f"您為{self.player_id}號玩家({player_name[self.player_id]})" , default_importantance=10)
         self.push('0' , len(self.memory_stream) , f"您的身分為{self.role_to_chinese[role]}" , default_importantance=10)
@@ -279,9 +279,16 @@ class long_memeory_stream():
             if player == self.player_id : continue
 
             memory = self.__retrieval__(day , turn , f"{player}號玩家({self.player_name[player]})是什麼身分?")
-            summary = self.__summary_to_str__(1)
-            memory_str = self.__memory_to_str__(memory)
-            final_prompt = self.prompt_template['suspect_role_list'].replace("%m" , memory_str).replace("%e" , self.example['suspect_role_list']).replace("%t" ,  f"{player}號玩家({self.player_name[player]})").replace("%s" , summary)
+            replace_order = {
+                "%m" : self.__memory_to_str__(memory),
+                "%e" : self.example['suspect_role_list'],
+                "%t" :  f"{player}號玩家({self.player_name[player]})",
+                "%rs" : self.__roles_setting_to_str__(),
+                "%s" : self.__summary_to_str__(1)
+            }
+            final_prompt = self.prompt_template['suspect_role_list']
+            for key , item in replace_order.items() : final_prompt = final_prompt.replace(key , item)
+            
             info = {
                 "role" : "村民",
                 "reason" : "test"
@@ -296,11 +303,16 @@ class long_memeory_stream():
         """gen the vote player num & get the reason"""
         # memory = self.__retrieval__(day , turn , "幾號玩家是大家懷疑對象")
         # memory_str = self.__memory_to_str__(memory)
-        memory_str = self.__memory_to_str__(self.memory_stream[-10:])
-        sus_role_str , know_role_str = self.__role_list_to_str__()
-        target_to_str = "、".join([str(_) for _ in target if _ != self.player_id])
-        summary = self.__summary_to_str__()
-        final_prompt = self.prompt_template['vote'].replace("%m" , memory_str).replace("%e" , self.example['vote']).replace("%l" , sus_role_str).replace("%t" , target_to_str).replace("%s" , summary)
+        replace_order = {
+            "%m" : self.__memory_to_str__(self.memory_stream[-10:]),
+            "%e" : self.example['vote'],
+            "%t" : "、".join([str(_) for _ in target if _ != self.player_id]),
+            "%rs" : self.__roles_setting_to_str__(),
+            "%s" : self.__summary_to_str__()
+        }
+        final_prompt = self.prompt_template['vote']
+        for key , item in replace_order.items() : final_prompt = final_prompt.replace(key , item)
+        
         info = {
             "vote" : "4",
             "reason" : "test"
@@ -319,10 +331,16 @@ class long_memeory_stream():
         query = self.__reflection_question__(day , turn)['question']
         memory = self.__retrieval__(day , turn , query)
         # memory_str = self.__memory_to_str__(self.memory_stream[-5:])
-        memory_str = self.__memory_to_str__(memory)
-        sus_role_str , know_role_str = self.__role_list_to_str__()
-        summary = self.__summary_to_str__()
-        final_prompt = self.prompt_template['dialogue'].replace("%m" , memory_str).replace("%e" , self.example['dialogue']).replace("%l" , sus_role_str).replace("%s" , summary)
+        replace_order = {
+            "%m" : self.__memory_to_str__(memory),
+            "%l" : self.__role_list_to_str__()[0],
+            "%e" : self.example['dialogue'],
+            "%rs" : self.__roles_setting_to_str__(),
+            "%s" : self.__summary_to_str__()
+        }
+        final_prompt = self.prompt_template['dialogue']
+        for key , item in replace_order.items() : final_prompt = final_prompt.replace(key , item)
+        # final_prompt = self.prompt_template['dialogue'].replace("%m" , memory_str).replace("%e" , self.example['dialogue']).replace("%l" , sus_role_str).replace("%s" , summary)
         
         info = {
             "dialogue" : "test",
@@ -348,6 +366,10 @@ class long_memeory_stream():
 
         return sus_role_str , know_role_str
     
+    def __roles_setting_to_str__(self):
+        return ','.join([f"{values}個{self.role_to_chinese[key]}" for key , values in self.roles_setting.items()]) 
+        
+    
     def __summary_to_str__(self , summary_type=0 , pick_num = 1):
         # summary_type 0 => operation
         # summary_type 1 => guess roles
@@ -366,7 +388,12 @@ class long_memeory_stream():
 
     def __cal_importantance__(self , observation):
         """cal the importantance score"""
-        final_prompt = self.prompt_template['importantance'].replace("%m" , observation).replace("%e" , self.example['importantance'])
+        replace_order = {
+            "%m" : observation,
+            "%e" : self.example['importantance'],
+        }
+        final_prompt = self.prompt_template['importantance']
+        for key , item in replace_order.items() : final_prompt = final_prompt.replace(key , item)
 
         info = {
             "score" : "0",
@@ -394,9 +421,8 @@ class long_memeory_stream():
     
     def __cal_relevance__(self , query : str):
         """cal the relevance score"""
-        query_embedding = self.sentence_model.encode(query , convert_to_tensor=True)
+        query_embedding = self.sentence_model.encode([query] , convert_to_tensor=True)
         score = [0 for i in range(len(self.memory_stream))]
-
         text = [i['observation'] for i in self.memory_stream]
         embeddings = self.sentence_model.encode(text, convert_to_tensor=True)
 
@@ -406,12 +432,18 @@ class long_memeory_stream():
         score = np.array(score)
         return score
     
-    def __reflection_question__(self , day , turn , pick_num = 5):
+    def __reflection_question__(self , day , turn , pick_num = 8):
         """one of reflection process , get the question used for reflection."""
         self.logger.debug('reflection_question')
-        memory_str = self.__memory_to_str__(self.memory_stream[-pick_num:])
-        sus_role_str , know_role_str = self.__role_list_to_str__()
-        final_prompt = self.prompt_template['reflection_question'].replace('%m' , memory_str).replace("%e" , self.example['reflection_question']).replace("%l" , sus_role_str)
+
+        replace_order = {
+            "%m" : self.__memory_to_str__(self.memory_stream[-pick_num:]),
+            "%l" : self.__role_list_to_str__()[0],
+            "%e" : self.example['reflection_question'],
+            "%rs" : self.__roles_setting_to_str__(),
+        }
+        final_prompt = self.prompt_template['reflection_question']
+        for key , item in replace_order.items() : final_prompt = final_prompt.replace(key , item)
 
         info = {
             "question" : "test",
@@ -427,7 +459,17 @@ class long_memeory_stream():
         self.logger.debug('reflection_opinion')
         memory_str = self.__memory_to_str__(memory)
         sus_role_str , know_role_str = self.__role_list_to_str__()
-        final_prompt = self.prompt_template['reflection'].replace('%m' , memory_str).replace("%e" , self.example['reflection']).replace("%l" , sus_role_str)
+
+        replace_order = {
+            "%m" : self.__memory_to_str__(memory),
+            "%l" : self.__role_list_to_str__()[0],
+            "%e" : self.example['reflection'],
+            "%rs" : self.__roles_setting_to_str__(),
+        }
+        final_prompt = self.prompt_template['reflection']
+        for key , item in replace_order.items() : final_prompt = final_prompt.replace(key , item)
+
+        # final_prompt = self.prompt_template['reflection'].replace('%m' , memory_str).replace("%e" , self.example['reflection']).replace("%l" , sus_role_str)
         info = {
             "opinion" : "test",
             "reference" : "test",
@@ -436,7 +478,7 @@ class long_memeory_stream():
         # process reference to real memory idx
         try:
             reference_memory = info["reference"].strip('\n').split('、')
-            real_reference_idx = [memory[int(idx)]["turn"] for idx in reference_memory]
+            real_reference_idx = [memory[int(idx)-1]["turn"] for idx in reference_memory]
             info["reference"] = real_reference_idx
         except Exception as e:
             self.logger.warning(f"__reflection_opinion__ fail with reference , {e}")
@@ -509,7 +551,7 @@ class long_memeory_stream():
                         info[keyword] = _.strip('\n')
             else : 
                 fail_idx+=1
-                self.logger.debug(f"  {fail_idx} failed")
+                self.logger.warning(f"  {fail_idx} failed \n{result}")
         
 
         if fail_idx >= self.max_fail_cnt: 
