@@ -12,13 +12,10 @@ class summary_agent(agent):
                 server_url = "140.127.208.185" , agent_name = "Agent1" , room_name = "TESTROOM" , 
                 color = "f9a8d4" , prompt_dir = Path("prompt/memory_stream/")):
         
-        
         super().__init__(api_json = api_json, server_url = server_url , 
                         agent_name = agent_name , room_name = room_name , 
                         color = color) 
-        
-        self.summary_generator = summary(api_json = api_json)
-        self.summary_operation_queue = []
+        self.summary_generator = summary(logger = self.logger, api_json = api_json)
 
     def __get_summary(self, cur_stage):
 
@@ -34,8 +31,8 @@ class summary_agent(agent):
         elif cur_stage == "guess_role":
             stage = "guess_role"
         else:
-            return None
-
+            return [None]
+        
         self.similarly_sentences = self.summary_generator.find_similarly_summary(stage, game_info = self.game_info)
 
         return self.similarly_sentences
@@ -58,10 +55,10 @@ class summary_agent(agent):
                     self.current_info = data
                     self.__record_agent_game_info__(data)
 
+                    self.logger.debug(f"current stage = {data['stage']}")
                     copy_current_info = self.current_info.copy()
-                    self.summary_operation_queue = data["information"]
                     copy_current_info["guess_summary"] = self.__get_summary(cur_stage= "guess_role")
-                    copy_current_info["stage_summary"] = self.__get_summary(cur_stage= data['stage'].split('-')[-1])
+                    copy_current_info["stage_summary"] = self.__get_summary(cur_stage= data['stage'].split('-')[-1]) if len(data["information"]) != 0 else [None]
                     self.logger.debug(copy_current_info)
                     
                     self.__process_data__(copy_current_info) 

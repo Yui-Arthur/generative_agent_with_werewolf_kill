@@ -9,12 +9,17 @@ from sentence_transformers import SentenceTransformer, util
 import random
 
 class summary():
-    def __init__(self, prompt_dir="./doc", api_json = None):
+
+    embedding_model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
+
+    def __init__(self,logger = None, prompt_dir="./doc", api_json = None, prompt_output = False):
         self.max_fail_cnt = 3
         self.token_used = 0
+        self.logger = logger
         self.prompt_template : dict[str , str] = None
         self.example : dict[str , str] = None
         self.player_name = None
+        self.prompt_output = prompt_output
         self.all_game_info = {
             "self_role" : "",
             "all_role_info" : "",
@@ -30,6 +35,7 @@ class summary():
             "發言總結" : "dialogue_summary",
             "技能總結" : "operation_summary",
             "猜測角色總結" : "guess",
+            "目前總結" : "current"
         }
         self.operation_to_chinese = {
             "seer" : "預言家查驗，目標是",
@@ -62,7 +68,7 @@ class summary():
         self.summary_limit = 20
         self.similarly_sentence_num = 5
         self.get_score_fail_times = 3
-        self.embedding_model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
+        
 
         if not os.path.exists(os.path.join(prompt_dir, "summary")):
             os.mkdir(os.path.join(prompt_dir, "summary"))
@@ -122,7 +128,7 @@ class summary():
             frequency_penalty=0,
             presence_penalty=0,
             stop=None)
-        
+    
         self.token_used += response.usage.total_tokens
         return response.model_dump()['choices'][0]['message']['content']
     
@@ -274,7 +280,16 @@ class summary():
             self.player2identity[f"{user_name}({number})"] = number
             self.player2identity[user_name] = number
 
-    def __load_game_info(self, file_path = None, game_info = None):       
+    def __load_game_info(self, random_guess_role, file_path = None, game_info = None):       
+
+        self.all_game_info = {
+            "self_role" : "",
+            "all_role_info" : "",
+            "result" : "",
+        }
+        self.memory_stream = {} 
+        self.operation_info = {}
+        self.guess_role = {}
 
         if file_path != None:
             with open(self.prompt_dir / file_path, encoding="utf-8") as json_file: game_info = [json.loads(line) for line in json_file.readlines()]
@@ -296,8 +311,8 @@ class summary():
                 self.__process_announcement__(info)
 
                 if "guess_role" in game_info[idx+1].keys():
-                    self.__process_random_guess_role(info["stage"] , game_info[idx+1])
-                    # self.__process_guess_role(info["stage"] , game_info[idx+1])
+                    if random_guess_role:   self.__process_random_guess_role(info["stage"] , game_info[idx+1])
+                    else:   self.__process_guess_role(info["stage"] , game_info[idx+1])
 
             # operation
             elif "stage_name" in info.keys() and (not info['stage_name'].split('-')[-1] in no_save_op):
@@ -326,8 +341,8 @@ class summary():
 
 
     def get_summary(self, file_name = "11_06_18_31_mAgent112.jsonl"):
-        
-        self.__load_game_info(file_path = f"./game_info/{file_name}")
+            
+        self.__load_game_info(random_guess_role = True ,file_path = f"./game_info/{file_name}")
         print(f"loading file_path: ./game_info/{file_name}")
         for day in self.memory_stream: 
             
@@ -431,25 +446,23 @@ class summary():
     
     def __get_current_summary(self, game_info):
 
-        self.__load_game_info(game_info= game_info)
+        self.__load_game_info(random_guess_role = False, game_info= game_info)
+        final_prompt = ""
     
-        for i in range(1, len(self.memory_stream)+1):
-            day = str(i)
-            self.prompt_template['current_summary'] += f"[第{day}天遊戲資訊]\n"
-            self.prompt_template['current_summary'] += f"{self.memory_stream[day]}\n"
+        try:
+            day = str(len(self.memory_stream))
+            final_prompt = self.prompt_template['current_summary'].replace("%l" , self.example['current_summary']).replace("%z", day).replace("%m" , self.memory_stream[day]).replace("%o" , self.operation_info[day]).replace("%y" , self.guess_role[day])
+        except:
+            final_prompt = self.prompt_template['current_summary'].replace("%l" , self.example['current_summary']).replace("%z", "0").replace("%m" , "無").replace("%o" , "無").replace("%y" , "無")
 
-            self.prompt_template['current_summary'] += f"[第{day}天猜測其他玩家的身分]\n"
-            self.prompt_template['current_summary'] += f"{self.guess_role[day]}\n"
+        if self.prompt_output:
+            self.logger.debug(f"final_prompt: {final_prompt}")
             
-            if len(self.operation_info[day]) != 0:
-                self.prompt_template['current_summary'] +=f"[你所進行的操作]\n"
-                self.prompt_template['current_summary'] += f"{self.operation_info[day]}\n"
-
-        self.prompt_template['current_summary'] = self.prompt_template['current_summary'].replace("%l", self.example['current_summary'])
-        self.prompt_template['current_summary'] += f"* 回應\n"
-        self.prompt_template['current_summary'] += f"[目前總結]\n"
-
-        return self.__openai_send__(self.prompt_template['current_summary'])
+        info = {
+            "current" : "current_summary",
+        }        
+        info = self.__process_LLM_output__(final_prompt , ["current"] , info)        
+        return info['current']
     
     def transform_player2identity(self, summary):
     
@@ -466,7 +479,7 @@ class summary():
     def find_similarly_summary(self, stage, game_info):
         
         cur_summary = self.__get_current_summary(game_info= game_info)
-        
+        self.logger.debug(f"cur_summary: {cur_summary}")
         file_path = f"./summary/{self.my_player_role}/{stage}.json"
         if not os.path.exists(self.prompt_dir / file_path):
             return "無"
@@ -487,7 +500,7 @@ class summary():
         window = min(len(similarly_scores), self.similarly_sentence_num)        
         found_similarly_summary = [summary_set[idx]["summary"] for _, idx in similarly_scores[0: window]]
 
-
+        self.logger.debug(f"found_similarly_summary: {found_similarly_summary}")
 
         return found_similarly_summary
 

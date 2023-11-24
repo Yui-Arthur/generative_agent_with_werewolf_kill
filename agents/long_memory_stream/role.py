@@ -4,8 +4,8 @@ import json
 
 class role(long_memeory_stream):
 
-    def __init__(self , prompt_dir , logger , client , openai_kwargs):
-        super().__init__(prompt_dir, logger , client, openai_kwargs)
+    def __init__(self , prompt_dir , logger , client , openai_kwargs  , summary=False ,  log_prompt = False):
+        super().__init__(prompt_dir, logger , client, openai_kwargs  , summary , log_prompt)
         self.max_fail_cnt = 3
         
     def __processs_information__(self , data):
@@ -24,21 +24,10 @@ class role(long_memeory_stream):
         for key , prompt_li in example.items():
             self.example[key] = '\n'.join(prompt_li)
 
-    # def __player_list_to_str__(self, datas):
-    #     """
-    #     export the {save_list} and {posion_list} to string like
-    #     1號玩家(Yui1), 2號玩家(Yui2), 3號玩家(Yui3)
-    #     """
-    #     name_list = ""
-    #     for data in datas:
-    #         name_list += f"{data}號玩家({self.player_name[data]}), "
-    
-    #     return name_list
-
 class werewolf(role):
 
-    def __init__(self , prompt_dir , logger , client , openai_kwargs):
-        super().__init__(prompt_dir, logger , client, openai_kwargs)
+    def __init__(self , prompt_dir , logger , client , openai_kwargs , summary=False , log_prompt = False):
+        super().__init__(prompt_dir, logger , client, openai_kwargs  , summary , log_prompt)
         self.werewolf_chat = ""
         self.personal_chat = ""
         self.__register_keywords__({
@@ -69,7 +58,8 @@ class werewolf(role):
             sus_role_str , know_role_str = self.__role_list_to_str__()
             # if you are the first dialogue wolf
             werewolf_chat = self.werewolf_chat if self.werewolf_chat != "" else "無\n"
-            final_prompt = self.prompt_template['werewolf_dialogue'].replace("%e" , self.example['werewolf_dialogue']).replace("%wi" , werewolf_chat).replace("%l" , sus_role_str)
+            summary = self.__summary_to_str__()
+            final_prompt = self.prompt_template['werewolf_dialogue'].replace("%e" , self.example['werewolf_dialogue']).replace("%wi" , werewolf_chat).replace("%l" , sus_role_str).replace("%s" , summary)
             
             self.logger.debug(final_prompt)
             info = {
@@ -89,8 +79,8 @@ class werewolf(role):
             target = data['information'][0]['target']
             target_to_str = "、".join([str(_) for _ in target if _ != self.player_id])
             sus_role_str , know_role_str = self.__role_list_to_str__()
-            final_prompt = self.prompt_template['werewolf_kill'].replace("%e" , self.example['werewolf_kill']).replace("%wi" , self.werewolf_chat).replace("%l" , sus_role_str).replace("%si" , self.personal_chat).replace("%t" , target_to_str)
-            self.logger.debug(final_prompt)
+            summary = self.__summary_to_str__()
+            final_prompt = self.prompt_template['werewolf_kill'].replace("%e" , self.example['werewolf_kill']).replace("%wi" , self.werewolf_chat).replace("%l" , sus_role_str).replace("%si" , self.personal_chat).replace("%t" , target_to_str).replace("%s" , summary)
             info = {
                 "answer" : 4,
                 "reason" : "test",
@@ -126,8 +116,8 @@ class werewolf(role):
 
 
 class seer(role):
-    def __init__(self , prompt_dir , logger , client , openai_kwargs):
-        super().__init__(prompt_dir, logger , client, openai_kwargs)
+    def __init__(self , prompt_dir , logger , client , openai_kwargs  , summary=False , log_prompt = False):
+        super().__init__(prompt_dir, logger , client, openai_kwargs , summary , log_prompt)
         
         self.__register_keywords__({
             "今晚要驗誰" : "target"
@@ -144,7 +134,8 @@ class seer(role):
 
         target = data['information'][0]['target']
         target_to_str = "、".join([str(_) for _ in target if _ != self.player_id])
-        final_prompt = self.prompt_template['check_role'].replace("%e" , self.example['check_role']).replace("%l" , sus_role_str).replace("%m" , memory_str).replace("%t" , target_to_str)
+        summary = self.__summary_to_str__()
+        final_prompt = self.prompt_template['check_role'].replace("%e" , self.example['check_role']).replace("%l" , sus_role_str).replace("%m" , memory_str).replace("%t" , target_to_str).replace("%s" , summary)
 
         info = {
             "target" : 1,
@@ -177,8 +168,8 @@ class seer(role):
 
 class witch(role):
     
-    def __init__(self , prompt_dir , logger , client , openai_kwargs):
-        super().__init__(prompt_dir, logger , client, openai_kwargs)
+    def __init__(self , prompt_dir , logger , client , openai_kwargs , summary=False, log_prompt=False):
+        super().__init__(prompt_dir, logger , client, openai_kwargs , summary , log_prompt)
         
         self.__register_keywords__({
             "選擇一位玩家" : "target",
@@ -199,6 +190,7 @@ class witch(role):
         sus_role_str , know_role_str = self.__role_list_to_str__()
         memory = self.__retrieval__(self.day , len(self.memory_stream) , "該救或毒哪位玩家")
         memory_str = self.__memory_to_str__(memory)
+        summary = self.__summary_to_str__()
 
         save_posion = ""
         save_list = "無"
@@ -224,7 +216,7 @@ class witch(role):
             save_list = "、".join([str(_) for _ in target if _ != self.player_id])
             save_posion = "解藥已用完，"
 
-        final_prompt = self.prompt_template['save_poison'].replace("%e" , self.example['save_poison']).replace("%l" , sus_role_str).replace("%m", memory_str).replace("%vl", save_list).replace("%pl", posion_list).replace("%s" , save_posion)
+        final_prompt = self.prompt_template['save_poison'].replace("%e" , self.example['save_poison']).replace("%l" , sus_role_str).replace("%m", memory_str).replace("%vl", save_list).replace("%pl", posion_list).replace("%sl" , save_posion).replace("%s" , summary)
     
         info = {
             "save_or_poison" : "救人",
@@ -250,8 +242,8 @@ class witch(role):
 
 
 class hunter(role):
-    def __init__(self , prompt_dir , logger , client , openai_kwargs):
-        super().__init__(prompt_dir, logger , client, openai_kwargs)
+    def __init__(self , prompt_dir , logger , client , openai_kwargs , summary=False , log_prompt=False):
+        super().__init__(prompt_dir, logger , client, openai_kwargs , summary , log_prompt)
         
         self.__register_keywords__({
             "選擇要獵殺的對象" : "target"
