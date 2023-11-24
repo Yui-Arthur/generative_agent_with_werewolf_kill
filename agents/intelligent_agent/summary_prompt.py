@@ -600,7 +600,7 @@ class summary_prompts:
         return res
     
     def __get_guess_role__(self):
-        """must override this , format = dict[str , list[str]]"""
+
         return self.guess_role
 
 
