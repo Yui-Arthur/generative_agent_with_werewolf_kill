@@ -125,12 +125,18 @@ class memory_stream_agent_script(script_agent):
             "hunter" : hunter,
             "village" : role,
         }
-        
-        self.long_memory : role = role_to_class[self.role](self.prompt_dir , self.logger , self.client , self.api_kwargs)
+        roles_setting = {
+            "werewolf" : 2,
+            "seer" : 1,
+            "witch" : 1, 
+            "hunter" : 1,
+            "village" : 2,
+        }
+        self.long_memory : role = role_to_class[self.role](self.prompt_dir , self.logger , self.client , self.api_kwargs , log_prompt = True)
         if self.role != "werewolf":
-            self.long_memory.update_game_info(self.player_id , self.player_name , self.role)
+            self.long_memory.update_game_info(self.player_id , self.player_name , self.role , roles_setting)
         else:
-            self.long_memory.update_game_info(self.player_id , self.player_name , self.role , self.teamate)
+            self.long_memory.update_game_info(self.player_id , self.player_name , self.role , roles_setting , self.teamate)
 
     def __del__(self):
         super().__del__()
@@ -178,11 +184,18 @@ class summary_memory_stream_agent_script(summary_script_agent):
             "village" : role,
         }
         
-        self.long_memory : role = role_to_class[self.role](self.prompt_dir , self.logger , self.client , self.api_kwargs , summary=True)
+        roles_setting = {
+            "werewolf" : 2,
+            "seer" : 1,
+            "witch" : 1, 
+            "hunter" : 1,
+            "village" : 2,
+        }
+        self.long_memory : role = role_to_class[self.role](self.prompt_dir , self.logger , self.client , self.api_kwargs , log_prompt = True)
         if self.role != "werewolf":
-            self.long_memory.update_game_info(self.player_id , self.player_name , self.role)
+            self.long_memory.update_game_info(self.player_id , self.player_name , self.role , roles_setting)
         else:
-            self.long_memory.update_game_info(self.player_id , self.player_name , self.role , self.teamate)
+            self.long_memory.update_game_info(self.player_id , self.player_name , self.role , roles_setting , self.teamate)
 
     def __del__(self):
         super().__del__()
