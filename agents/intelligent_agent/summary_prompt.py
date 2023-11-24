@@ -196,7 +196,7 @@ class summary_prompts:
                 else:
                     text = f"{i['user'][0]}號玩家發言: {i['description']}"
 
-            elif i['operation'] == 'died':
+            elif i['operation'] == 'died' and i['user'][0] in self.alive:
                 self.alive.remove(i['user'][0])
                 text = f"{i['user'][0]}號玩家死了"
             
