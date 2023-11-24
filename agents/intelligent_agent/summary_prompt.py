@@ -475,8 +475,11 @@ class summary_prompts:
         use_summary = stage_summary
         if prompt_type == "guess_role":
             use_summary = guess_summary
-        for idx, summary in enumerate(use_summary):
-            self.prompt += f'{idx+1}. {summary}\n'
+        if use_summary[0] == None:
+            self.prompt += "無"
+        else:
+            for idx, summary in enumerate(use_summary):
+                self.prompt += f'{idx+1}. {summary}\n'
 
         guess_role_prompt = "\n你推測玩家的角色：\n"
         if prompt_type == "guess_role":
