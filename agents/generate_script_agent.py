@@ -5,9 +5,16 @@ import requests
 import threading
 from pathlib import Path   
 import json
+import datetime
 
 class generate_script_agent(agent):
     
+    output = None 
+    output_lock = threading.Lock()
+
+    def setoutput():
+        generate_script_agent.output = open('game.md', 'w' , encoding='utf-8')
+
     def __init__(self ,player_number, script_game_path = "doc/game_script/game1", api_json = "doc/secret/yui.key", 
                 server_url = "140.127.208.185" , agent_name = "7" , room_name = "TESTROOM" , 
                 color = "f9a8d4" , prompt_dir = Path("prompt/memory_stream/")):
@@ -17,7 +24,8 @@ class generate_script_agent(agent):
                         color = color) 
         
         self.master_token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX25hbWUiOiJ5dWkiLCJyb29tX25hbWUiOiJURVNUUk9PTSIsImxlYWRlciI6dHJ1ZSwiaWF0IjoxNjkwMzc5NTM0LCJleHAiOjE2OTkwMTk1MzR9.BEmD52DuK657YQezsqNgJAwbPfl54o8Pb--Dh7VQMMA"
-        
+        self.script_name =  Path(script_game_path).stem
+
         with open(f"{script_game_path}/{agent_name}.jsonl", encoding="utf-8") as json_file: self.script_info = [json.loads(line) for line in json_file.readlines()]
         self.current_script_idx = 0
         self.agent_name = agent_name
@@ -50,10 +58,19 @@ class generate_script_agent(agent):
         # print(data)
         # print(self.script_info[self.current_script_idx])
         # print("///////////////////")
+        
         try:
             
 
             for info in data["information"]:
+
+                with self.output_lock:
+                    if self.output != None and not self.output.closed:
+                        self.output.write((
+                            f"### {self.name}號玩家 {self.role}\n"
+                            f"#### 目標{self.script_info[self.current_script_idx]['target']}號玩家\n" 
+                            f"#### {self.script_info[self.current_script_idx]['chat']}\n"
+                            f"---\n"))
                 
                 if self.script_info[self.current_script_idx]["chat"] == "poison" and info["description"] == "女巫救人":
                     continue
@@ -72,8 +89,8 @@ class generate_script_agent(agent):
                     break
                 self.current_script_idx += 1
 
-        except:
-            self.logger.warning(f"player:{self.agent_name} script end.")
+        except Exception as e:
+            self.logger.warning(f"player:{self.agent_name} script end. {e}")
             
     def __start_server__(self):
         """for convenient test"""
@@ -113,6 +130,12 @@ class generate_script_agent(agent):
         self.__get_role__()
         self.__get_all_role__()
         self.__check_game_state__(0)
+
+    def __save__game__info__(self):
+        with open(f"doc/game_info/{self.script_name}_{self.name}.jsonl" , "w" , encoding='utf-8') as f:
+            for info in self.game_info:
+                json.dump(info , f , ensure_ascii=False)
+                f.write('\n')
 
 
 
