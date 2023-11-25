@@ -315,7 +315,7 @@ class long_memeory_stream():
         for key , item in replace_order.items() : final_prompt = final_prompt.replace(key , item)
         
         info = {
-            "vote" : "4",
+            "vote" : 4,
             "reason" : "test"
         }
         info = self.__process_LLM_output__(final_prompt , {"vote" : int , "reason" : str} , info , "vote")
@@ -397,7 +397,7 @@ class long_memeory_stream():
         for key , item in replace_order.items() : final_prompt = final_prompt.replace(key , item)
 
         info = {
-            "score" : "0",
+            "score" : 0,
             "reason" : "test"
         }
 
@@ -542,7 +542,7 @@ class long_memeory_stream():
                     info[keyword_name] += line + "\n"
 
             # check the keyword is in keyword_list and the type is satisfy require
-            if info.keys() == keyword_dict.keys() and all(_.strip('\n').isnumeric() for keyword , _ in info.items() if keyword_dict[keyword] == int):
+            if info.keys() == keyword_dict.keys() and all(_.strip('\n').strip('-').isnumeric() for keyword , _ in info.items() if keyword_dict[keyword] == int):
                 success_get_keyword = True
                 # change data type & remove the '\n'
                 for keyword , _ in info.items() : 
