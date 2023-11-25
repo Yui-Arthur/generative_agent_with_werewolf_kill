@@ -90,8 +90,8 @@ class summary_prompts:
     
         # initial prompts in the beginning
         self.init_prompt = f"""你現在是狼人殺遊戲中的一名玩家，遊戲中玩家會藉由說謊，以獲得勝利。因此，資訊為某玩家發言可能會是假的，而其他的資訊皆是真的。
-其遊戲設定為{self.room_setting["player_num"]}人局，角色包含{self.room_setting["werewolf"]}位狼人、{self.room_setting["village"]}位平民、{"3" if self.room_setting["hunter"] else "2"}位神職（預言家和女巫{"和獵人" if self.room_setting["hunter"] else ""}）
-你是{self.player_id}號玩家，你的角色是{self.en_dict[self.user_role]}，你的勝利條件為{"殺死所有神職或是所有平民或是狼的數量多於平民加神職的數量。" if self.user_role == "werewolf" else "殺死所有狼人。"}\n"""
+其遊戲設定為{self.room_setting["player_num"]}人局，從玩家0號到玩家{self.room_setting["player_num"] - 1}號，角色包含{self.room_setting["werewolf"]}位狼人、{self.room_setting["village"]}位平民、{"3" if self.room_setting["hunter"] else "2"}位神職（預言家和女巫{"和獵人" if self.room_setting["hunter"] else ""}）
+你是{self.player_id}號玩家，你的角色是{self.en_dict[self.user_role]}，你的勝利條件為{"找出所有的神職或所有的平民。" if self.user_role == "werewolf" else "找出所有狼人。"}\n"""
         
         for x in self.teammate:
             self.init_prompt += f"{x}號玩家是狼，是你的隊友。\n"
@@ -196,7 +196,7 @@ class summary_prompts:
                 else:
                     text = f"{i['user'][0]}號玩家發言: {i['description']}"
 
-            elif i['operation'] == 'died':
+            elif i['operation'] == 'died' and i['user'][0] in self.alive:
                 self.alive.remove(i['user'][0])
                 text = f"{i['user'][0]}號玩家死了"
             
@@ -338,21 +338,21 @@ class summary_prompts:
                         res = response.split("，", 1)
                         if "1" in res[0]:
                             res = response.split("，", 2)
-                            save_text = f"我在狼人階段發言\"我同意{res[1]}的發言\"。{res[2]}"
-                            send_text = f"我同意{res[1]}的發言"
+                            save_text = f"我在狼人階段發言\"我同意{res[1]}的發言\"。{res[2]}。"
+                            send_text = f"我同意{res[1]}的發言。"
                         elif "2" in res[0]:
                             res = response.split("，", 3)
-                            save_text = f"我在狼人階段發言\"我想刀{res[1]}，我覺得他是{res[2]}\"。{res[3]}"
-                            send_text = f"我想刀{res[1]}，我覺得他是{res[2]}"
+                            save_text = f"我在狼人階段發言\"我想刀{res[1]}，我覺得他是{res[2]}\"。{res[3]}。"
+                            send_text = f"我想刀{res[1]}，我覺得他是{res[2]}。"
                         elif "3" in res[0]:
-                            save_text = f"我在狼人發言階段不發言。{res[1]}"
-                            send_text = f"我不發言。{res[1]}"
+                            save_text = f"我在狼人發言階段不發言。{res[1]}。"
+                            send_text = f"我不發言。{res[1]}。"
 
                     elif prompt_type == 'dialogue':
                         try:
                             res_json = json.loads(response)
-                            save_text = f"{self.stage_detail[prompt_type]['save']}{res_json['最終的分析']['發言']}{res_json['最終的分析']['理由']}"
-                            send_text = f"{res_json['最終的分析']['發言']}{res_json['最終的分析']['理由']}"
+                            save_text = f"{self.stage_detail[prompt_type]['save']}{res_json['最終的思考']['發言']}{res_json['最終的思考']['理由']}。"
+                            send_text = f"{res_json['最終的思考']['發言']}{res_json['最終的思考']['理由']}。"
 
                         except Exception as e:
                             if self.player_id in self.alive:
@@ -416,7 +416,7 @@ class summary_prompts:
                 roles_prompt = f"{player_number}號玩家" + \
                     self.stage_detail['guess_role']['save'][0] + f"{confidence}%" + \
                     self.stage_detail['guess_role']['save'][1] + player["角色"] + \
-                    self.stage_detail['guess_role']['save'][2] + player["原因"]
+                    self.stage_detail['guess_role']['save'][2] + player["原因"] + "。"
                 self.guess_roles.append(roles_prompt)  
                 
                 # send to server (if it didn't print the percentage, how much we should get?)
@@ -517,47 +517,44 @@ class summary_prompts:
     "原因": ""
   }}
 }}""",
-            "werewolf_dialogue":f'''根據以上綜合資訊，你有三個選項，請選擇其中一個選項當作發言？
+            "werewolf_dialogue":f'''請你根據以上我提供的所有文本資訊，你有三個選項，請選擇其中一個選項當作發言？
 1. 我同意隊友的發言。請在{self.player_array_to_string(self.teammate)}號玩家中，選擇一位隊友(若選擇此選項，請直接回答"選項1，[玩家]號玩家，[原因]"，不需要其他廢話，回答完直接結束回答)
 2. 想殺某位玩家，並猜測玩家的角色。從{self.player_array_to_string(self.alive)}中，只能選擇一位想殺的玩家，且從預言家和女巫{"和獵人" if self.room_setting["hunter"] else ""}中選一位你認為是此玩家的角色(若選擇此選項，請直接回答"選項2，[玩家]號玩家，[角色]，[原因]"，不需要其他廢話，回答完直接結束回答)
 3. 無發言(若選擇此選項，請直接回答"選項3，[原因]"，不需要其他廢話，回答完直接結束回答)
                 ''',
-            "werewolf":f'根據以上綜合資訊，請從{choices}號玩家中，選擇一位要殺的玩家並簡述原因？(直接回答"[玩家]號玩家，[原因]"，不需要其他廢話，回答完直接結束回答)',
-            "seer":f'根據以上綜合資訊，請問你要從{choices}號玩家中，查驗哪一位玩家並簡述原因？(直接回答"[玩家]號玩家，[原因]"，不需要其他廢話，回答完直接結束回答)',
-            "witch_save":f'根據以上綜合資訊，{choices}號玩家死了，請問你要使用解藥並簡述原因？(直接回答"[救或不救]，[原因]"，不需要其他廢話，回答完直接結束回答)',
-            "witch_poison":f'根據以上綜合資訊，請你從{choices}號玩家中使用毒藥，或選擇-1表示不使用毒藥，並簡述原因？(直接回答"[玩家]號玩家，[原因]"，不需要其他廢話，回答完直接結束回答)',
-            "dialogue-test":f'根據以上綜合資訊，簡述你的推測（20字以下）?',
+            "werewolf":f'請你根據以上我提供的所有文本資訊，請從{choices}號玩家中，選擇一位要殺的玩家並簡述原因？(直接回答"[玩家]號玩家，[原因]"，不需要其他廢話，回答完直接結束回答)',
+            "seer":f'請你根據以上我提供的所有文本資訊，請問你要從{choices}號玩家中，查驗哪一位玩家並簡述原因？(直接回答"[玩家]號玩家，[原因]"，不需要其他廢話，回答完直接結束回答)',
+            "witch_save":f'請你根據以上我提供的所有文本資訊，{choices}號玩家死了，請問你要使用解藥並簡述原因？(直接回答"[救或不救]，[原因]"，不需要其他廢話，回答完直接結束回答)',
+            "witch_poison":f'請你根據以上我提供的所有文本資訊，請你從{choices}號玩家中選擇一位玩家號碼使用毒藥，或選擇-1表示不使用毒藥，並簡述原因？(直接回答"[玩家]號玩家，[原因]"，不需要其他廢話，回答完直接結束回答)',
+            "dialogue-test":f'請你根據以上我提供的所有文本資訊，簡述你的推測（20字以下）?',
             "check":f'根據以上綜合資訊，簡述你的推測（20字以下）?',
-            "dialogue":'''使用JSON的形式來回答，如下所述:
-在這個回答格式中，我希望你能分析多次，以獲得更完整的想法，你要確保你每句話都能以[你目前知道的資訊]佐證，不能無中生有。並在[最終的分析]的發言，能夠清楚的表明你的立場，一定要確保發言的正確性，說話的邏輯一定不能有錯誤。
-回答格式:
+            "dialogue":'''請你根據以上我提供的所有文本資訊，整理與思考該如何發言可以使你的陣營獲勝，並將結果以下列的json格式回答。(你不需要其他廢話，回答完直接結束回答)。
 {   
-    "分析1": {
+    "思考1": {
         "想法": "你有甚麼想法?你需要以[你目前知道的資訊]佐證，不能無中生有",
         "理由": "想出這個想法的理由是甚麼?你需要以[你目前知道的資訊]佐證，不能無中生有",
         "策略": "有了這個想法，你會怎麼做?",
         "批評": "對於想法與策略有甚麼可以批評與改進的地方或是有甚麼資訊是你理解錯誤的，請詳細說明",
     },
-    "分析2": {
+    "思考2": {
         "反思": "對於前一個想法的批評內容，你能做甚麼改進?你需要以[你目前知道的資訊]佐證，並思考活著玩家可疑的地方，不能無中生有。",
         "想法": "根據反思，你有甚麼更進一步的想法?你需要以[你目前知道的資訊]佐證，不能無中生有",
         "理由": "想出這個想法的理由是甚麼?你需要以[你目前知道的資訊]佐證，不能無中生有",
         "策略": "有了這個想法，你會怎麼做?",
         "批評": "對於想法與策略有甚麼可以批評與改進的地方或是有甚麼資訊是你理解錯誤的，請詳細說明",
     },
-    ...(你能夠思考N次，以獲得更完整的發言)
-    "最終的分析":{
+    ...(思考N次，以獲得更完整的發言)
+    "最終的思考":{
         "反思": "對於前一個想法的批評內容，你能做甚麼改進?你需要以[你目前知道的資訊]佐證，並思考活著玩家可疑的地方，不能無中生有。",
         "想法": "根據反思，你有甚麼更進一步的想法?你需要以[你目前知道的資訊]佐證，不能無中生有",
         "理由": "想出這個想法的理由是甚麼?你需要以[你目前知道的資訊]佐證，不能無中生有",
         "策略": "有了這個想法，你會怎麼做?",
         "發言": "(請直接呈現你說的話即可，不添加其他附加訊息)"
     }
-}
-請保證你的回答可以(直接被 Python 的 json.loads 解析)，且你只提供 JSON 格式的回答，不添加其他附加信息。''',
-            "vote1":f'根據以上綜合資訊，請你從{choices}號玩家中選一位投票，或選擇-1表示棄票，並簡述原因？(直接回答"[玩家]號玩家，[原因]"，不需要其他廢話，回答完直接結束回答)',
-            "vote2":f'根據以上綜合資訊，請你從{choices}號玩家中選一位投票，或選擇-1表示棄票，並簡述原因？(直接回答"[玩家]號玩家，[原因]"，不需要其他廢話，回答完直接結束回答)',
-            "hunter":f'根據以上綜合資訊，請你從{choices}號玩家中選一位殺掉，或選擇-1表示棄票，並簡述原因？(直接回答"[玩家]號玩家，[原因]"，不需要其他廢話，回答完直接結束回答)',
+}''',
+            "vote1":f'請你根據以上我提供的所有文本資訊，請你從{choices}號玩家中選一位投票，或選擇-1表示棄票，並簡述原因？(直接回答"[玩家]號玩家，[原因]"，不需要其他廢話，回答完直接結束回答)',
+            "vote2":f'請你根據以上我提供的所有文本資訊，請你從{choices}號玩家中選一位投票，或選擇-1表示棄票，並簡述原因？(直接回答"[玩家]號玩家，[原因]"，不需要其他廢話，回答完直接結束回答)',
+            "hunter":f'請你根據以上我提供的所有文本資訊，請你從{choices}號玩家中選一位殺掉，或選擇-1表示棄票，並簡述原因？(直接回答"[玩家]號玩家，[原因]"，不需要其他廢話，回答完直接結束回答)',
         }
     
         self.prompt += '\nQ:'
@@ -600,7 +597,7 @@ class summary_prompts:
         return res
     
     def __get_guess_role__(self):
-        """must override this , format = dict[str , list[str]]"""
+
         return self.guess_role
 
 
