@@ -85,7 +85,7 @@ class werewolf(role):
                 "%wi" : self.werewolf_chat if self.werewolf_chat != "" else "無\n",
                 "%l" : self.__role_list_to_str__()[0],
                 "%si" : self.personal_chat,
-                "%t" : "、".join([str(_) for _ in target if _ != self.player_id]),
+                "%t" : "、".join([str(_) for _ in target]),
                 "%e" : self.example['werewolf_kill'],
                 "%s" : self.__summary_to_str__()
             }
@@ -214,7 +214,7 @@ class witch(role):
         # both save & posion not used 
         if len(data['information'])==2:
             target = data['information'][0]['target']
-            save_list = "、".join([str(_) for _ in target if _ != self.player_id])
+            save_list = "、".join([str(_) for _ in target])
 
             target = data['information'][1]['target']
             posion_list = "、".join([str(_) for _ in target if _ != self.player_id])
@@ -228,7 +228,7 @@ class witch(role):
         # remain save
         else:
             target = data['information'][0]['target']
-            save_list = "、".join([str(_) for _ in target if _ != self.player_id])
+            save_list = "、".join([str(_) for _ in target])
             save_posion = "解藥已用完，"
         
         replace_order = {
@@ -285,11 +285,7 @@ class hunter(role):
         
         self.logger.debug("hunter process")
         memory = self.__retrieval__(self.day , len(self.memory_stream) , "目前哪位玩家最可疑")
-        target = data['information'][0]['target']
-
-        memory_str = self.__memory_to_str__(memory)
-        sus_role_str , know_role_str = self.__role_list_to_str__()
-        target_str = "、".join([str(_) for _ in target if _ != self.player_id])
+        target = data['information'][1]['target']
 
         replace_order = {
             "%l" : self.__role_list_to_str__()[0],

@@ -191,7 +191,7 @@ class summary_memory_stream_agent_script(summary_script_agent):
             "hunter" : 1,
             "village" : 2,
         }
-        self.long_memory : role = role_to_class[self.role](self.prompt_dir , self.logger , self.client , self.api_kwargs , log_prompt = True)
+        self.long_memory : role = role_to_class[self.role](self.prompt_dir , self.logger , self.client , self.api_kwargs , summary = True , log_prompt = True)
         if self.role != "werewolf":
             self.long_memory.update_game_info(self.player_id , self.player_name , self.role , roles_setting)
         else:
