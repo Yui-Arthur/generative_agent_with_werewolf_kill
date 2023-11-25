@@ -21,6 +21,7 @@ class summary():
         self.player_name = None
         self.prompt_output = prompt_output
         self.all_game_info = {
+            "self_number" : "",
             "self_role" : "",
             "all_role_info" : "",
             "result" : "",
@@ -65,7 +66,7 @@ class summary():
         except:
             raise Exception("API Init failed")
         
-        self.summary_limit = 20
+        self.summary_limit = 50
         self.similarly_sentence_num = 5
         self.get_score_fail_times = 3
         
@@ -178,7 +179,7 @@ class summary():
         
         role_info = ""
         for idx, key in enumerate(data):
-            role_info += f"{idx}. {data[key]['user_name']}({idx})是{self.role_to_chinese[data[key]['user_role']]}\n"
+            role_info += f"{idx}. {idx}號玩家({data[key]['user_name']})是{self.role_to_chinese[data[key]['user_role']]}\n"
         
         return role_info
     
@@ -235,9 +236,11 @@ class summary():
             if len(anno['user']) > 0:
                 player = str(anno['user'][0])
             if anno["operation"] == "chat":
-                ob = f"{self.player_name[player]['user_name']}({player})說「{anno['description']}」\n"    
+                if data['stage'].split('-')[-1] == "werewolf_dialogue":
+                    ob = "目前是狼人發言，只有狼人可以看到。"
+                ob += f"{player}號玩家({self.player_name[player]['user_name']})說「{anno['description']}」\n"    
             elif anno["operation"] == "died":
-                ob = f"{self.player_name[player]['user_name']}({player})死了\n"    
+                ob = f"{player}號玩家({self.player_name[player]['user_name']})死了\n"    
             
             self.__memory_stream_push(data["stage"], ob)
 
@@ -248,11 +251,11 @@ class summary():
             day = str(int(stage.split('-')[0]))
 
             if day not in self.memory_stream.keys():
-                self.memory_stream[day] = ""
+                self.memory_stream[day] = f"你本場的身分為{self.all_game_info['self_role']}\n你是{self.all_game_info['self_number']}號玩家\n"
             if day not in self.operation_info.keys():
-                self.operation_info[day] = ""
+                self.operation_info[day] = f"你本場的身分為{self.all_game_info['self_role']}\n你是{self.all_game_info['self_number']}號玩家\n"
             if day not in self.guess_role.keys():
-                self.guess_role[day] = ""
+                self.guess_role[day] = f"你本場的身分為{self.all_game_info['self_role']}\n你是{self.all_game_info['self_number']}號玩家\n"
 
     def __push_vote_info__(self , vote_info : dict , stage):
         """add vote info to memory stream"""
@@ -261,9 +264,9 @@ class summary():
         ob = ""
         for player , voted in vote_info.items():
             if voted != -1:
-                ob += f"{prefix} {self.player_name[player]['user_name']}({player})投給{self.player_name[str(voted)]['user_name']}({voted})\n"
+                ob += f"{prefix} {player}號玩家({self.player_name[player]['user_name']})投給{voted}號玩家({self.player_name[str(voted)]['user_name']})\n"
             else:
-                ob += f"{prefix} {self.player_name[player]['user_name']}({player})棄票\n"
+                ob += f"{prefix} {player}號玩家({self.player_name[player]['user_name']})棄票\n"
 
         self.__memory_stream_push(stage, ob)
 
@@ -283,6 +286,7 @@ class summary():
     def __load_game_info(self, random_guess_role, file_path = None, game_info = None):       
 
         self.all_game_info = {
+            "self_number" : "",
             "self_role" : "",
             "all_role_info" : "",
             "result" : "",
@@ -297,6 +301,7 @@ class summary():
             self.my_player_role = val
         
         self.player_name = game_info[1]
+        self.all_game_info["self_number"] = list(game_info[0].keys())[0]
         self.all_game_info["self_role"] = self.role_to_chinese[list(game_info[0].values())[0]]
         self.all_game_info["all_role_info"] = self.__process_user_role(game_info[1])
         
@@ -307,7 +312,7 @@ class summary():
 
             # stage info
             if "stage" in info.keys():
-                self. __info_init(info["stage"])
+                self.__info_init(info["stage"])
                 self.__process_announcement__(info)
 
                 if "guess_role" in game_info[idx+1].keys():
@@ -346,9 +351,9 @@ class summary():
         print(f"loading file_path: ./game_info/{file_name}")
         for day in self.memory_stream: 
             
-            vote_summary = self.__get_day_summary__(day, self.memory_stream[day], self.operation_info[day], self.all_game_info["result"], "vote_summary")
-            dialogue_summary = self.__get_day_summary__(day, self.memory_stream[day], self.operation_info[day], self.all_game_info["result"], "dialogue_summary")
-            operation_summary = self.__get_day_summary__(day, self.memory_stream[day], self.operation_info[day], self.all_game_info["result"], "operation_summary")
+            vote_summary = self.__get_vote_summary__(day, self.memory_stream[day], self.all_game_info["result"])
+            dialogue_summary = self.__get_dialogue_summary__(day, self.memory_stream[day], self.all_game_info["result"])
+            operation_summary = self.__get_operation_summary__(day, self.memory_stream[day], self.operation_info[day], self.all_game_info["result"])
             guess_role_summary = self.__get_guess_role_summary(day, self.memory_stream[day], self.guess_role[day])
             
             """summary + score"""            
@@ -358,18 +363,59 @@ class summary():
             self.set_score(self.my_player_role, "guess_role", guess_role_summary)
         print("Finish")
 
-    def __get_day_summary__(self, day, day_memory, day_operation, result, stage):
+    def __get_operation_summary__(self, day, day_memory, day_operation, result):
         """day summary to openai"""
 
         day = f"第{day}天"    
         self.max_fail_cnt = 3
     
-        final_prompt = self.prompt_template['day_summary'].replace("%l" , self.example[stage]).replace("%z", day).replace("%m" , day_memory).replace("%o" , day_operation).replace("%y" , self.all_game_info["all_role_info"]).replace("%p" , result)
-        sample_info = {stage : stage}        
-        info = self.__process_LLM_output__(final_prompt , [stage] , sample_info)
+        final_prompt = self.prompt_template['operation_summary'].replace("%l" , self.example['operation_summary']).replace("%z", day).replace("%m" , day_memory).replace("%o" , day_operation).replace("%y" , self.all_game_info["all_role_info"]).replace("%p" , result)
+        sample_info = {'operation_summary' : "operation_summary_result"}        
+        info = self.__process_LLM_output__(final_prompt , ['operation_summary'] , sample_info)
         if info == None:
             return None
-        return info[stage]
+        
+        if self.prompt_output:
+            print(f"day_summary_prompt: {final_prompt}")
+            print(f"operation_summary_result: {info['operation_summary']}")
+
+        return info['operation_summary']
+    
+    def __get_dialogue_summary__(self, day, day_memory, result):
+        """dialogue summary to openai"""
+
+        day = f"第{day}天"    
+        self.max_fail_cnt = 3
+    
+        final_prompt = self.prompt_template['dialogue_summary'].replace("%l" , self.example["dialogue_summary"]).replace("%z", day).replace("%m" , day_memory).replace("%y" , self.all_game_info["all_role_info"]).replace("%p" , result)
+        sample_info = {"dialogue_summary" : "dialogue_summary_result"}        
+        info = self.__process_LLM_output__(final_prompt , ["dialogue_summary"] , sample_info)
+        if info == None:
+            return None
+        
+        if self.prompt_output:
+            print(f"dialogue_summary_prompt: {final_prompt}")
+            print(f"dialogue_summary_result: {info['dialogue_summary']}")
+
+        return info["dialogue_summary"]
+    
+    def __get_vote_summary__(self, day, day_memory, result):
+        """dialogue summary to openai"""
+
+        day = f"第{day}天"    
+        self.max_fail_cnt = 3
+
+        final_prompt = self.prompt_template['vote_summary'].replace("%l" , self.example["vote_summary"]).replace("%z", day).replace("%m" , day_memory).replace("%y" , self.all_game_info["all_role_info"]).replace("%p" , result)
+        sample_info = {"vote_summary" : "vote_summary_result"}        
+        info = self.__process_LLM_output__(final_prompt , ["vote_summary"] , sample_info)
+        if info == None:
+            return None
+        
+        if self.prompt_output:
+            print(f"vote_summary_prompt: {final_prompt}")
+            print(f"vote_summary_result: {info['vote_summary']}")
+
+        return info["vote_summary"]
     
     def __get_guess_role_summary(self, day, day_memory, guess_role):
         """guess_role summary to openai"""
@@ -508,7 +554,16 @@ class summary():
     
 if __name__ == '__main__':
 
-    file_name = "./game2/11_19_23_13_agent4.jsonl"
-    s = summary(api_json="./doc/secret/openai.key", prompt_dir="./doc")
-    # s.get_summary(file_name= file_name)
-    s.find_similarly_summary(stage= "guess_role", game_info= "11_19_23_13_agent3.jsonl")
+
+    # game_name = "game1/11_19_23_17_"
+    # game_name = "game2/11_19_23_13_"
+    game_name = "game4/11_24_23_30_"
+    # game_name = "game5/"
+    # game_name = "game6/"
+    s = summary(api_json="./doc/secret/openai.key", prompt_dir="./doc", prompt_output = True)
+    for i in range(0, 7):
+        s.get_summary(file_name= f"./{game_name}agent{i}.jsonl")
+        # memory_stream_agent_script(api_json = "./doc/secret/openai.key", game_info_path = f"./doc/game_info/{game_name}/{game_time}_agent{i}.jsonl", agent_name = f"{role[i]}_{version}" , game_room = game_name)
+    
+    # s.find_similarly_summary(stage= "guess_role", game_info= "11_19_23_13_agent3.jsonl")
+    

@@ -100,7 +100,7 @@ def print_agent_dict(agent_dict : dict[str , agent]):
 def serve(opt):
 
     agent_dict = {}
-    server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
+    server = grpc.server(futures.ThreadPoolExecutor(max_workers=20))
     agent_pb2_grpc.add_agentServicer_to_server((agent_service(opt["api_server"] , agent_dict)), server)
     print(f'server start with api server : {opt["api_server"]}')
     
