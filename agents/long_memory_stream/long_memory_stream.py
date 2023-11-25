@@ -305,6 +305,7 @@ class long_memeory_stream():
         # memory_str = self.__memory_to_str__(memory)
         replace_order = {
             "%m" : self.__memory_to_str__(self.memory_stream[-10:]),
+            "%l" : self.__role_list_to_str__()[0],
             "%e" : self.example['vote'],
             "%t" : "、".join([str(_) for _ in target if _ != self.player_id]),
             "%rs" : self.__roles_setting_to_str__(),
