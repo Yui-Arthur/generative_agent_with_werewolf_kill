@@ -31,9 +31,10 @@ class werewolf(role):
         self.werewolf_chat = ""
         self.personal_chat = ""
         self.__register_keywords__({
-            "回答" : "answer"
+            "回答" : "answer",
+            "目標" : "target"
         })
-        # self.max_fail_cnt = 0
+        self.dialogue_suggestion = "並請藏好狼人身分，不要在發言中洩漏自己是狼人"
 
     def update_game_info(self , player_id , player_name , role , roles_setting ,teamate):
         super().update_game_info(player_id , player_name , role , roles_setting)
@@ -93,13 +94,13 @@ class werewolf(role):
             for key , item in replace_order.items() : final_prompt = final_prompt.replace(key , item)
 
             info = {
-                "answer" : 4,
+                "target" : 4,
                 "reason" : "test",
             }
-            info = self.__process_LLM_output__(final_prompt , {'answer':int , 'reason' : str} , info , "werewolf kill")
+            info = self.__process_LLM_output__(final_prompt , {'target':int , 'reason' : str} , info , "werewolf kill")
             ret = self.ret_format.copy()
             ret['operation'] = "vote"
-            ret['target'] = info["answer"]
+            ret['target'] = info["target"]
             ret['chat'] = ""
             operation.append(ret)
 
@@ -148,6 +149,7 @@ class seer(role):
             "%l" : self.__role_list_to_str__()[0],
             "%m" : self.__memory_to_str__(memory),
             "%t" : "、".join([str(_) for _ in target if _ != self.player_id]),
+            "%ar" : f"{self.player_id}號玩家({self.player_name[self.player_id]})，身分為{self.role_to_chinese[self.role]}",
             "%e" : self.example['check_role'],
             "%s" : self.__summary_to_str__(),
             "%rs" : self.__roles_setting_to_str__(),
@@ -190,8 +192,8 @@ class witch(role):
         super().__init__(prompt_dir, logger , client, openai_kwargs , summary , log_prompt)
         
         self.__register_keywords__({
-            "選擇一位玩家" : "target",
-            "今晚要救人還是毒人" : "save_or_poison",
+            "目標" : "target",
+            "藥水" : "potion",
         })
 
         # self.max_fail_cnt = 0
@@ -219,17 +221,17 @@ class witch(role):
             target = data['information'][1]['target']
             posion_list = "、".join([str(_) for _ in target if _ != self.player_id])
 
-            save_posion = ""
+            save_posion = "解藥、毒藥"
         # remain posion
         elif data['information'][0]['description'] == '女巫毒人':
             target = data['information'][0]['target']
             posion_list = "、".join([str(_) for _ in target if _ != self.player_id])
-            save_posion = "解藥已用完，"
+            save_posion += "解藥"
         # remain save
         else:
             target = data['information'][0]['target']
             save_list = "、".join([str(_) for _ in target])
-            save_posion = "解藥已用完，"
+            save_posion = "毒藥"
         
         replace_order = {
             "%l" : self.__role_list_to_str__()[0],
@@ -241,29 +243,34 @@ class witch(role):
             "%e" : self.example['save_poison'],
             "%s" : self.__summary_to_str__(),
             "%rs" : self.__roles_setting_to_str__(),
+            "%ar" : f"{self.player_id}號玩家({self.player_name[self.player_id]})，身分為{self.role_to_chinese[self.role]}",
         }
         final_prompt = self.prompt_template['save_poison']
         for key , item in replace_order.items() : final_prompt = final_prompt.replace(key , item)
 
         info = {
-            "save_or_poison" : "救人",
-            "target": 1,
+            "potion" : "不使用",
+            "target": -1,
             "reason": "test"
         }
-        info = self.__process_LLM_output__(final_prompt , {'save_or_poison' : str, 'target' : int, 'reason' : str} , info , 3)
+        info = self.__process_LLM_output__(final_prompt , {'potion' : str, 'target' : int, 'reason' : str} , info , 3)
 
         ret = self.ret_format.copy()
         ret['operation'] = "vote_or_not"
         ret['target'] = info['target']
 
-        if info['save_or_poison'].strip("\n") == "救人":
+        if info['potion'].strip("\n") == "解藥":
             self.push(self.day , len(self.memory_stream) , f"您({self.player_name[self.player_id]})用解藥救了{ret['target']}號玩家({self.player_name[ret['target']]})" , default_importantance=10)
             ret['chat'] = 'save'
             operation.append(ret)
-        elif info['save_or_poison'].strip("\n") == "毒人":
+        elif info['potion'].strip("\n") == "毒藥":
             self.push(self.day , len(self.memory_stream) , f"您({self.player_name[self.player_id]})用毒藥毒了{ret['target']}號玩家({self.player_name[ret['target']]})", default_importantance=10)
             ret['chat'] = 'poison'
             operation.append(ret)
+        else:
+            ret['chat'] = 'save'
+            ret['target'] = -1
+            operation.append(ret) 
 
         return operation
 
@@ -273,7 +280,7 @@ class hunter(role):
         super().__init__(prompt_dir, logger , client, openai_kwargs , summary , log_prompt)
         
         self.__register_keywords__({
-            "選擇要獵殺的對象" : "target"
+            "目標" : "target"
         })
         # self.max_fail_cnt = 0
     
