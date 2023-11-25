@@ -351,8 +351,8 @@ class summary_prompts:
                     elif prompt_type == 'dialogue':
                         try:
                             res_json = json.loads(response)
-                            save_text = f"{self.stage_detail[prompt_type]['save']}{res_json['最終的分析']['發言']}{res_json['最終的分析']['理由']}。"
-                            send_text = f"{res_json['最終的分析']['發言']}{res_json['最終的分析']['理由']}。"
+                            save_text = f"{self.stage_detail[prompt_type]['save']}{res_json['最終的思考']['發言']}{res_json['最終的思考']['理由']}。"
+                            send_text = f"{res_json['最終的思考']['發言']}{res_json['最終的思考']['理由']}。"
 
                         except Exception as e:
                             if self.player_id in self.alive:
