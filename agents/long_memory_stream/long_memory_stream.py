@@ -34,7 +34,7 @@ class long_memeory_stream():
             "見解" : "opinion",
             "參考見解" : "reference",
             # suspect role list
-            "該玩家身分" : "role",
+            "猜測身分" : "role",
             # vote
             "投票" : "vote",
             # dialogue
@@ -77,6 +77,7 @@ class long_memeory_stream():
         # sumary data , if summary flag = false , set all to empty string
         self.summary_operation_data : list = ["" for i in range(5)]
         self.summary_guess_role_data : list = ["" for i in range(5)]
+        self.dialogue_suggestion = "也請不要完全相信其他玩家的發言，小心掉入狼人陷阱"
 
 
     def update_game_info(self , player_id , player_name , role , roles_setting):
@@ -88,9 +89,9 @@ class long_memeory_stream():
         self.roles_setting = roles_setting
         
         self.__load_prompt_and_example__(self.prompt_dir)
-        self.push('0' , len(self.memory_stream) , f"您為{self.player_id}號玩家({player_name[self.player_id]})" , default_importantance=10)
+        # self.push('0' , len(self.memory_stream) , f"您為{self.player_id}號玩家({player_name[self.player_id]})" , default_importantance=10)
         self.push('0' , len(self.memory_stream) , f"您的身分為{self.role_to_chinese[role]}" , default_importantance=10)
-        self.push('0' , len(self.memory_stream) , f"{self.player_id}號玩家({player_name[self.player_id]})是{self.role_to_chinese[role]}" , default_importantance=10)
+        # self.push('0' , len(self.memory_stream) , f"{self.player_id}號玩家({player_name[self.player_id]})是{self.role_to_chinese[role]}" , default_importantance=10)
 
         self.suspect_role_list = {i:"未知" for i in range(self.player_num) if i != self.player_id}
         self.logger.debug(self.suspect_role_list)
@@ -284,6 +285,7 @@ class long_memeory_stream():
                 "%e" : self.example['suspect_role_list'],
                 "%t" :  f"{player}號玩家({self.player_name[player]})",
                 "%rs" : self.__roles_setting_to_str__(),
+                "%ar" : f"{self.player_id}號玩家({self.player_name[self.player_id]})，身分為{self.role_to_chinese[self.role]}",
                 "%s" : self.__summary_to_str__(1)
             }
             final_prompt = self.prompt_template['suspect_role_list']
@@ -308,6 +310,7 @@ class long_memeory_stream():
             "%l" : self.__role_list_to_str__()[0],
             "%e" : self.example['vote'],
             "%t" : "、".join([str(_) for _ in target if _ != self.player_id]),
+            "%ar" : f"{self.player_id}號玩家({self.player_name[self.player_id]})，身分為{self.role_to_chinese[self.role]}",
             "%rs" : self.__roles_setting_to_str__(),
             "%s" : self.__summary_to_str__()
         }
@@ -315,7 +318,7 @@ class long_memeory_stream():
         for key , item in replace_order.items() : final_prompt = final_prompt.replace(key , item)
         
         info = {
-            "vote" : "4",
+            "vote" : 4,
             "reason" : "test"
         }
         info = self.__process_LLM_output__(final_prompt , {"vote" : int , "reason" : str} , info , "vote")
@@ -337,6 +340,8 @@ class long_memeory_stream():
             "%l" : self.__role_list_to_str__()[0],
             "%e" : self.example['dialogue'],
             "%rs" : self.__roles_setting_to_str__(),
+            "%su" : self.dialogue_suggestion,
+            "%ar" : f"{self.player_id}號玩家({self.player_name[self.player_id]})，身分為{self.role_to_chinese[self.role]}",
             "%s" : self.__summary_to_str__()
         }
         final_prompt = self.prompt_template['dialogue']
@@ -397,7 +402,7 @@ class long_memeory_stream():
         for key , item in replace_order.items() : final_prompt = final_prompt.replace(key , item)
 
         info = {
-            "score" : "0",
+            "score" : 0,
             "reason" : "test"
         }
 
@@ -441,6 +446,7 @@ class long_memeory_stream():
             "%m" : self.__memory_to_str__(self.memory_stream[-pick_num:]),
             "%l" : self.__role_list_to_str__()[0],
             "%e" : self.example['reflection_question'],
+            "%ar" : f"{self.player_id}號玩家({self.player_name[self.player_id]})，身分為{self.role_to_chinese[self.role]}",
             "%rs" : self.__roles_setting_to_str__(),
         }
         final_prompt = self.prompt_template['reflection_question']
@@ -466,6 +472,7 @@ class long_memeory_stream():
             "%l" : self.__role_list_to_str__()[0],
             "%e" : self.example['reflection'],
             "%rs" : self.__roles_setting_to_str__(),
+            "%ar" : f"{self.player_id}號玩家({self.player_name[self.player_id]})，身分為{self.role_to_chinese[self.role]}",
         }
         final_prompt = self.prompt_template['reflection']
         for key , item in replace_order.items() : final_prompt = final_prompt.replace(key , item)
@@ -542,7 +549,7 @@ class long_memeory_stream():
                     info[keyword_name] += line + "\n"
 
             # check the keyword is in keyword_list and the type is satisfy require
-            if info.keys() == keyword_dict.keys() and all(_.strip('\n').isnumeric() for keyword , _ in info.items() if keyword_dict[keyword] == int):
+            if info.keys() == keyword_dict.keys() and all(_.strip('\n').strip('-').isnumeric() for keyword , _ in info.items() if keyword_dict[keyword] == int):
                 success_get_keyword = True
                 # change data type & remove the '\n'
                 for keyword , _ in info.items() : 
@@ -582,7 +589,7 @@ class long_memeory_stream():
         response = self.client.chat.completions.create(
             **self.openai_kwargs,
             messages = [
-                {"role":"system","content":"You are an AI assistant that helps people find information."},
+                {"role":"system","content":"您為狼人殺遊戲的玩家，請根據狼人殺遊戲相關規則與經驗，回答相關的內容。"},
                 {"role":"user","content":prompt}
             ],
             temperature=0.7,
