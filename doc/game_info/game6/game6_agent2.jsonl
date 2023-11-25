@@ -4,9 +4,9 @@
 {"guess_role": ["狼人", "狼人", "狼人", "狼人", "狼人", "狼人", "狼人"]}
 {"stage": "1-0-check", "stage_description": "天黑請閉眼", "announcement": [], "information": [], "agent_info": {}, "timer": 5, "vote_info": {}, "empty": 0}
 {"guess_role": ["狼人", "狼人", "狼人", "狼人", "狼人", "狼人", "狼人"]}
-{"stage": "1-0-werewolf_dialogue", "stage_description": "狼人進行討論#146", "announcement": [], "information": [], "agent_info": {}, "timer": 3, "vote_info": {}, "empty": 0}
+{"stage": "1-0-werewolf_dialogue", "stage_description": "狼人進行討論#961", "announcement": [], "information": [], "agent_info": {}, "timer": 3, "vote_info": {}, "empty": 0}
 {"guess_role": ["狼人", "狼人", "狼人", "狼人", "狼人", "狼人", "狼人"]}
-{"stage": "1-0-werewolf_dialogue", "stage_description": "狼人進行討論#836", "announcement": [], "information": [], "agent_info": {}, "timer": 8, "vote_info": {}, "empty": 0}
+{"stage": "1-0-werewolf_dialogue", "stage_description": "狼人進行討論#529", "announcement": [], "information": [], "agent_info": {}, "timer": 8, "vote_info": {}, "empty": 0}
 {"guess_role": ["狼人", "狼人", "狼人", "狼人", "狼人", "狼人", "狼人"]}
 {"stage": "1-0-werewolf", "stage_description": "狼人請殺人", "announcement": [], "information": [], "agent_info": {}, "timer": 8, "vote_info": {}, "empty": 0}
 {"guess_role": ["狼人", "狼人", "狼人", "狼人", "狼人", "狼人", "狼人"]}
@@ -39,9 +39,9 @@
 {"guess_role": ["狼人", "狼人", "狼人", "狼人", "狼人", "狼人", "狼人"]}
 {"stage": "2-0-check", "stage_description": "天黑請閉眼", "announcement": [{"user": [3], "operation": "chat", "description": "我支持玩家0號"}], "information": [], "agent_info": {}, "timer": 5, "vote_info": {}, "empty": 0}
 {"guess_role": ["狼人", "狼人", "狼人", "狼人", "狼人", "狼人", "狼人"]}
-{"stage": "2-0-werewolf_dialogue", "stage_description": "狼人進行討論#817", "announcement": [], "information": [], "agent_info": {}, "timer": 3, "vote_info": {}, "empty": 0}
+{"stage": "2-0-werewolf_dialogue", "stage_description": "狼人進行討論#50", "announcement": [], "information": [], "agent_info": {}, "timer": 3, "vote_info": {}, "empty": 0}
 {"guess_role": ["狼人", "狼人", "狼人", "狼人", "狼人", "狼人", "狼人"]}
-{"stage": "2-0-werewolf_dialogue", "stage_description": "狼人進行討論#351", "announcement": [], "information": [], "agent_info": {}, "timer": 8, "vote_info": {}, "empty": 0}
+{"stage": "2-0-werewolf_dialogue", "stage_description": "狼人進行討論#226", "announcement": [], "information": [], "agent_info": {}, "timer": 8, "vote_info": {}, "empty": 0}
 {"guess_role": ["狼人", "狼人", "狼人", "狼人", "狼人", "狼人", "狼人"]}
 {"stage": "2-0-werewolf", "stage_description": "狼人請殺人", "announcement": [], "information": [], "agent_info": {}, "timer": 3, "vote_info": {}, "empty": 0}
 {"guess_role": ["狼人", "狼人", "狼人", "狼人", "狼人", "狼人", "狼人"]}
@@ -66,5 +66,5 @@
 {"stage": "2-1-vote1", "stage_description": "玩家進行投票", "announcement": [{"user": [5], "operation": "chat", "description": "這局還挺難的，我覺得兩邊的說法都有可能，但也確實玩家0號能活下來真的很可疑，雖然她說我是好人，但我還是會想先把他投出去，在考慮後續的發展要站邊玩家1還是玩家3。"}], "information": [{"user": [0, 1, 2, 4, 5], "target": [0, 1, 2, 4, 5], "operation": "vote_or_not", "description": "投票階段"}], "agent_info": {}, "timer": 8, "vote_info": {}, "empty": 0}
 {"guess_role": ["狼人", "狼人", "狼人", "狼人", "狼人", "狼人", "狼人"]}
 {"stage_name": "2-1-vote1", "operation": "vote_or_not", "target": 0, "chat": "投票階段"}
-{"stage": "2-1-check", "stage_description": "agent0(0)被票出去了，請發表遺言", "announcement": [{"user": [], "operation": "game_over", "description": "好人陣營獲勝"}, {"user": [0], "operation": "died", "description": "agent0(0)被票出去了"}], "information": [], "agent_info": {}, "timer": 10, "vote_info": {"0": 2, "1": 0, "2": 0, "4": -1, "5": 0}, "empty": 2}
+{"stage": "2-1-check", "stage_description": "agent0(0)被票出去了，請發表遺言", "announcement": [{"user": [0], "operation": "died", "description": "agent0(0)被票出去了"}, {"user": [], "operation": "game_over", "description": "好人陣營獲勝"}], "information": [], "agent_info": {}, "timer": 10, "vote_info": {"0": 2, "1": 0, "2": 0, "4": -1, "5": 0}, "empty": 2}
 {"guess_role": ["狼人", "狼人", "狼人", "狼人", "狼人", "狼人", "狼人"]}
