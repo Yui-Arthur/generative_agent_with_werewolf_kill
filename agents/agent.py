@@ -48,6 +48,7 @@ class agent():
         # game_over = True => game is over
         #           = False => game is running
         self.game_over = False
+        self.is_delete = False
 
         # for test get info
         self.update = 0
@@ -173,7 +174,7 @@ class agent():
         log_format = logging.Formatter(f'[%(asctime)s] [{self.name}] [%(levelname)s] - %(message)s ')
         self.logger.setLevel(logging.DEBUG)
 
-        handler = logging.FileHandler(filename=f'logs/{self.name}_{self.room}.log', encoding='utf-8' , mode="w")
+        handler = logging.FileHandler(filename=f'logs/{self.name.replace(":" , "_")}_{self.room}.log', encoding='utf-8' , mode="w")
         handler.setLevel(logging.DEBUG)   
         handler.setFormatter(log_format)
         self.logger.addHandler(handler)   
@@ -365,6 +366,8 @@ class agent():
     def __del__(self):
         self.logger.debug("Stop the timer & cancel the checker")
         self.checker = False
+        if self.is_delete:
+            return
         if self.timer != None:
             self.timer.cancel()
 
@@ -383,3 +386,4 @@ class agent():
 
         for handler in self.logger_handler:
             self.logger.removeHandler(handler)
+        self.is_delete = True
