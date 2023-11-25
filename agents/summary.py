@@ -66,7 +66,7 @@ class summary():
         except:
             raise Exception("API Init failed")
         
-        self.summary_limit = 20
+        self.summary_limit = 50
         self.similarly_sentence_num = 5
         self.get_score_fail_times = 3
         
