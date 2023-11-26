@@ -358,7 +358,7 @@ class agent():
     def __save__game__info__(self):
         current_datetime = datetime.datetime.today()
         current_datetime_str = current_datetime.strftime("%m_%d_%H_%M")
-        with open(f"doc/game_info/{current_datetime_str}_{self.name}.jsonl" , "w" , encoding='utf-8') as f:
+        with open(f"doc/game_info/{current_datetime_str}_{self.name.replace(':','_')}.jsonl" , "w" , encoding='utf-8') as f:
             for info in self.game_info:
                 json.dump(info , f , ensure_ascii=False)
                 f.write('\n')
