@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 {"4": "witch"}
-=======
-{"0": "werewolf"}
->>>>>>> 67b3ea1c06a428b646a8448d6ad366ae9b286a84
 {"0": {"user_name": "agent0", "user_role": "werewolf"}, "1": {"user_name": "agent1", "user_role": "village"}, "2": {"user_name": "agent2", "user_role": "seer"}, "3": {"user_name": "agent3", "user_role": "werewolf"}, "4": {"user_name": "agent4", "user_role": "witch"}, "5": {"user_name": "agent5", "user_role": "village"}, "6": {"user_name": "agent6", "user_role": "hunter"}}
 {"stage": "check_role", "stage_description": "遊戲開始，請查看身分", "announcement": [], "information": [], "agent_info": {}, "timer": 5, "vote_info": {}, "empty": 0}
 {"guess_role": ["狼人", "狼人", "狼人", "狼人", "狼人", "狼人", "狼人"]}
@@ -12,7 +8,6 @@
 {"stage": "1-0-werewolf_dialogue", "stage_description": "狼人進行討論#828", "announcement": [], "information": [], "agent_info": {}, "timer": 3, "vote_info": {}, "empty": 0}
 {"guess_role": ["狼人", "狼人", "狼人", "狼人", "狼人", "狼人", "狼人"]}
 {"stage": "1-0-werewolf_dialogue", "stage_description": "狼人進行討論#276", "announcement": [], "information": [], "agent_info": {}, "timer": 8, "vote_info": {}, "empty": 0}
-{"guess_role": ["狼人", "狼人", "狼人", "狼人", "狼人", "狼人", "狼人"]}
 {"stage": "1-0-werewolf", "stage_description": "狼人請殺人", "announcement": [], "information": [], "agent_info": {}, "timer": 8, "vote_info": {}, "empty": 0}
 {"guess_role": ["狼人", "狼人", "狼人", "狼人", "狼人", "狼人", "狼人"]}
 {"stage": "1-0-seer", "stage_description": "預言家請睜眼，確認查驗身份", "announcement": [], "information": [], "agent_info": {}, "timer": 3, "vote_info": {}, "empty": 0}
@@ -24,20 +19,6 @@
 {"stage": "1-0-werewolf_dialogue", "stage_description": "狼人進行討論#828", "announcement": [], "information": [{"user": [0], "target": [0, 3], "operation": "werewolf_dialogue", "description": "玩家發言"}], "agent_info": {}, "timer": 3, "vote_info": {}, "empty": 0}
 {"guess_role": ["狼人", "狼人", "狼人", "狼人", "狼人", "狼人", "狼人"]}
 {"stage_name": "1-0-werewolf_dialogue", "operation": "werewolf_dialogue", "target": 6, "chat": "我想殺6號玩家(agent6)，因為我認為他是預言家"}
-{"stage": "1-0-werewolf_dialogue", "stage_description": "狼人進行討論#276", "announcement": [{"user": [0], "operation": "chat", "description": "我想殺6號玩家(agent6)，因為我認為他是預言家"}], "information": [], "agent_info": {}, "timer": 8, "vote_info": {}, "empty": 0}
-{"guess_role": ["狼人", "狼人", "狼人", "狼人", "狼人", "狼人", "狼人"]}
-{"stage": "1-0-werewolf", "stage_description": "狼人請殺人", "announcement": [{"user": [3], "operation": "chat", "description": "我同意0號玩家(agent0)"}], "information": [{"user": [0, 3], "target": [0, 1, 2, 3, 4, 5, 6], "operation": "vote", "description": "狼人投票殺人"}], "agent_info": {}, "timer": 8, "vote_info": {}, "empty": 1}
-{"guess_role": ["狼人", "狼人", "狼人", "狼人", "狼人", "狼人", "狼人"]}
-{"stage_name": "1-0-werewolf", "operation": "vote", "target": 6, "chat": "狼人投票"}
-{"stage": "1-0-seer", "stage_description": "預言家請睜眼，確認查驗身份", "announcement": [], "information": [], "agent_info": {}, "timer": 3, "vote_info": {"0": 6, "3": 6}, "empty": 2}
-{"guess_role": ["狼人", "狼人", "狼人", "狼人", "狼人", "狼人", "狼人"]}
-{"stage": "1-0-witch", "stage_description": "女巫請睜眼，請問要使用解藥，還是毒藥", "announcement": [], "information": [], "agent_info": {}, "timer": 8, "vote_info": {}, "empty": 0}
-{"guess_role": ["狼人", "狼人", "狼人", "狼人", "狼人", "狼人", "狼人"]}
->>>>>>> 67b3ea1c06a428b646a8448d6ad366ae9b286a84
-{"stage": "1-1-check", "stage_description": "天亮請睜眼，昨晚是平安夜", "announcement": [], "information": [], "agent_info": {}, "timer": 5, "vote_info": {}, "empty": 0}
-{"guess_role": ["狼人", "狼人", "狼人", "狼人", "狼人", "狼人", "狼人"]}
-{"stage": "1-1-dialogue", "stage_description": "agent6(6)玩家進行討論", "announcement": [], "information": [], "agent_info": {}, "timer": 3, "vote_info": {}, "empty": 0}
-{"guess_role": ["狼人", "狼人", "狼人", "狼人", "狼人", "狼人", "狼人"]}
 <<<<<<< HEAD
 {"stage": "1-1-dialogue", "stage_description": "agent0(0)玩家進行討論", "announcement": [{"user": [6], "operation": "chat", "description": "我是好人，目前沒什麼資訊。"}], "information": [], "agent_info": {}, "timer": 8, "vote_info": {}, "empty": 0}
 {"guess_role": ["狼人", "狼人", "狼人", "狼人", "狼人", "狼人", "狼人"]}
