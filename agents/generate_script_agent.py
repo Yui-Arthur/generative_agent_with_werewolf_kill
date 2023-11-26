@@ -89,7 +89,7 @@ class generate_script_agent(agent):
                     if self.form_output != None and not self.form_output.closed:
                         if info['operation'] == 'dialogue'and data['stage'].split('-')[-1] == 'dialogue':
                             self.form_output.write(f"{self.day}/dialogue/{self.name[-1]}號玩家發言:「{self.script_info[self.current_script_idx]['chat']}」\n")
-                        elif info['operation'] == 'dialogue'and data['stage'].split('-')[-1] == 'check':
+                        elif info['operation'] == 'dialogue'and data['stage'].split('-')[-1] in ['check','hunter']:
                             self.form_output.write(f"{self.day}/died_dialogue/{self.name[-1]}號玩家遺言:「{self.script_info[self.current_script_idx]['chat']}」\n")
                         elif info['operation'] == 'vote_or_not' and 'vote' in data['stage'].split('-')[-1] :
                             target = self.script_info[self.current_script_idx]['target']
