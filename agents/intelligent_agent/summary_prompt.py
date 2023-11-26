@@ -406,6 +406,10 @@ class summary_prompts:
 
         response = self.prompts_response('guess_role', stage_summary, guess_summary)
         response.replace("\'", "\"")
+        if response[0] != "{":
+            response = "{\n" + response
+        if response[-1] != "}" and response[-3] != "}":
+            response += "\n}"
         res_json = json.loads(response)
         
         self.guess_roles= []
@@ -521,9 +525,7 @@ class summary_prompts:
 }}""",
             "werewolf_dialogue":f'''請你根據以上我提供的所有文本資訊，你有三個選項，請選擇其中一個選項當作發言？
 1. 我同意隊友的發言。請在{self.player_array_to_string(self.teammate)}號玩家中，選擇一位隊友(若選擇此選項，請直接回答"選項1，[玩家]號玩家，[原因]"，不需要其他廢話，回答完直接結束回答)
-2. 想殺某位玩家，並猜測玩家的角色。從{self.player_array_to_string(self.alive)}中，只能選擇一位想殺的玩家，且從預言家和女巫{"和獵人" if self.room_setting["hunter"] else ""}中選一位你認為是此玩家的角色(若選擇此選項，請直接回答"選項2，[玩家]號玩家，[角色]，[原因]"，不需要其他廢話，回答完直接結束回答)
-3. 無發言(若選擇此選項，請直接回答"選項3，[原因]"，不需要其他廢話，回答完直接結束回答)
-                ''',
+2. 想殺某位玩家，並猜測玩家的角色。從{self.player_array_to_string(self.alive)}中，只能選擇一位想殺的玩家，且從預言家和女巫{"和獵人" if self.room_setting["hunter"] else ""}中選一位你認為是此玩家的角色(若選擇此選項，請直接回答"選項2，[玩家]號玩家，[角色]，[原因]"，不需要其他廢話，回答完直接結束回答)''',
             "werewolf":f'請你根據以上我提供的所有文本資訊，請從{choices}號玩家中，選擇一位要殺的玩家並簡述原因？(直接回答"[玩家]號玩家，[原因]"，不需要其他廢話，回答完直接結束回答)',
             "seer":f'請你根據以上我提供的所有文本資訊，請問你要從{choices}號玩家中，查驗哪一位玩家並簡述原因？(直接回答"[玩家]號玩家，[原因]"，不需要其他廢話，回答完直接結束回答)',
             "witch_save":f'請你根據以上我提供的所有文本資訊，{choices}號玩家死了，請問你要使用解藥並簡述原因？(直接回答"[救或不救]，[原因]"，不需要其他廢話，回答完直接結束回答)',
