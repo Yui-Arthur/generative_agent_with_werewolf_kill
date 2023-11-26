@@ -555,7 +555,7 @@ class summary():
 if __name__ == '__main__':
 
     s = summary(api_json="./doc/secret/openai.key", prompt_dir="./doc", prompt_output = True)
-    for g in range(9,11):
+    for g in range(1,11):
         for i in range(0, 7):
             s.get_summary(file_name= f"./game{g}/game{g}_agent{i}.jsonl")
     
