@@ -16,7 +16,7 @@ class long_memeory_stream():
     
     sentence_model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
 
-    def __init__(self , prompt_dir , logger , client , openai_kwargs , summary=False , log_prompt = False):
+    def __init__(self , prompt_dir , logger , client , openai_kwargs , summary=False , log_prompt = False , used_memory=True):
         self.memory_stream = []
         self.openai_kwargs = openai_kwargs
         self.client : OpenAI | AzureOpenAI = client
@@ -72,12 +72,18 @@ class long_memeory_stream():
         self.guess_roles_updated = 0
         # record the reflection 
         self.reflection_list = []
+
         # the use summary or not flag
         self.summary = summary
+        # the use memory or not flag
+        self.used_memory = used_memory
+
         # sumary data , if summary flag = false , set all to empty string
         self.summary_operation_data : list = ["" for i in range(5)]
         self.summary_guess_role_data : list = ["" for i in range(5)]
+        # addtion prompt suggest
         self.dialogue_suggestion = "也請不要完全相信其他玩家的發言，小心掉入狼人陷阱"
+        
 
 
     def update_game_info(self , player_id , player_name , role , roles_setting):
@@ -207,6 +213,9 @@ class long_memeory_stream():
         the retrieval process , will call importantance,recency,relevance func
         and return the top {pick_num} memory sored by score.
         """
+        # not used the memory 
+        if self.used_memory == False: return self.memory_stream
+
         self.logger.debug(f"start retrieval")
         self.logger.debug(f"  query : {query}")
         importantance_score = [ob['importantance'] for ob in self.memory_stream] 
@@ -263,6 +272,7 @@ class long_memeory_stream():
         second , use the question as retrieval query search the memory
         third , refection by the memory and push the new refection to memory
         """
+        if not self.used_memory: return
             
         info = self.__reflection_question__(day , turn)
         question = info['question'].strip('\n')
@@ -406,9 +416,11 @@ class long_memeory_stream():
             "reason" : "test"
         }
 
-        info = self.__process_LLM_output__(final_prompt, {"score" : int, "reason" : str} , info , "importantance")
-    
+        if self.used_memory: 
+            info = self.__process_LLM_output__(final_prompt, {"score" : int, "reason" : str} , info , "importantance")
+
         return info
+    
 
     def __cal_recency__(self , day, turn) :
         """cal the recency score"""
@@ -455,10 +467,10 @@ class long_memeory_stream():
         info = {
             "question" : "test",
         }
-
-        info = self.__process_LLM_output__(final_prompt, {"question" : str} , info , "reflection question")
-
         
+        if self.used_memory: 
+            info = self.__process_LLM_output__(final_prompt, {"question" : str} , info , "reflection question")
+            
         return info
     
     def __reflection_opinion__(self , memory):
