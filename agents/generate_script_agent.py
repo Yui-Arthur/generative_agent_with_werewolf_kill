@@ -111,6 +111,8 @@ class generate_script_agent(agent):
                     self.current_script_idx += 1
                     break
                 self.current_script_idx += 1
+                if data['stage'].split("-")[2] not in  ["werewolf", "vote1" , "vote2"]:
+                    self.__skip_stage__()
 
         except Exception as e:
             self.logger.warning(f"player:{self.agent_name} script end. {e}")

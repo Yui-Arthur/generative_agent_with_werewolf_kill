@@ -490,7 +490,7 @@ class summary_prompts:
 
         guess_role_prompt = "\n你推測玩家的角色：\n"
         if prompt_type == "guess_role":
-            guess_role_prompt = "\n你上一次推測玩家的角色(只能作為參考，不能沿用)：\n"
+            guess_role_prompt = "\n你上一次推測玩家的角色(只能作為參考，不能完全沿用)：\n"
         # guess roles
         self.prompt += guess_role_prompt
 
