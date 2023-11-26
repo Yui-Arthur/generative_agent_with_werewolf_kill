@@ -14,7 +14,7 @@ from .summary import summary
 
 class script_agent(agent):
     def __init__(self , api_json = None, game_info_path = None,
-                 agent_name = "ScriptGame" , game_room = "ScriptGame"):
+                 agent_name = "ScriptGame" , game_room = "ScriptGame" , save_target_file = None):
 
         # basic setting
         self.name = agent_name
@@ -37,6 +37,9 @@ class script_agent(agent):
         self.game_data : list[dict]= None
         self.teamate = None
         self.operation_record = []
+        self.last_token_used = 0
+        self.save_target_file = save_target_file
+        self.game_info_name = Path(game_info_path).stem
         # acc init
         self.mapping_dict : dict = None
         self.__init_mapping_dict__()
@@ -105,6 +108,7 @@ class script_agent(agent):
             self.__process_data__(data)
             # logging agent info
             agent_info = self.get_info()
+            self.last_token_used = int(agent_info['token_used'][0])
             del agent_info['memory']
 
             self.logger.debug(agent_info)
@@ -115,6 +119,8 @@ class script_agent(agent):
                 if anno['operation'] == "game_over" : 
                     self.__game_over_process__(anno , 0)
                     break
+        if self.save_target_file != None:
+            self.__save_to_file__()
         self.__del__()
     def __cal_quess_role_acc__(self , guess_roles):
         acc_cnt = 0
@@ -163,6 +169,18 @@ class script_agent(agent):
     def __send_operation__(self, data):
         self.operation_record.append(data)
         self.logger.info(f"Agent send operation : {data}")
+    
+    def __save_to_file__(self):
+        result_dic = {
+            "agent_type" : type(self).__name__,
+            "scr_game_info" : self.game_info_name,
+            "all_acc" : self.acc_record,
+            "all_operation" : self.operation_record,
+            "token_used" : self.last_token_used
+        }
+        with open(self.save_target_file , 'a+' , encoding='utf-8') as f :
+            json.dump(result_dic , f , ensure_ascii=False)
+            f.write('\n')
 
     def __del__(self):
         self.logger.info(f"---------------Script Result---------------")
@@ -175,7 +193,7 @@ class script_agent(agent):
 
 class summary_script_agent(summary_agent):
     def __init__(self , api_json = None, game_info_path = None,
-                 agent_name = "ScriptGame" , game_room = "ScriptGame"):
+                 agent_name = "ScriptGame" , game_room = "ScriptGame" , save_target_file = None):
 
         # basic setting
         self.name = agent_name
@@ -202,6 +220,9 @@ class summary_script_agent(summary_agent):
         self.mapping_dict : dict = None
         self.__init_mapping_dict__()
         self.acc_record = []
+        self.last_token_used = 0
+        self.save_target_file =  save_target_file
+        self.game_info_name = Path(game_info_path).stem
         # for test get info
         self.update = 0
         # summary
@@ -275,6 +296,7 @@ class summary_script_agent(summary_agent):
             self.__process_data__(data)
             # logging agent info
             agent_info = self.get_info()
+            self.last_token_used = int(agent_info['token_used'][0])
             del agent_info['memory']
 
             self.logger.debug(agent_info)
@@ -285,6 +307,9 @@ class summary_script_agent(summary_agent):
                 if anno['operation'] == "game_over" : 
                     self.__game_over_process__(anno , 0)
                     break
+
+        if self.save_target_file != None:
+            self.__save_to_file__()
         self.__del__()
     def __cal_quess_role_acc__(self , guess_roles):
         acc_cnt = 0
@@ -355,7 +380,20 @@ class summary_script_agent(summary_agent):
         self.operation_record.append(data)
         self.logger.info(f"Agent send operation : {data}")
 
+    def __save_to_file__(self):
+        result_dic = {
+            "agent_type" : type(self).__name__,
+            "scr_game_info" : self.game_info_name,
+            "all_acc" : self.acc_record,
+            "all_operation" : self.operation_record,
+            "token_used" : self.last_token_used
+        }
+        with open(self.save_target_file , 'a+' , encoding='utf8') as f :
+            json.dump(result_dic , f , ensure_ascii=False)
+            f.write('\n')
+
     def __del__(self):
+
         self.logger.info(f"---------------Script Result---------------")
         if len(self.acc_record) != 0:
             self.logger.info(f"Agent guess roles avg acc {(sum(self.acc_record) / len(self.acc_record)):.3f}")
