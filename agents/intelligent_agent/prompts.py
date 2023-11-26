@@ -403,11 +403,11 @@ class prompts:
         ''' Predict and update player roles '''
 
         response = self.prompts_response('guess_role')
-        response.replace("\'", "\"")
         if response[0] != "{":
             response = "{\n" + response
         if response[-1] != "}" and response[-3] != "}":
             response += "\n}"
+        response = response.replace("\'", "\"")
 
         res_json = json.loads(response)
         
