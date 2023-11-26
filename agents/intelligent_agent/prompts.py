@@ -446,7 +446,7 @@ class prompts:
         '''Generate response by prompts'''
         
         prompt = self.generate_prompts(prompt_type)
-        self.logger.debug("Prompt: "+str(prompt))
+        # self.logger.debug("Prompt: "+str(prompt))
 
         response = self.__openai_send__(prompt)
         self.logger.debug("Response: "+str(response))

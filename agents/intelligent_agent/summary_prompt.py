@@ -448,7 +448,7 @@ class summary_prompts:
         '''Generate response by prompts'''
         
         prompt = self.generate_prompts(prompt_type, stage_summary, guess_summary)
-        self.logger.debug("Prompt: "+str(prompt))
+        # self.logger.debug("Prompt: "+str(prompt))
 
         response = self.__openai_send__(prompt)
         self.logger.debug("Response: "+str(response))
