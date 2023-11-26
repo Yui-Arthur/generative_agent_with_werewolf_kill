@@ -411,7 +411,6 @@ class summary_prompts:
             response += "}"
         
         response = response.replace("\'", "\"")
-        print(response)
         res_json = json.loads(response)
         
         self.guess_roles= []
