@@ -95,9 +95,9 @@ class memory_stream_agent_test(memory_stream_agent):
     
 class memory_stream_agent_script(script_agent):
     def __init__(self , api_json = None, game_info_path = None,
-                agent_name = "ScriptGame" , game_room = "ScriptGame" , prompt_dir = "doc/prompt/memory_stream"):
+                agent_name = "ScriptGame" , game_room = "ScriptGame" , prompt_dir = "doc/prompt/memory_stream" , save_target_file = None):
         self.prompt_dir = Path(prompt_dir)
-        super().__init__(api_json, game_info_path, agent_name , game_room)
+        super().__init__(api_json, game_info_path, agent_name , game_room , save_target_file)
     
     def __process_data__(self, data):
         """the data process."""
@@ -149,9 +149,9 @@ class memory_stream_agent_script(script_agent):
 
 class summary_memory_stream_agent_script(summary_script_agent):
     def __init__(self , api_json = None, game_info_path = None,
-                agent_name = "ScriptGame" , game_room = "ScriptGame" , prompt_dir = "doc/prompt/memory_stream"):
+                agent_name = "ScriptGame" , game_room = "ScriptGame" , prompt_dir = "doc/prompt/memory_stream" , save_target_file = None):
         self.prompt_dir = Path(prompt_dir)
-        super().__init__(api_json, game_info_path, agent_name , game_room)
+        super().__init__(api_json, game_info_path, agent_name , game_room , save_target_file)
     
     def __process_data__(self, data):
         """the data process."""
