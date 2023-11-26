@@ -2,9 +2,9 @@
 {"0": {"user_name": "agent0", "user_role": "werewolf"}, "1": {"user_name": "agent1", "user_role": "village"}, "2": {"user_name": "agent2", "user_role": "seer"}, "3": {"user_name": "agent3", "user_role": "werewolf"}, "4": {"user_name": "agent4", "user_role": "witch"}, "5": {"user_name": "agent5", "user_role": "village"}, "6": {"user_name": "agent6", "user_role": "hunter"}}
 {"stage": "1-0-check", "stage_description": "天黑請閉眼", "announcement": [], "information": [], "agent_info": {}, "timer": 5, "vote_info": {}, "empty": 0}
 {"guess_role": ["狼人", "狼人", "狼人", "狼人", "狼人", "狼人", "狼人"]}
-{"stage": "1-0-werewolf_dialogue", "stage_description": "狼人進行討論#600", "announcement": [], "information": [], "agent_info": {}, "timer": 3, "vote_info": {}, "empty": 0}
+{"stage": "1-0-werewolf_dialogue", "stage_description": "狼人進行討論#449", "announcement": [], "information": [], "agent_info": {}, "timer": 3, "vote_info": {}, "empty": 0}
 {"guess_role": ["狼人", "狼人", "狼人", "狼人", "狼人", "狼人", "狼人"]}
-{"stage": "1-0-werewolf_dialogue", "stage_description": "狼人進行討論#344", "announcement": [], "information": [], "agent_info": {}, "timer": 8, "vote_info": {}, "empty": 0}
+{"stage": "1-0-werewolf_dialogue", "stage_description": "狼人進行討論#143", "announcement": [], "information": [], "agent_info": {}, "timer": 8, "vote_info": {}, "empty": 0}
 {"guess_role": ["狼人", "狼人", "狼人", "狼人", "狼人", "狼人", "狼人"]}
 {"stage": "1-0-werewolf", "stage_description": "狼人請殺人", "announcement": [], "information": [], "agent_info": {}, "timer": 8, "vote_info": {}, "empty": 0}
 {"guess_role": ["狼人", "狼人", "狼人", "狼人", "狼人", "狼人", "狼人"]}
@@ -19,8 +19,6 @@
 {"stage": "1-1-dialogue", "stage_description": "agent1(1)玩家進行討論", "announcement": [{"user": [0], "operation": "chat", "description": "我是預言家昨晚我查驗玩家3號，他是好人，因為我原本懷疑他是狼人，另外，我也懷疑玩家5，如果等下我還活著，我會查驗他的身分。"}], "information": [{"user": [1], "target": [], "operation": "dialogue", "description": "玩家發言"}], "agent_info": {}, "timer": 8, "vote_info": {}, "empty": 0}
 {"guess_role": ["狼人", "狼人", "狼人", "狼人", "狼人", "狼人", "狼人"]}
 {"stage_name": "1-1-dialogue", "operation": "dialogue", "target": -1, "chat": "玩家0跳了預言家查驗玩家3號是好人，在首置位跳預言家說的還是好人的查驗，我認為效益不大，但看起來也不像狼人的行為，我會先暫時觀察看看，而其他玩家的部分，我認為玩家5很可疑。"}
-{"stage": "1-1-dialogue", "stage_description": "agent2(2)玩家進行討論", "announcement": [{"user": [1], "operation": "chat", "description": "玩家0跳了預言家查驗玩家3號是好人，在首置位跳預言家說的還是好人的查驗，我認為效益不大，但看起來也不像狼人的行為，我會先暫時觀察看看，而其他玩家的部分，我認為玩家5很可疑。"}], "information": [], "agent_info": {}, "timer": 8, "vote_info": {}, "empty": 0}
-{"guess_role": ["狼人", "狼人", "狼人", "狼人", "狼人", "狼人", "狼人"]}
 {"stage": "1-1-dialogue", "stage_description": "agent3(3)玩家進行討論", "announcement": [{"user": [2], "operation": "chat", "description": "大家好，我才是真的預言家，我昨晚查驗玩家0號他是狼人，大家投票階段的時候把它投出去，他說查驗的玩家3號與玩家5號應該就是真的好人了，下一次查驗我會想查驗玩家4號，這局我們先把玩家0號投出去。"}], "information": [], "agent_info": {}, "timer": 8, "vote_info": {}, "empty": 0}
 {"guess_role": ["狼人", "狼人", "狼人", "狼人", "狼人", "狼人", "狼人"]}
 {"stage": "1-1-dialogue", "stage_description": "agent4(4)玩家進行討論", "announcement": [{"user": [3], "operation": "chat", "description": "這把又是兩個預言家跳出來的局，我是玩家0號的金水，我會選擇相信他，因為我確實是好人，而玩家2殺心就比較重了，查殺玩家0號是狼人，有沒有一種可能是狼人想要直接假跳預言家把真的預言家投出去，我認為這也不是不可能，所以我會投給玩家2號"}], "information": [], "agent_info": {}, "timer": 8, "vote_info": {}, "empty": 0}
@@ -32,13 +30,11 @@
 {"stage": "1-1-vote1", "stage_description": "玩家進行投票", "announcement": [{"user": [6], "operation": "chat", "description": "我來歸票，我同意玩家5號的說法，不管怎麼樣，先投出玩家2號是大家都認同的事情，那女巫可以在想想要不要把玩家0號投出去，這樣可以打平衡，可以避免我們投錯人導致遊戲處於劣勢狀態。"}], "information": [{"user": [0, 1, 2, 3, 4, 5, 6], "target": [0, 1, 2, 3, 4, 5, 6], "operation": "vote_or_not", "description": "投票階段"}], "agent_info": {}, "timer": 8, "vote_info": {}, "empty": 0}
 {"guess_role": ["狼人", "狼人", "狼人", "狼人", "狼人", "狼人", "狼人"]}
 {"stage_name": "1-1-vote1", "operation": "vote_or_not", "target": 2, "chat": "投票階段"}
-{"stage": "1-1-check", "stage_description": "agent2(2)被票出去了，請發表遺言", "announcement": [{"user": [2], "operation": "died", "description": "agent2(2)被票出去了"}], "information": [], "agent_info": {}, "timer": 8, "vote_info": {"0": 2, "1": 2, "2": 0, "3": 2, "4": 2, "5": 2, "6": 2}, "empty": 2}
-{"guess_role": ["狼人", "狼人", "狼人", "狼人", "狼人", "狼人", "狼人"]}
 {"stage": "2-0-check", "stage_description": "天黑請閉眼", "announcement": [{"user": [2], "operation": "chat", "description": "我是真的預言家，大家一定要相信我，我敢說下回合玩家0號一定會活下來，所以我希望女巫可以毒掉其他人，來證明我說的話是真的。"}], "information": [], "agent_info": {}, "timer": 5, "vote_info": {}, "empty": 0}
 {"guess_role": ["狼人", "狼人", "狼人", "狼人", "狼人", "狼人", "狼人"]}
-{"stage": "2-0-werewolf_dialogue", "stage_description": "狼人進行討論#462", "announcement": [], "information": [], "agent_info": {}, "timer": 3, "vote_info": {}, "empty": 0}
+{"stage": "2-0-werewolf_dialogue", "stage_description": "狼人進行討論#925", "announcement": [], "information": [], "agent_info": {}, "timer": 3, "vote_info": {}, "empty": 0}
 {"guess_role": ["狼人", "狼人", "狼人", "狼人", "狼人", "狼人", "狼人"]}
-{"stage": "2-0-werewolf_dialogue", "stage_description": "狼人進行討論#38", "announcement": [], "information": [], "agent_info": {}, "timer": 8, "vote_info": {}, "empty": 0}
+{"stage": "2-0-werewolf_dialogue", "stage_description": "狼人進行討論#865", "announcement": [], "information": [], "agent_info": {}, "timer": 8, "vote_info": {}, "empty": 0}
 {"guess_role": ["狼人", "狼人", "狼人", "狼人", "狼人", "狼人", "狼人"]}
 {"stage": "2-0-werewolf", "stage_description": "狼人請殺人", "announcement": [], "information": [], "agent_info": {}, "timer": 8, "vote_info": {}, "empty": 0}
 {"guess_role": ["狼人", "狼人", "狼人", "狼人", "狼人", "狼人", "狼人"]}
@@ -66,9 +62,9 @@
 {"guess_role": ["狼人", "狼人", "狼人", "狼人", "狼人", "狼人", "狼人"]}
 {"stage": "3-0-check", "stage_description": "天黑請閉眼", "announcement": [{"user": [0], "operation": "chat", "description": "大家請你們一定要相信我，不要被玩家1號的策略給騙了，我們好人陣營現在已經找出一個狼人，只要在把玩家1號投出去就可以獲勝了，下回合你們一定要謹慎思考。"}], "information": [], "agent_info": {}, "timer": 5, "vote_info": {}, "empty": 0}
 {"guess_role": ["狼人", "狼人", "狼人", "狼人", "狼人", "狼人", "狼人"]}
-{"stage": "3-0-werewolf_dialogue", "stage_description": "狼人進行討論#391", "announcement": [], "information": [], "agent_info": {}, "timer": 3, "vote_info": {}, "empty": 0}
+{"stage": "3-0-werewolf_dialogue", "stage_description": "狼人進行討論#714", "announcement": [], "information": [], "agent_info": {}, "timer": 3, "vote_info": {}, "empty": 0}
 {"guess_role": ["狼人", "狼人", "狼人", "狼人", "狼人", "狼人", "狼人"]}
-{"stage": "3-0-werewolf_dialogue", "stage_description": "狼人進行討論#780", "announcement": [], "information": [], "agent_info": {}, "timer": 3, "vote_info": {}, "empty": 0}
+{"stage": "3-0-werewolf_dialogue", "stage_description": "狼人進行討論#288", "announcement": [], "information": [], "agent_info": {}, "timer": 3, "vote_info": {}, "empty": 0}
 {"guess_role": ["狼人", "狼人", "狼人", "狼人", "狼人", "狼人", "狼人"]}
 {"stage": "3-0-werewolf", "stage_description": "狼人請殺人", "announcement": [], "information": [], "agent_info": {}, "timer": 8, "vote_info": {}, "empty": 0}
 {"guess_role": ["狼人", "狼人", "狼人", "狼人", "狼人", "狼人", "狼人"]}
@@ -88,5 +84,5 @@
 {"stage": "3-1-vote1", "stage_description": "玩家進行投票", "announcement": [{"user": [6], "operation": "chat", "description": "很遺憾的玩家3號，我支持玩家1號的說法，因為你從一開始就與玩家0號明顯同邊，而我認為玩家0號是假跳預言家，所以我會優先將你投出去。"}], "information": [{"user": [1, 3, 6], "target": [1, 3, 6], "operation": "vote_or_not", "description": "投票階段"}], "agent_info": {}, "timer": 8, "vote_info": {}, "empty": 0}
 {"guess_role": ["狼人", "狼人", "狼人", "狼人", "狼人", "狼人", "狼人"]}
 {"stage_name": "3-1-vote1", "operation": "vote_or_not", "target": 3, "chat": "投票階段"}
-{"stage": "3-1-check", "stage_description": "agent3(3)被票出去了，請發表遺言", "announcement": [{"user": [3], "operation": "died", "description": "agent3(3)被票出去了"}, {"user": [], "operation": "game_over", "description": "好人陣營獲勝"}], "information": [], "agent_info": {}, "timer": 10, "vote_info": {"1": 3, "3": 1, "6": 3}, "empty": 2}
+{"stage": "3-1-check", "stage_description": "agent3(3)被票出去了，請發表遺言", "announcement": [{"user": [], "operation": "game_over", "description": "好人陣營獲勝"}, {"user": [3], "operation": "died", "description": "agent3(3)被票出去了"}], "information": [], "agent_info": {}, "timer": 10, "vote_info": {"1": 3, "3": 1, "6": 3}, "empty": 2}
 {"guess_role": ["狼人", "狼人", "狼人", "狼人", "狼人", "狼人", "狼人"]}
