@@ -554,16 +554,11 @@ class summary():
     
 if __name__ == '__main__':
 
-
-    # game_name = "game1/11_19_23_17_"
-    # game_name = "game2/11_19_23_13_"
-    game_name = "game4/11_24_23_30_"
-    # game_name = "game5/"
-    # game_name = "game6/"
     s = summary(api_json="./doc/secret/openai.key", prompt_dir="./doc", prompt_output = True)
-    for i in range(0, 7):
-        s.get_summary(file_name= f"./{game_name}agent{i}.jsonl")
-        # memory_stream_agent_script(api_json = "./doc/secret/openai.key", game_info_path = f"./doc/game_info/{game_name}/{game_time}_agent{i}.jsonl", agent_name = f"{role[i]}_{version}" , game_room = game_name)
+    for g in range(9,11):
+        for i in range(0, 7):
+            s.get_summary(file_name= f"./game{g}/game{g}_agent{i}.jsonl")
     
+    # memory_stream_agent_script(api_json = "./doc/secret/openai.key", game_info_path = f"./doc/game_info/{game_name}/{game_time}_agent{i}.jsonl", agent_name = f"{role[i]}_{version}" , game_room = game_name)
     # s.find_similarly_summary(stage= "guess_role", game_info= "11_19_23_13_agent3.jsonl")
     
