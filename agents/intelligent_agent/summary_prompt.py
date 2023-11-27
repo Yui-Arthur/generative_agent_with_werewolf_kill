@@ -405,11 +405,12 @@ class summary_prompts:
         ''' Predict and update player roles '''
 
         response = self.prompts_response('guess_role', stage_summary, guess_summary)
-        response.replace("\'", "\"")
         if response[0] != "{":
-            response = "{\n" + response
+            response = "{" + response
         if response[-1] != "}" and response[-3] != "}":
-            response += "\n}"
+            response += "}"
+        
+        response = response.replace("\'", "\"")
         res_json = json.loads(response)
         
         self.guess_roles= []
@@ -447,7 +448,7 @@ class summary_prompts:
         '''Generate response by prompts'''
         
         prompt = self.generate_prompts(prompt_type, stage_summary, guess_summary)
-        self.logger.debug("Prompt: "+str(prompt))
+        # self.logger.debug("Prompt: "+str(prompt))
 
         response = self.__openai_send__(prompt)
         self.logger.debug("Response: "+str(response))
@@ -489,7 +490,7 @@ class summary_prompts:
 
         guess_role_prompt = "\n你推測玩家的角色：\n"
         if prompt_type == "guess_role":
-            guess_role_prompt = "\n你上一次推測玩家的角色(只能作為參考，不能沿用)：\n"
+            guess_role_prompt = "\n你上一次推測玩家的角色(只能作為參考，不能完全沿用)：\n"
         # guess roles
         self.prompt += guess_role_prompt
 
@@ -555,7 +556,7 @@ class summary_prompts:
         "策略": "有了這個想法，你會怎麼做?",
         "發言": "(請直接呈現你說的話即可，不添加其他附加訊息)"
     }
-}''',
+}請保證你的回答可以(直接被 Python 的 json.loads 解析)，且你只提供 JSON 格式的回答，不添加其他附加信息。''',
             "vote1":f'請你根據以上我提供的所有文本資訊，請你從{choices}號玩家中選一位投票，或選擇-1表示棄票，並簡述原因？(直接回答"[玩家]號玩家，[原因]"，不需要其他廢話，回答完直接結束回答)',
             "vote2":f'請你根據以上我提供的所有文本資訊，請你從{choices}號玩家中選一位投票，或選擇-1表示棄票，並簡述原因？(直接回答"[玩家]號玩家，[原因]"，不需要其他廢話，回答完直接結束回答)',
             "hunter":f'請你根據以上我提供的所有文本資訊，請你從{choices}號玩家中選一位殺掉，或選擇-1表示棄票，並簡述原因？(直接回答"[玩家]號玩家，[原因]"，不需要其他廢話，回答完直接結束回答)',
