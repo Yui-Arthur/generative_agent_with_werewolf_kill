@@ -292,7 +292,7 @@ class hunter(role):
         
         self.logger.debug("hunter process")
         memory = self.__retrieval__(self.day , len(self.memory_stream) , "目前哪位玩家最可疑")
-        target = data['information'][1]['target']
+        target = data['information'][1]['target'] if len(['information']) == 2 else data['information'][0]['target']
 
         replace_order = {
             "%l" : self.__role_list_to_str__()[0],

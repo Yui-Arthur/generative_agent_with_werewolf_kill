@@ -1,0 +1,62 @@
+{"0": "werewolf"}
+{"0": {"user_name": "agent0", "user_role": "werewolf"}, "1": {"user_name": "agent1", "user_role": "village"}, "2": {"user_name": "agent2", "user_role": "seer"}, "3": {"user_name": "agent3", "user_role": "werewolf"}, "4": {"user_name": "agent4", "user_role": "witch"}, "5": {"user_name": "agent5", "user_role": "village"}, "6": {"user_name": "agent6", "user_role": "hunter"}}
+{"stage": "1-0-check", "stage_description": "天黑請閉眼", "announcement": [], "information": [], "agent_info": {}, "timer": 5, "vote_info": {}, "empty": 0}
+{"guess_role": ["狼人", "狼人", "狼人", "狼人", "狼人", "狼人", "狼人"]}
+{"stage": "1-0-werewolf_dialogue", "stage_description": "狼人進行討論#20", "announcement": [], "information": [{"user": [0], "target": [0, 3], "operation": "werewolf_dialogue", "description": "玩家發言"}], "agent_info": {}, "timer": 3, "vote_info": {}, "empty": 0}
+{"guess_role": ["狼人", "狼人", "狼人", "狼人", "狼人", "狼人", "狼人"]}
+{"stage_name": "1-0-werewolf_dialogue", "operation": "werewolf_dialogue", "target": -1, "chat": "我想要殺玩家6號，我覺得他是神職"}
+{"stage": "1-0-werewolf_dialogue", "stage_description": "狼人進行討論#485", "announcement": [{"user": [0], "operation": "chat", "description": "我想要殺玩家6號，我覺得他是神職"}], "information": [], "agent_info": {}, "timer": 8, "vote_info": {}, "empty": 0}
+{"guess_role": ["狼人", "狼人", "狼人", "狼人", "狼人", "狼人", "狼人"]}
+{"stage": "1-0-werewolf", "stage_description": "狼人請殺人", "announcement": [{"user": [3], "operation": "chat", "description": "我支持玩家0號"}], "information": [{"user": [0, 3], "target": [0, 1, 2, 3, 4, 5, 6], "operation": "vote", "description": "狼人投票殺人"}], "agent_info": {}, "timer": 8, "vote_info": {}, "empty": 1}
+{"guess_role": ["狼人", "狼人", "狼人", "狼人", "狼人", "狼人", "狼人"]}
+{"stage_name": "1-0-werewolf", "operation": "vote", "target": 6, "chat": "狼人投票殺人"}
+{"stage": "1-0-seer", "stage_description": "預言家請睜眼，確認查驗身份", "announcement": [], "information": [], "agent_info": {}, "timer": 3, "vote_info": {"0": 6, "3": 6}, "empty": 2}
+{"guess_role": ["狼人", "狼人", "狼人", "狼人", "狼人", "狼人", "狼人"]}
+{"stage": "1-0-witch", "stage_description": "女巫請睜眼，請問要使用解藥，還是毒藥", "announcement": [], "information": [], "agent_info": {}, "timer": 8, "vote_info": {}, "empty": 0}
+{"guess_role": ["狼人", "狼人", "狼人", "狼人", "狼人", "狼人", "狼人"]}
+{"stage": "1-1-check", "stage_description": "天亮請睜眼，昨晚是平安夜", "announcement": [], "information": [], "agent_info": {}, "timer": 5, "vote_info": {}, "empty": 0}
+{"guess_role": ["狼人", "狼人", "狼人", "狼人", "狼人", "狼人", "狼人"]}
+{"stage": "1-1-dialogue", "stage_description": "agent0(0)玩家進行討論", "announcement": [], "information": [{"user": [0], "target": [], "operation": "dialogue", "description": "玩家發言"}], "agent_info": {}, "timer": 3, "vote_info": {}, "empty": 0}
+{"guess_role": ["狼人", "狼人", "狼人", "狼人", "狼人", "狼人", "狼人"]}
+{"stage_name": "1-1-dialogue", "operation": "dialogue", "target": -1, "chat": "我是第一個發言目前沒什麼資訊，希望預言家可以跳，讓我們有點方向跟資訊可以判斷。"}
+{"stage": "1-1-dialogue", "stage_description": "agent1(1)玩家進行討論", "announcement": [{"user": [0], "operation": "chat", "description": "我是第一個發言目前沒什麼資訊，希望預言家可以跳，讓我們有點方向跟資訊可以判斷。"}], "information": [], "agent_info": {}, "timer": 8, "vote_info": {}, "empty": 0}
+{"guess_role": ["狼人", "狼人", "狼人", "狼人", "狼人", "狼人", "狼人"]}
+{"stage": "1-1-dialogue", "stage_description": "agent2(2)玩家進行討論", "announcement": [{"user": [1], "operation": "chat", "description": "我目前也沒資訊，但我是一個好人，玩家0號目前看起來也像跟民，但也可能是狼人在裝，後面的玩家我比較懷疑的是玩家6號，所以我會想要著重聽他的發言。"}], "information": [], "agent_info": {}, "timer": 8, "vote_info": {}, "empty": 0}
+{"guess_role": ["狼人", "狼人", "狼人", "狼人", "狼人", "狼人", "狼人"]}
+{"stage": "1-1-dialogue", "stage_description": "agent3(3)玩家進行討論", "announcement": [{"user": [2], "operation": "chat", "description": "大家好，我是預言家，很幸運的我在第一天的查驗就找到玩家3號他是狼人，會查驗他的理由是因為我覺得她很可疑，另外我也覺得玩家5、6可以重點觀察，下一次查驗我會想查玩家5號，這輪把玩家3投出去就可以了。"}], "information": [], "agent_info": {}, "timer": 8, "vote_info": {}, "empty": 0}
+{"guess_role": ["狼人", "狼人", "狼人", "狼人", "狼人", "狼人", "狼人"]}
+{"stage": "1-1-dialogue", "stage_description": "agent5(5)玩家進行討論", "announcement": [{"user": [4], "operation": "chat", "description": "玩家3被玩家2查殺之後，也跳了預言家，我個人會比較相信玩家2，因為玩家3是被查殺的人，感覺有可能是想要最後的掙扎，所以我會投給玩家3。"}], "information": [], "agent_info": {}, "timer": 8, "vote_info": {}, "empty": 0}
+{"guess_role": ["狼人", "狼人", "狼人", "狼人", "狼人", "狼人", "狼人"]}
+{"stage": "1-1-vote1", "stage_description": "玩家進行投票", "announcement": [{"user": [6], "operation": "chat", "description": "總之來說，我會投給玩家3號，玩家2發言比較有內容，玩家3比較緊張，其餘的玩家我認為玩家0或玩家1是狼人，因為他們的發言資訊比較少。"}], "information": [{"user": [0, 1, 2, 3, 4, 5, 6], "target": [0, 1, 2, 3, 4, 5, 6], "operation": "vote_or_not", "description": "投票階段"}], "agent_info": {}, "timer": 8, "vote_info": {}, "empty": 0}
+{"guess_role": ["狼人", "狼人", "狼人", "狼人", "狼人", "狼人", "狼人"]}
+{"stage_name": "1-1-vote1", "operation": "vote_or_not", "target": 3, "chat": "投票階段"}
+{"stage": "1-1-check", "stage_description": "agent3(3)被票出去了，請發表遺言", "announcement": [{"user": [3], "operation": "died", "description": "agent3(3)被票出去了"}], "information": [], "agent_info": {}, "timer": 8, "vote_info": {"0": 3, "1": 2, "2": 3, "3": 2, "4": 3, "5": 3, "6": 3}, "empty": 2}
+{"guess_role": ["狼人", "狼人", "狼人", "狼人", "狼人", "狼人", "狼人"]}
+{"stage": "2-0-check", "stage_description": "天黑請閉眼", "announcement": [{"user": [3], "operation": "chat", "description": "大家你們真的被騙了，我是好人，明晚你們看玩家2號有沒有活著就知道誰是好人誰是狼人了，女巫也可以使用毒要把它毒掉來打平衡，現在來看我覺得玩家0、1、6比較有可能是狼人。"}], "information": [], "agent_info": {}, "timer": 5, "vote_info": {}, "empty": 0}
+{"guess_role": ["狼人", "狼人", "狼人", "狼人", "狼人", "狼人", "狼人"]}
+{"stage": "2-0-werewolf_dialogue", "stage_description": "狼人進行討論#554", "announcement": [], "information": [{"user": [0], "target": [0, 3], "operation": "werewolf_dialogue", "description": "玩家發言"}], "agent_info": {}, "timer": 3, "vote_info": {}, "empty": 0}
+{"guess_role": ["狼人", "狼人", "狼人", "狼人", "狼人", "狼人", "狼人"]}
+{"stage_name": "2-0-werewolf_dialogue", "operation": "werewolf_dialogue", "target": -1, "chat": "我想要殺玩家6號，我覺得他是神"}
+{"stage": "2-0-werewolf_dialogue", "stage_description": "狼人進行討論#41", "announcement": [{"user": [0], "operation": "chat", "description": "我想要殺玩家6號，我覺得他是神"}], "information": [], "agent_info": {}, "timer": 8, "vote_info": {}, "empty": 0}
+{"guess_role": ["狼人", "狼人", "狼人", "狼人", "狼人", "狼人", "狼人"]}
+{"stage": "2-0-werewolf", "stage_description": "狼人請殺人", "announcement": [], "information": [{"user": [0], "target": [0, 1, 2, 4, 5, 6], "operation": "vote", "description": "狼人投票殺人"}], "agent_info": {}, "timer": 3, "vote_info": {}, "empty": 1}
+{"guess_role": ["狼人", "狼人", "狼人", "狼人", "狼人", "狼人", "狼人"]}
+{"stage_name": "2-0-werewolf", "operation": "vote", "target": 6, "chat": "狼人投票殺人"}
+{"stage": "2-0-seer", "stage_description": "預言家請睜眼，確認查驗身份", "announcement": [], "information": [], "agent_info": {}, "timer": 3, "vote_info": {"0": 6}, "empty": 2}
+{"guess_role": ["狼人", "狼人", "狼人", "狼人", "狼人", "狼人", "狼人"]}
+{"stage": "2-1-hunter", "stage_description": "天亮請睜眼", "announcement": [{"user": [6], "operation": "died", "description": "agent6(6)昨晚死了"}], "information": [], "agent_info": {}, "timer": 8, "vote_info": {}, "empty": 0}
+{"guess_role": ["狼人", "狼人", "狼人", "狼人", "狼人", "狼人", "狼人"]}
+{"stage": "2-1-dialogue", "stage_description": "agent0(0)玩家進行討論", "announcement": [], "information": [{"user": [0], "target": [], "operation": "dialogue", "description": "玩家發言"}], "agent_info": {}, "timer": 3, "vote_info": {}, "empty": 0}
+{"guess_role": ["狼人", "狼人", "狼人", "狼人", "狼人", "狼人", "狼人"]}
+{"stage_name": "2-1-dialogue", "operation": "dialogue", "target": -1, "chat": "這一輪剛開始就少了好多人，大家這局要謹慎投票，因為現在最差的情況，我們剩下一民或是一神，只要殺錯人，我們好人就輸了，我目前聽下來我覺得玩家5號是狼人，因為上一次的發言她也是跟著玩家4的發言說的，沒有自己的主見。"}
+{"stage": "2-1-dialogue", "stage_description": "agent1(1)玩家進行討論", "announcement": [{"user": [0], "operation": "chat", "description": "這一輪剛開始就少了好多人，大家這局要謹慎投票，因為現在最差的情況，我們剩下一民或是一神，只要殺錯人，我們好人就輸了，我目前聽下來我覺得玩家5號是狼人，因為上一次的發言她也是跟著玩家4的發言說的，沒有自己的主見。"}], "information": [], "agent_info": {}, "timer": 8, "vote_info": {}, "empty": 0}
+{"guess_role": ["狼人", "狼人", "狼人", "狼人", "狼人", "狼人", "狼人"]}
+{"stage": "2-1-dialogue", "stage_description": "agent2(2)玩家進行討論", "announcement": [{"user": [1], "operation": "chat", "description": "玩家0號這樣踩我，我就沒辦法任你是真的預言家了，因為我是好人，假設玩家2號是真的預言家，你是狼人，那剩下可疑的人就是玩家3號了，因為其他玩家5、6的說法比較客觀，所以我覺得玩家3是狼人，女巫還活著的話可以毒其中一個。"}], "information": [], "agent_info": {}, "timer": 8, "vote_info": {}, "empty": 0}
+{"guess_role": ["狼人", "狼人", "狼人", "狼人", "狼人", "狼人", "狼人"]}
+{"stage": "2-1-dialogue", "stage_description": "agent5(5)玩家進行討論", "announcement": [{"user": [4], "operation": "chat", "description": "我認同預言家的說法，玩家2號雖然沒死，但通常狼人都會刻意去殺其他的玩家，來賭女巫是否會毒殺這個預言家，但看來狼人賭錯了，以現在的情況來看，我認為可以投玩家0號。"}], "information": [], "agent_info": {}, "timer": 8, "vote_info": {}, "empty": 0}
+{"guess_role": ["狼人", "狼人", "狼人", "狼人", "狼人", "狼人", "狼人"]}
+{"stage": "2-1-vote1", "stage_description": "玩家進行投票", "announcement": [{"user": [5], "operation": "chat", "description": "這局還挺難的，我覺得兩邊的說法都有可能，但也確實玩家0號能活下來真的很可疑，雖然她說我是好人，但我還是會想先把他投出去，在考慮後續的發展要站邊玩家1還是玩家3。"}], "information": [{"user": [0, 1, 2, 4, 5], "target": [0, 1, 2, 4, 5], "operation": "vote_or_not", "description": "投票階段"}], "agent_info": {}, "timer": 8, "vote_info": {}, "empty": 0}
+{"guess_role": ["狼人", "狼人", "狼人", "狼人", "狼人", "狼人", "狼人"]}
+{"stage_name": "2-1-vote1", "operation": "vote_or_not", "target": 2, "chat": "投票階段"}
+{"stage": "2-1-check", "stage_description": "agent0(0)被票出去了，請發表遺言", "announcement": [{"user": [0], "operation": "died", "description": "agent0(0)被票出去了"}, {"user": [], "operation": "game_over", "description": "好人陣營獲勝"}], "information": [], "agent_info": {}, "timer": 10, "vote_info": {"0": 2, "1": 0, "2": 0, "4": 0, "5": 0}, "empty": 2}
+{"guess_role": ["狼人", "狼人", "狼人", "狼人", "狼人", "狼人", "狼人"]}
