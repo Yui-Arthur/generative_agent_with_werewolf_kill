@@ -146,6 +146,8 @@ class memory_stream_agent_script(script_agent):
         self.logger.info(f"reflect")
         for _ in self.long_memory.reflection_list: self.logger.info(f"  {_}")
         self.logger.info(f"-------------------------------------------")
+        for handler in self.logger_handler:
+            self.logger.removeHandler(handler)
 
 class summary_memory_stream_agent_script(summary_script_agent):
     def __init__(self , api_json = None, game_info_path = None,
@@ -205,3 +207,5 @@ class summary_memory_stream_agent_script(summary_script_agent):
         self.logger.info(f"reflect")
         for _ in self.long_memory.reflection_list: self.logger.info(f"  {_}")
         self.logger.info(f"-------------------------------------------")
+        for handler in self.logger_handler:
+            self.logger.removeHandler(handler)
