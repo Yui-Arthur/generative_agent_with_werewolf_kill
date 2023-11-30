@@ -349,6 +349,10 @@ class prompts:
                     elif prompt_type == 'dialogue':
                         try:
                             response.replace("\'", "\"")
+                            response = response.lstrip("```json")
+                            response = response.rstrip("```")
+                            response = response.lstrip()
+                            response = response.rstrip()
                             res_json = json.loads(response)
                             save_text = f"{self.stage_detail[prompt_type]['save']}{res_json['最終的思考']['發言']}{res_json['最終的思考']['理由']}。"
                             send_text = f"{res_json['最終的思考']['發言']}{res_json['最終的思考']['理由']}。"
@@ -403,12 +407,11 @@ class prompts:
         ''' Predict and update player roles '''
 
         response = self.prompts_response('guess_role')
-        if response[0] != "{":
-            response = "{\n" + response
-        if response[-1] != "}" and response[-3] != "}":
-            response += "\n}"
-        response = response.replace("\'", "\"")
-
+        response = response.replace("'", "\"")
+        response = response.lstrip("```json")
+        response = response.rstrip("```")
+        response = response.lstrip()
+        response = response.rstrip()
         res_json = json.loads(response)
         
         self.guess_roles= []
