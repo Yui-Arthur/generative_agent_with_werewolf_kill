@@ -13,7 +13,7 @@ class summary():
     embedding_model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
 
     def __init__(self,logger = None, prompt_dir="./doc", api_json = None, prompt_output = False):
-        self.max_fail_cnt = 3
+        self.max_fail_cnt = 1
         self.token_used = 0
         self.logger = logger
         self.prompt_template : dict[str , str] = None
@@ -373,7 +373,7 @@ class summary():
         sample_info = {'operation_summary' : "operation_summary_result"}        
         info = self.__process_LLM_output__(final_prompt , ['operation_summary'] , sample_info)
         if info == None:
-            return None
+            return [None]
         
         if self.prompt_output:
             print(f"day_summary_prompt: {final_prompt}")
@@ -391,7 +391,7 @@ class summary():
         sample_info = {"dialogue_summary" : "dialogue_summary_result"}        
         info = self.__process_LLM_output__(final_prompt , ["dialogue_summary"] , sample_info)
         if info == None:
-            return None
+            return [None]
         
         if self.prompt_output:
             print(f"dialogue_summary_prompt: {final_prompt}")
@@ -409,7 +409,7 @@ class summary():
         sample_info = {"vote_summary" : "vote_summary_result"}        
         info = self.__process_LLM_output__(final_prompt , ["vote_summary"] , sample_info)
         if info == None:
-            return None
+            return [None]
         
         if self.prompt_output:
             print(f"vote_summary_prompt: {final_prompt}")
@@ -430,7 +430,7 @@ class summary():
     
         info = self.__process_LLM_output__(final_prompt , ["guess"] , info)
         if info == None:
-            return None
+            return [None]
         return info['guess']
 
     def set_score(self, role, stage, summary):
@@ -508,6 +508,8 @@ class summary():
             "current" : "current_summary",
         }        
         info = self.__process_LLM_output__(final_prompt , ["current"] , info)        
+        if info == None:
+            return [None]
         return info['current']
     
     def transform_player2identity(self, summary):
@@ -526,6 +528,8 @@ class summary():
         
         cur_summary = self.__get_current_summary(game_info= game_info)
         self.logger.debug(f"cur_summary: {cur_summary}")
+        if cur_summary[0] == None:
+            return [None]
         file_path = f"./summary/{self.my_player_role}/{stage}.json"
         if not os.path.exists(self.prompt_dir / file_path):
             return "無"

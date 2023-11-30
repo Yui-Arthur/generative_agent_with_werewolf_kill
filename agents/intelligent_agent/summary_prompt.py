@@ -483,9 +483,8 @@ class summary_prompts:
                 for idx, i in enumerate(mem):
                     self.prompt += f'{idx+1}. {i}\n'
         self.prompt += "你以往的經驗:\n"
-        use_summary = stage_summary
-        if prompt_type == "guess_role":
-            use_summary = guess_summary
+        use_summary = guess_summary if prompt_type == "guess_role" else stage_summary 
+        
         if use_summary[0] == None:
             self.prompt += "無"
         else:
