@@ -4,27 +4,27 @@
 {"agent_type": "human", "scr_game_info": "game4_1", "all_acc": [0.21428571428571427, 0.2857142857142857], "all_operation": [], "token_used": 0}
 {"agent_type": "human", "scr_game_info": "game5_1", "all_acc": [0.42857142857142855, 0.42857142857142855], "all_operation": [], "token_used": 0}
 {"agent_type": "human", "scr_game_info": "game6_1", "all_acc": [0.5714285714285714, 0.5714285714285714], "all_operation": [], "token_used": 0}
-{"agent_type": "human", "scr_game_info": "game7_1", "all_acc": [0.21428571428571427, 0.5714285714285714, 0.7142857142857143], "all_operation": [], "token_used": 0}
+{"agent_type": "human", "scr_game_info": "game7_1", "all_acc": [0.21428571428571427, 0.6428571428571429, 0.7142857142857143], "all_operation": [], "token_used": 0}
 {"agent_type": "human", "scr_game_info": "game8_1", "all_acc": [0.2857142857142857, 0.5, 0.5714285714285714], "all_operation": [], "token_used": 0}
 {"agent_type": "human", "scr_game_info": "game9_1", "all_acc": [0.35714285714285715, 0.42857142857142855], "all_operation": [], "token_used": 0}
 {"agent_type": "human", "scr_game_info": "game1_2", "all_acc": [0.42857142857142855, 0.7142857142857143], "all_operation": [], "token_used": 0}
-{"agent_type": "human", "scr_game_info": "game2_2", "all_acc": [0.2857142857142857, 0.42857142857142855], "all_operation": [], "token_used": 0}
-{"agent_type": "human", "scr_game_info": "game3_2", "all_acc": [0.2857142857142857, 0.0], "all_operation": [], "token_used": 0}
-{"agent_type": "human", "scr_game_info": "game4_2", "all_acc": [0.42857142857142855, 0.14285714285714285], "all_operation": [], "token_used": 0}
-{"agent_type": "human", "scr_game_info": "game5_2", "all_acc": [0.42857142857142855, 0.07142857142857142], "all_operation": [], "token_used": 0}
-{"agent_type": "human", "scr_game_info": "game6_2", "all_acc": [0.35714285714285715, 0.35714285714285715], "all_operation": [], "token_used": 0}
-{"agent_type": "human", "scr_game_info": "game7_2", "all_acc": [0.21428571428571427, 0.2857142857142857, 0.21428571428571427], "all_operation": [], "token_used": 0}
-{"agent_type": "human", "scr_game_info": "game8_2", "all_acc": [0.5, 0.07142857142857142, 0.42857142857142855], "all_operation": [], "token_used": 0}
-{"agent_type": "human", "scr_game_info": "game9_2", "all_acc": [0.42857142857142855, 0.2857142857142857], "all_operation": [], "token_used": 0}
-{"agent_type": "human", "scr_game_info": "game1_3", "all_acc": [0.35714285714285715, 0.6428571428571429], "all_operation": [], "token_used": 0}
+{"agent_type": "human", "scr_game_info": "game2_2", "all_acc": [0.35714285714285715, 0.5714285714285714], "all_operation": [], "token_used": 0}
+{"agent_type": "human", "scr_game_info": "game3_2", "all_acc": [0.35714285714285715, 0.21428571428571427], "all_operation": [], "token_used": 0}
+{"agent_type": "human", "scr_game_info": "game4_2", "all_acc": [0.5714285714285714, 0.21428571428571427], "all_operation": [], "token_used": 0}
+{"agent_type": "human", "scr_game_info": "game5_2", "all_acc": [0.5714285714285714, 0.14285714285714285], "all_operation": [], "token_used": 0}
+{"agent_type": "human", "scr_game_info": "game6_2", "all_acc": [0.42857142857142855, 0.42857142857142855], "all_operation": [], "token_used": 0}
+{"agent_type": "human", "scr_game_info": "game7_2", "all_acc": [0.2857142857142857, 0.2857142857142857, 0.35714285714285715], "all_operation": [], "token_used": 0}
+{"agent_type": "human", "scr_game_info": "game8_2", "all_acc": [0.6428571428571429, 0.07142857142857142, 0.5714285714285714], "all_operation": [], "token_used": 0}
+{"agent_type": "human", "scr_game_info": "game9_2", "all_acc": [0.5, 0.2857142857142857], "all_operation": [], "token_used": 0}
+{"agent_type": "human", "scr_game_info": "game1_3", "all_acc": [0.42857142857142855, 0.7857142857142857], "all_operation": [], "token_used": 0}
 {"agent_type": "human", "scr_game_info": "game2_3", "all_acc": [0.42857142857142855, 0.42857142857142855], "all_operation": [], "token_used": 0}
 {"agent_type": "human", "scr_game_info": "game3_3", "all_acc": [0.2857142857142857, 0.42857142857142855], "all_operation": [], "token_used": 0}
 {"agent_type": "human", "scr_game_info": "game4_3", "all_acc": [0.2857142857142857, 0.5714285714285714], "all_operation": [], "token_used": 0}
-{"agent_type": "human", "scr_game_info": "game5_3", "all_acc": [0.0, 0.14285714285714285], "all_operation": [], "token_used": 0}
+{"agent_type": "human", "scr_game_info": "game5_3", "all_acc": [0.14285714285714285, 0.2857142857142857], "all_operation": [], "token_used": 0}
 {"agent_type": "human", "scr_game_info": "game6_3", "all_acc": [0.5714285714285714, 0.21428571428571427], "all_operation": [], "token_used": 0}
-{"agent_type": "human", "scr_game_info": "game7_3", "all_acc": [0.21428571428571427, 0.21428571428571427, 0.14285714285714285], "all_operation": [], "token_used": 0}
+{"agent_type": "human", "scr_game_info": "game7_3", "all_acc": [0.21428571428571427, 0.21428571428571427, 0.21428571428571427], "all_operation": [], "token_used": 0}
 {"agent_type": "human", "scr_game_info": "game8_3", "all_acc": [0.5, 0.5714285714285714, 0.42857142857142855], "all_operation": [], "token_used": 0}
-{"agent_type": "human", "scr_game_info": "game9_3", "all_acc": [0.21428571428571427, 0.0], "all_operation": [], "token_used": 0}
+{"agent_type": "human", "scr_game_info": "game9_3", "all_acc": [0.21428571428571427, 0.07142857142857142], "all_operation": [], "token_used": 0}
 {"agent_type": "human", "scr_game_info": "game1_4", "all_acc": [0.5, 0.6428571428571429], "all_operation": [], "token_used": 0}
 {"agent_type": "human", "scr_game_info": "game2_4", "all_acc": [0.7142857142857143, 0.7142857142857143], "all_operation": [], "token_used": 0}
 {"agent_type": "human", "scr_game_info": "game3_4", "all_acc": [0.35714285714285715, 0.42857142857142855], "all_operation": [], "token_used": 0}
@@ -33,16 +33,16 @@
 {"agent_type": "human", "scr_game_info": "game6_4", "all_acc": [0.8571428571428571, 1.0], "all_operation": [], "token_used": 0}
 {"agent_type": "human", "scr_game_info": "game7_4", "all_acc": [0.21428571428571427, 0.14285714285714285, 0.35714285714285715], "all_operation": [], "token_used": 0}
 {"agent_type": "human", "scr_game_info": "game8_4", "all_acc": [0.2857142857142857, 0.2857142857142857, 0.2857142857142857], "all_operation": [], "token_used": 0}
-{"agent_type": "human", "scr_game_info": "game9_4", "all_acc": [0.5, 0.14285714285714285], "all_operation": [], "token_used": 0}
-{"agent_type": "human", "scr_game_info": "game1_5", "all_acc": [0.2857142857142857, 0.5], "all_operation": [], "token_used": 0}
+{"agent_type": "human", "scr_game_info": "game9_4", "all_acc": [0.5, 0.21428571428571427], "all_operation": [], "token_used": 0}
+{"agent_type": "human", "scr_game_info": "game1_5", "all_acc": [0.35714285714285715, 0.5], "all_operation": [], "token_used": 0}
 {"agent_type": "human", "scr_game_info": "game2_5", "all_acc": [0.2857142857142857, 0.2857142857142857], "all_operation": [], "token_used": 0}
-{"agent_type": "human", "scr_game_info": "game3_5", "all_acc": [0.42857142857142855, 0.14285714285714285], "all_operation": [], "token_used": 0}
+{"agent_type": "human", "scr_game_info": "game3_5", "all_acc": [0.5, 0.14285714285714285], "all_operation": [], "token_used": 0}
 {"agent_type": "human", "scr_game_info": "game4_5", "all_acc": [0.42857142857142855, 0.2857142857142857], "all_operation": [], "token_used": 0}
-{"agent_type": "human", "scr_game_info": "game5_5", "all_acc": [0.14285714285714285, 0.35714285714285715], "all_operation": [], "token_used": 0}
+{"agent_type": "human", "scr_game_info": "game5_5", "all_acc": [0.21428571428571427, 0.42857142857142855], "all_operation": [], "token_used": 0}
 {"agent_type": "human", "scr_game_info": "game6_5", "all_acc": [0.7142857142857143, 0.7142857142857143], "all_operation": [], "token_used": 0}
-{"agent_type": "human", "scr_game_info": "game7_5", "all_acc": [0.5714285714285714, 0.14285714285714285, 0.14285714285714285], "all_operation": [], "token_used": 0}
+{"agent_type": "human", "scr_game_info": "game7_5", "all_acc": [0.5714285714285714, 0.21428571428571427, 0.14285714285714285], "all_operation": [], "token_used": 0}
 {"agent_type": "human", "scr_game_info": "game8_5", "all_acc": [0.42857142857142855, 0.35714285714285715, 0.42857142857142855], "all_operation": [], "token_used": 0}
-{"agent_type": "human", "scr_game_info": "game9_5", "all_acc": [0.2857142857142857, 0.5714285714285714], "all_operation": [], "token_used": 0}
+{"agent_type": "human", "scr_game_info": "game9_5", "all_acc": [0.35714285714285715, 0.5714285714285714], "all_operation": [], "token_used": 0}
 {"agent_type": "human", "scr_game_info": "game1_6", "all_acc": [0.6428571428571429, 0.6428571428571429], "all_operation": [], "token_used": 0}
 {"agent_type": "human", "scr_game_info": "game2_6", "all_acc": [0.7857142857142857, 0.7857142857142857], "all_operation": [], "token_used": 0}
 {"agent_type": "human", "scr_game_info": "game3_6", "all_acc": [0.5714285714285714, 0.5], "all_operation": [], "token_used": 0}
@@ -54,14 +54,14 @@
 {"agent_type": "human", "scr_game_info": "game9_6", "all_acc": [0.7142857142857143, 0.7142857142857143], "all_operation": [], "token_used": 0}
 {"agent_type": "human", "scr_game_info": "game1_7", "all_acc": [0.5714285714285714, 0.5714285714285714], "all_operation": [], "token_used": 0}
 {"agent_type": "human", "scr_game_info": "game2_7", "all_acc": [0.14285714285714285, 0.21428571428571427], "all_operation": [], "token_used": 0}
-{"agent_type": "human", "scr_game_info": "game3_7", "all_acc": [0.14285714285714285, 0.0], "all_operation": [], "token_used": 0}
-{"agent_type": "human", "scr_game_info": "game4_7", "all_acc": [0.14285714285714285, 0.0], "all_operation": [], "token_used": 0}
-{"agent_type": "human", "scr_game_info": "game5_7", "all_acc": [0.14285714285714285, 0.0], "all_operation": [], "token_used": 0}
-{"agent_type": "human", "scr_game_info": "game6_7", "all_acc": [0.2857142857142857, 0.2857142857142857], "all_operation": [], "token_used": 0}
-{"agent_type": "human", "scr_game_info": "game7_7", "all_acc": [0.21428571428571427, 0.21428571428571427, 0.14285714285714285], "all_operation": [], "token_used": 0}
+{"agent_type": "human", "scr_game_info": "game3_7", "all_acc": [0.2857142857142857, 0.07142857142857142], "all_operation": [], "token_used": 0}
+{"agent_type": "human", "scr_game_info": "game4_7", "all_acc": [0.21428571428571427, 0.0], "all_operation": [], "token_used": 0}
+{"agent_type": "human", "scr_game_info": "game5_7", "all_acc": [0.21428571428571427, 0.0], "all_operation": [], "token_used": 0}
+{"agent_type": "human", "scr_game_info": "game6_7", "all_acc": [0.35714285714285715, 0.35714285714285715], "all_operation": [], "token_used": 0}
+{"agent_type": "human", "scr_game_info": "game7_7", "all_acc": [0.21428571428571427, 0.2857142857142857, 0.14285714285714285], "all_operation": [], "token_used": 0}
 {"agent_type": "human", "scr_game_info": "game8_7", "all_acc": [0.21428571428571427, 0.35714285714285715, 0.2857142857142857], "all_operation": [], "token_used": 0}
 {"agent_type": "human", "scr_game_info": "game9_7", "all_acc": [0.2857142857142857, 0.42857142857142855], "all_operation": [], "token_used": 0}
-{"agent_type": "human", "scr_game_info": "game1_8", "all_acc": [0.42857142857142855, 0.42857142857142855], "all_operation": [], "token_used": 0}
+{"agent_type": "human", "scr_game_info": "game1_8", "all_acc": [0.5714285714285714, 0.5714285714285714], "all_operation": [], "token_used": 0}
 {"agent_type": "human", "scr_game_info": "game2_8", "all_acc": [0.42857142857142855, 0.42857142857142855], "all_operation": [], "token_used": 0}
 {"agent_type": "human", "scr_game_info": "game3_8", "all_acc": [0.35714285714285715, 0.2857142857142857], "all_operation": [], "token_used": 0}
 {"agent_type": "human", "scr_game_info": "game4_8", "all_acc": [0.5714285714285714, 0.7142857142857143], "all_operation": [], "token_used": 0}
