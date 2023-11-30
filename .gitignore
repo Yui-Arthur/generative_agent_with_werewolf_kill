@@ -18,4 +18,5 @@ doc/game_info/useful_info
 test_summary_intelligent_agent_script.py
 test_summary_script.py
 a.jsonl
-chart.py
+cal_human_acc.py
+human_sheet.csv
