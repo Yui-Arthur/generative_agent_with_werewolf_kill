@@ -64,9 +64,9 @@ def show_game_token_used(all_agent_info):
         plt.hlines(y=average, xmin= x[k] - width, xmax= x[k] + 5 * width, color='r', linestyle='--')
 
     plt.grid(axis='y', alpha=0.7, which='major', color='gray', linewidth=0.5, dashes=(5, 2))
-    plt.xticks(x + 2 * width, games, fontsize=15)
-    plt.yticks(fontsize=15)
-    plt.legend()
+    plt.xticks(x + 2 * width, games, fontsize=23)
+    plt.yticks(fontsize=23)
+    plt.legend(loc = "upper left")
     plt.show()
 
 def show_agent_role_token_used(all_agent_info):
@@ -84,9 +84,9 @@ def show_agent_role_token_used(all_agent_info):
         plt.hlines(y=average, xmin= x[i] - width, xmax= x[i] + 5 * width, color='r', linestyle='--')
 
     plt.grid(axis='y', alpha=0.7, which='major', color='gray', linewidth=0.5, dashes=(5, 2))
-    plt.xticks(x + 2 * width, games, fontsize=15)
-    plt.yticks(fontsize=15)
-    plt.legend()
+    plt.xticks(x + 2 * width, games, fontsize=23)
+    plt.yticks(fontsize=23)
+    plt.legend(loc = "upper left")
     plt.show()
 
 def show_role_agent_token_used(all_agent_info):
@@ -96,7 +96,6 @@ def show_role_agent_token_used(all_agent_info):
     width = 0.13
     x = np.arange(len(games))
     for i in range(5):
-        print(x, i*width, x + i*width)
         plt.bar(x + i*width , [game_token_used[agent_type[i]][role_list[j]][2] / 1000 for j in range(5)], width, color = color[i], label= agent_simply_name[i], align= "center")
     
     for i in range(5):
@@ -105,9 +104,9 @@ def show_role_agent_token_used(all_agent_info):
         plt.hlines(y=average, xmin= x[i] - width, xmax= x[i] + 5 * width, color='r', linestyle='--')
         
     plt.grid(axis='y', alpha=0.7, which='major', color='gray', linewidth=0.5, dashes=(5, 2))
-    plt.xticks(x + 2 * width, games, fontsize=15)
-    plt.yticks(fontsize=15)
-    plt.legend()
+    plt.xticks(x + 2 * width, games, fontsize=23)
+    plt.yticks(fontsize=23)
+    plt.legend(loc = "upper left")
     plt.show()
 
 
