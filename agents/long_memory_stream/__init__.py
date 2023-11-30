@@ -1,2 +1,4 @@
 from .memory_stream_agent import memory_stream_agent , summary_memory_stream_agent
 from .test_memory_stream_agent import memory_stream_agent_test , memory_stream_agent_script  , summary_memory_stream_agent_script
+from .simple_agent import simple_agent , summary_simple_agent
+from .test_simple_agent import simple_agent_script , summary_simple_agent_script

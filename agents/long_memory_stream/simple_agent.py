@@ -16,7 +16,7 @@ from ..summary_agent import summary_agent
 from ..script_agent import script_agent
 from .memory_stream_utils.role import role , werewolf , seer , witch , hunter
 
-class memory_stream_agent(agent):
+class simple_agent(agent):
     def __init__(self , api_json = "doc/secret/yui.key",  
                  server_url = "140.127.208.185" , agent_name = "Agent1" , room_name = "TESTROOM" , 
                  color = "f9a8d4" , prompt_dir = "doc/prompt/memory_stream"):
@@ -65,7 +65,7 @@ class memory_stream_agent(agent):
             "village" : role,
         }
         roles_setting = {role_name : room_data['game_setting'][role_name] for role_name in role_to_class.keys()}
-        self.long_memory : role = role_to_class[self.role](self.prompt_dir , self.logger, self.client , self.api_kwargs)
+        self.long_memory : role = role_to_class[self.role](self.prompt_dir , self.logger, self.client , self.api_kwargs , used_memory=False)
         if self.role != "werewolf":
             self.long_memory.update_game_info(self.player_id , self.player_name , self.role , roles_setting)
         else:
@@ -74,7 +74,7 @@ class memory_stream_agent(agent):
         self.__check_game_state__(0)
 
 
-class summary_memory_stream_agent(summary_agent):
+class summary_simple_agent(summary_agent):
     def __init__(self , api_json = "doc/secret/yui.key",  
                  server_url = "140.127.208.185" , agent_name = "Agent1" , room_name = "TESTROOM" , 
                  color = "f9a8d4" , prompt_dir = "doc/prompt/memory_stream"):
@@ -125,7 +125,7 @@ class summary_memory_stream_agent(summary_agent):
             "village" : role,
         }
         roles_setting = {role_name : room_data['game_setting'][role_name] for role_name in role_to_class.keys()}
-        self.long_memory : role = role_to_class[self.role](self.prompt_dir , self.logger, self.client , self.api_kwargs , summary = True)
+        self.long_memory : role = role_to_class[self.role](self.prompt_dir , self.logger, self.client , self.api_kwargs , summary=True , used_memory=False)
         if self.role != "werewolf":
             self.long_memory.update_game_info(self.player_id , self.player_name , self.role , roles_setting)
         else:
