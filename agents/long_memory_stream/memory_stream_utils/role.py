@@ -4,8 +4,8 @@ import json
 
 class role(long_memeory_stream):
 
-    def __init__(self , prompt_dir , logger , client , openai_kwargs  , summary=False ,  log_prompt = False):
-        super().__init__(prompt_dir, logger , client, openai_kwargs  , summary , log_prompt)
+    def __init__(self , prompt_dir , logger , client , openai_kwargs  , summary=False ,  log_prompt = False , used_memory=True):
+        super().__init__(prompt_dir, logger , client, openai_kwargs  , summary , log_prompt , used_memory)
         self.max_fail_cnt = 3
         
     def __processs_information__(self , data):
@@ -26,8 +26,8 @@ class role(long_memeory_stream):
 
 class werewolf(role):
 
-    def __init__(self , prompt_dir , logger , client , openai_kwargs , summary=False , log_prompt = False):
-        super().__init__(prompt_dir, logger , client, openai_kwargs  , summary , log_prompt)
+    def __init__(self , prompt_dir , logger , client , openai_kwargs , summary=False , log_prompt=False , used_memory=True):
+        super().__init__(prompt_dir, logger , client, openai_kwargs  , summary , log_prompt , used_memory)
         self.werewolf_chat = ""
         self.personal_chat = ""
         self.__register_keywords__({
@@ -128,8 +128,8 @@ class werewolf(role):
 
 
 class seer(role):
-    def __init__(self , prompt_dir , logger , client , openai_kwargs  , summary=False , log_prompt = False):
-        super().__init__(prompt_dir, logger , client, openai_kwargs , summary , log_prompt)
+    def __init__(self , prompt_dir , logger , client , openai_kwargs  , summary=False , log_prompt=False , used_memory=True):
+        super().__init__(prompt_dir, logger , client, openai_kwargs , summary , log_prompt , used_memory)
         
         self.__register_keywords__({
             "目標" : "target"
@@ -188,8 +188,8 @@ class seer(role):
 
 class witch(role):
     
-    def __init__(self , prompt_dir , logger , client , openai_kwargs , summary=False, log_prompt=False):
-        super().__init__(prompt_dir, logger , client, openai_kwargs , summary , log_prompt)
+    def __init__(self , prompt_dir , logger , client , openai_kwargs , summary=False, log_prompt=False , used_memory=True):
+        super().__init__(prompt_dir, logger , client, openai_kwargs , summary , log_prompt , used_memory)
         
         self.__register_keywords__({
             "目標" : "target",
@@ -276,8 +276,8 @@ class witch(role):
 
 
 class hunter(role):
-    def __init__(self , prompt_dir , logger , client , openai_kwargs , summary=False , log_prompt=False):
-        super().__init__(prompt_dir, logger , client, openai_kwargs , summary , log_prompt)
+    def __init__(self , prompt_dir , logger , client , openai_kwargs , summary=False , log_prompt=False , used_memory=True):
+        super().__init__(prompt_dir, logger , client, openai_kwargs , summary , log_prompt , used_memory)
         
         self.__register_keywords__({
             "目標" : "target"
@@ -292,7 +292,7 @@ class hunter(role):
         
         self.logger.debug("hunter process")
         memory = self.__retrieval__(self.day , len(self.memory_stream) , "目前哪位玩家最可疑")
-        target = data['information'][1]['target']
+        target = data['information'][1]['target'] if len(['information']) == 2 else data['information'][0]['target']
 
         replace_order = {
             "%l" : self.__role_list_to_str__()[0],
