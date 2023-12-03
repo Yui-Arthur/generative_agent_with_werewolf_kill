@@ -333,25 +333,34 @@ class prompts:
 
                     # process text in special cases
                     if prompt_type == 'werewolf_dialogue':
-                        res = response.split("，", 1)
-                        if "1" in res[0]:
-                            res = response.split("，", 2)
-                            save_text = f"我在狼人階段發言\"我同意{res[1]}的發言\"。{res[2]}。"
-                            send_text = f"我同意{res[1]}的發言。"
-                        elif "2" in res[0]:
-                            res = response.split("，", 3)
-                            save_text = f"我在狼人階段發言\"我想刀{res[1]}，我覺得他是{res[2]}\"。{res[3]}。"
-                            send_text = f"我想刀{res[1]}，我覺得他是{res[2]}。"
-                        elif "3" in res[0]:
-                            save_text = f"我在狼人發言階段不發言。{res[1]}。"
-                            send_text = f"我不發言。{res[1]}。"
-
+                        try:
+                            res = response.split("，", 1)
+                            if "1" in res[0]:
+                                res = response.split("，", 2)
+                                save_text = f"我在狼人階段發言\"我同意{res[1]}的發言\"。{res[2]}。"
+                                send_text = f"我同意{res[1]}的發言。"
+                            elif "2" in res[0]:
+                                res = response.split("，", 3)
+                                save_text = f"我在狼人階段發言\"我想刀{res[1]}，我覺得他是{res[2]}\"。{res[3]}。"
+                                send_text = f"我想刀{res[1]}，我覺得他是{res[2]}。"
+                            elif "3" in res[0]:
+                                save_text = f"我在狼人發言階段不發言。{res[1]}。"
+                                send_text = f"我不發言。{res[1]}。"
+                        except Exception as e:
+                            save_text = f"我在狼人發言階段不發言。"
+                            send_text = f"我不發言。"
+                            self.logger.warning(f"Not found ',' , split prompt error , {e}")
+                            
                     elif prompt_type == 'dialogue':
                         try:
                             response.replace("\'", "\"")
+                            response = response.lstrip("```json")
+                            response = response.rstrip("```")
+                            response = response.lstrip()
+                            response = response.rstrip()
                             res_json = json.loads(response)
-                            save_text = f"{self.stage_detail[prompt_type]['save']}{res_json['最終的思考']['發言']}{res_json['最終的思考']['理由']}。"
-                            send_text = f"{res_json['最終的思考']['發言']}{res_json['最終的思考']['理由']}。"
+                            save_text = f"{self.stage_detail[prompt_type]['save']}{res_json['最終的思考']['發言']}。因為{res_json['最終的思考']['理由']}。"
+                            send_text = f"{res_json['最終的思考']['發言']}"
 
                         except Exception as e:
                             if self.player_id in self.alive:
@@ -361,7 +370,7 @@ class prompts:
                                 save_text = '我無遺言'
                                 send_text = '我無遺言'
                             self.logger.warning(f"Dialogue prompts error , {e}")
-           
+    
                     if save_text == '':
                         save_text = '無操作'
 
@@ -369,7 +378,11 @@ class prompts:
                     # save operation's target
                     target = -1
                     if '號玩家，' in response:
-                        target = int(response.split('號玩家，')[0][-1])
+                        try:
+                            target = int(response.split('號玩家，')[0][-1])
+                        except Exception as e:
+                            target = -1
+                            self.logger.warning(f"Not found ',' , split prompt error , {e}")
 
                     # save_text += "。"
                     # save text to memory
@@ -403,12 +416,11 @@ class prompts:
         ''' Predict and update player roles '''
 
         response = self.prompts_response('guess_role')
-        if response[0] != "{":
-            response = "{\n" + response
-        if response[-1] != "}" and response[-3] != "}":
-            response += "\n}"
-        response = response.replace("\'", "\"")
-
+        response = response.replace("'", "\"")
+        response = response.lstrip("```json")
+        response = response.rstrip("```")
+        response = response.lstrip()
+        response = response.rstrip()
         res_json = json.loads(response)
         
         self.guess_roles= []

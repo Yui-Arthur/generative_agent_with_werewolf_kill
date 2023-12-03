@@ -84,9 +84,9 @@ class intelligent_agent(agent):
 
 class intelligent_agent_script(script_agent):
     def __init__(self , api_json = None, game_info_path = None,
-                agent_name = "ScriptGame" , game_room = "ScriptGame" , prompt_dir = "doc/prompt/memory_stream"):
+                agent_name = "ScriptGame" , game_room = "ScriptGame" , prompt_dir = "doc/prompt/memory_stream", save=None):
         self.prompt_dir = Path(prompt_dir)
-        super().__init__(api_json, game_info_path, agent_name , game_room)
+        super().__init__(api_json, game_info_path, agent_name , game_room, save_target_file= save)
     
     def __process_data__(self, data):
         """Process the data got from server"""
@@ -207,9 +207,9 @@ class summary_intelligent_agent(summary_agent):
 class summary_intelligent_agent_script(summary_script_agent):
 
     def __init__(self , api_json = None, game_info_path = None,
-                agent_name = "ScriptGame" , game_room = "ScriptGame" , prompt_dir = "doc/prompt/memory_stream"):
+                agent_name = "ScriptGame" , game_room = "ScriptGame" , prompt_dir = "doc/prompt/memory_stream", save=None):
         self.prompt_dir = Path(prompt_dir)
-        super().__init__(api_json, game_info_path, agent_name , game_room)
+        super().__init__(api_json, game_info_path, agent_name , game_room, save_target_file= save)
     
     def __process_data__(self, data):
         """Process the data got from server"""
