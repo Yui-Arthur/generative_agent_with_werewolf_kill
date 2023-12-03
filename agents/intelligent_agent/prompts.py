@@ -355,7 +355,7 @@ class prompts:
                             response = response.rstrip()
                             res_json = json.loads(response)
                             save_text = f"{self.stage_detail[prompt_type]['save']}{res_json['最終的思考']['發言']}{res_json['最終的思考']['理由']}。"
-                            send_text = f"{res_json['最終的思考']['發言']}{res_json['最終的思考']['理由']}。"
+                            send_text = f"{res_json['最終的思考']['發言']}"
 
                         except Exception as e:
                             if self.player_id in self.alive:
