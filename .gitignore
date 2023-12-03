@@ -23,3 +23,4 @@ cal_human_acc.py
 gen_plot.py
 human_sheet.csv
 human_script.jsonl
+/data/*.jsonl
