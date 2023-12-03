@@ -13,7 +13,7 @@ class summary():
     embedding_model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
 
     def __init__(self,logger = None, prompt_dir="./doc", api_json = None, prompt_output = False):
-        self.max_fail_cnt = 1
+        self.max_fail_cnt = 3
         self.token_used = 0
         self.logger = logger
         self.prompt_template : dict[str , str] = None

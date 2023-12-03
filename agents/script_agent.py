@@ -47,6 +47,7 @@ class script_agent(agent):
         # from file load a game
         self.__load_game_info__(game_info_path)
         # for test get info
+        self.is_deleted = False
         self.update = 0
         # start the script game
         self.__start_script_game__()
@@ -183,6 +184,9 @@ class script_agent(agent):
             f.write('\n')
 
     def __del__(self):
+        if self.is_deleted: return
+
+        self.is_deleted = True
         self.logger.info(f"---------------Script Result---------------")
         if len(self.acc_record) != 0:
             self.logger.info(f"Agent guess roles avg acc {(sum(self.acc_record) / len(self.acc_record)):.3f}")
@@ -190,6 +194,7 @@ class script_agent(agent):
         self.logger.info(f"operation record")
         for _ in self.operation_record: self.logger.info(f"  {_}")
         self.logger.info(f"-------------------------------------------")
+        
 
 class summary_script_agent(summary_agent):
     def __init__(self , api_json = None, game_info_path = None,
@@ -229,6 +234,7 @@ class summary_script_agent(summary_agent):
         self.summary_generator = summary(logger= self.logger, api_json = api_json)
         self.operation_info = {}
         self.game_info = []
+        self.is_deleted = False
         # from file load a game
         self.__load_game_info__(game_info_path)
         # start the script game
@@ -393,7 +399,9 @@ class summary_script_agent(summary_agent):
             f.write('\n')
 
     def __del__(self):
+        if self.is_deleted: return
 
+        self.is_deleted = True
         self.logger.info(f"---------------Script Result---------------")
         if len(self.acc_record) != 0:
             self.logger.info(f"Agent guess roles avg acc {(sum(self.acc_record) / len(self.acc_record)):.3f}")
