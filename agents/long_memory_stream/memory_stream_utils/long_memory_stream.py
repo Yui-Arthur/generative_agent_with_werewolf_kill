@@ -131,7 +131,8 @@ class long_memeory_stream():
 
         # if summary flag = true , save the summary
         if self.summary:
-            self.summary_guess_role_data = [_.strip('\n') for _ in data['guess_summary']]
+            if data['guess_summary'] != [None]:
+                self.summary_guess_role_data = [_.strip('\n') for _ in data['guess_summary']]
             if data['stage_summary'] != [None]:
                 self.summary_operation_data = [_.strip('\n') for _ in data['stage_summary']]
 
